@@ -6,6 +6,7 @@
   "mixins": [
   ],
   "client": [
+    "TaskButtonMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,9 +1,9 @@
 package com.creeperyang.contactquests
 
-import com.creeperyang.contactquests.block.ModBlocks
+import com.creeperyang.contactquests.client.ContactQuestsClient
+import com.creeperyang.contactquests.task.TaskRegistry
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.fml.common.EventBusSubscriber
 import net.neoforged.fml.common.Mod
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
@@ -19,28 +19,26 @@ import thedarkcolour.kotlinforforge.neoforge.forge.runForDist
  *
  * An example for blocks is in the `blocks` package of this mod.
  */
-@Mod(Contactquests.ID)
-object Contactquests {
+@Mod(ContactQuests.ID)
+object ContactQuests {
     const val ID = "contactquests"
 
     // the logger for our mod
     val LOGGER: Logger = LogManager.getLogger(ID)
 
     init {
-        LOGGER.log(Level.INFO, "Hello world!")
+        LOGGER.log(Level.INFO, "Contactquests init")
+        TaskRegistry.init()
 
-        // Register the KDeferredRegister to the mod-specific event bus
-        ModBlocks.REGISTRY.register(MOD_BUS)
-
-        val obj = runForDist(clientTarget = {
-            MOD_BUS.addListener(::onClientSetup)
-            Minecraft.getInstance()
-        }, serverTarget = {
-            MOD_BUS.addListener(::onServerSetup)
-            "test"
-        })
-
-        println(obj)
+        val obj = runForDist(
+            clientTarget = {
+                MOD_BUS.addListener(::onClientSetup)
+                Minecraft.getInstance()
+            },
+            serverTarget = {
+                MOD_BUS.addListener(::onServerSetup)
+                "test"
+            })
     }
 
     /**
@@ -49,18 +47,19 @@ object Contactquests {
      * Fired on the mod specific event bus.
      */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-        LOGGER.log(Level.INFO, "Initializing client...")
+//        LOGGER.log(Level.INFO, "Initializing client...")
+        ContactQuestsClient.init()
     }
 
     /**
      * Fired on the global Forge bus.
      */
     private fun onServerSetup(event: FMLDedicatedServerSetupEvent) {
-        LOGGER.log(Level.INFO, "Server starting...")
+//        LOGGER.log(Level.INFO, "Server starting...")
     }
 
     @SubscribeEvent
     fun onCommonSetup(event: FMLCommonSetupEvent) {
-        LOGGER.log(Level.INFO, "Hello! This is working!")
+//        LOGGER.log(Level.INFO, "Hello! This is working!")
     }
 }

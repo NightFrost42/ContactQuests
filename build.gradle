@@ -18,6 +18,7 @@ repositories {
     }
     maven { url = "https://cursemaven.com" }
     maven { url = "https://api.modrinth.com/maven" }
+    maven { url = "https://maven.blamejared.com/"        }
 }
 
 base {
@@ -106,17 +107,20 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     implementation 'thedarkcolour:kotlinforforge-neoforge:5.3.0'
-    implementation "curse.maven:jupiter-1072905:6843052"
-    compileOnly "curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}"
-    compileOnly "curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}"
-    compileOnly "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
-    compileOnly "curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}"
+    implementation "curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}"
+    implementation "curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}"
+    implementation "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
+    implementation "curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}"
+    implementation "curse.maven:ftb-filter-system-943925:${filter_system_neoforge_21}"
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
     // compileOnly "mezz.jei:jei-${mc_version}-forge-api:${jei_version}"
-    // runtimeOnly "mezz.jei:jei-${mc_version}-forge:${jei_version}"
-
+    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
+    runtimeOnly "curse.maven:architectury-api-419699:${architectury_api_neoforge_21}"
+    runtimeOnly "curse.maven:jupiter-1072905:${jupiter_neoforge_21}"
+    runtimeOnly "curse.maven:oelib-1319210:${oelib_neoforge_21}"
+    runtimeOnly "curse.maven:ftb-xmod-compat-889915:${ftb_xmod_compat_neoforge_21}"
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"

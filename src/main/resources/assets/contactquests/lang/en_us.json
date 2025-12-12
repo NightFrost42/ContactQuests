@@ -1,5 +1,6 @@
 {
-  "itemGroup.contactquests": "Example Mod Tab",
-  "block.contactquests.example_block": "Example Block",
-  "item.contactquests.example_item": "Example Item"
+  "contactquest.task.ftbquests.parcel.valid_for": "Valid items for %s",
+  "ftbquests.task.ftbquests.item.view_items": "Click to view valid items",
+  "ftbquests.task.ftbquests.item.click_recipe": "Click to view recipe(s)",
+  "ftbquests.gui.submit": "Submit"
 }
