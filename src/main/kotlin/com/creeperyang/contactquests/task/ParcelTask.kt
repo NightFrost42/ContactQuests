@@ -26,6 +26,7 @@ import net.minecraft.network.chat.MutableComponent
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
+import net.minecraft.world.item.Items
 import net.minecraft.world.item.TooltipFlag
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
@@ -39,7 +40,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest) {
     var count: Long = 1
     var returnPostcardStyleId: ResourceLocation? = null
 
-    override fun getType(): TaskType = TaskRegistry.PARCEL_TASK
+    override fun getType(): TaskType = TaskRegistry.PARCEL
 
     override fun getMaxProgress(): Long {
         return count
@@ -108,7 +109,11 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest) {
     override fun onButtonClicked(button: Button?, canClick: Boolean) {
         button!!.playClickSound()
 
-        val validItems: MutableList<ItemStack> = getValidDisplayItems()
+//        val validItems: MutableList<ItemStack> = getValidDisplayItems()
+
+        val validItems = getValidDisplayItems().filter {
+            !it.isEmpty && it.item != Items.AIR && it.count > 0
+        }.toMutableList()
 
         if (validItems.size == 1 && FTBQuests.getRecipeModHelper().isRecipeModAvailable) {
             FTBQuests.getRecipeModHelper().showRecipes(validItems[0])
@@ -197,5 +202,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest) {
 
     override fun onStarted(data: QuestProgressEventData<*>) {
         super.onStarted(data)
+
     }
 }

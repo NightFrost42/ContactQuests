@@ -9,7 +9,8 @@ import net.minecraft.resources.ResourceLocation
 
 class TaskRegistry : TaskTypes {
     companion object {
-        val PARCEL_TASK: TaskType = TaskTypes.register(
+        @JvmField
+        val PARCEL: TaskType = TaskTypes.register(
             ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "parcel_task"),
             ::ParcelTask
         ) { Icon.getIcon("contact:item/parcel") }
