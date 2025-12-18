@@ -14,12 +14,9 @@ class TaskRegistry : TaskTypes {
             ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "parcel_task"),
             ::ParcelTask
         ) { Icon.getIcon("contact:item/parcel") }
-//    val POSTCARD_TASK: TaskType = TaskTypes.register(
-//        ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "postcard_task"),
-//        ::PostcardTask
-//    ) { Icon.getIcon("contact:item/postcard") }
 
         fun init() {
+            //引入
         }
     }
 }

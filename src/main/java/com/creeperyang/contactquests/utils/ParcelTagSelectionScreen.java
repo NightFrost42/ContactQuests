@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.utils;
 
 import com.creeperyang.contactquests.task.ParcelTask;
 import dev.ftb.mods.ftblibrary.icon.Color4I;
+import dev.ftb.mods.ftblibrary.icon.Icon;
 import dev.ftb.mods.ftblibrary.ui.Panel;
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton;
 import dev.ftb.mods.ftblibrary.ui.Theme;
@@ -78,7 +79,7 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
         private final TagKey<Item> tag;
 
         public TagSelectionButton(Panel panel, TagKey<Item> tag) {
-            super(panel, Component.literal(tag.location().toString()), Color4I.empty());
+            super(panel, Component.literal(tag.location().toString()), Icon.empty());
             this.tag = tag;
         }
 

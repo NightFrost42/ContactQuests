@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GuiProviders.class)
-class GuiProvidersMixin {
+public abstract class GuiProvidersMixin {
     @Inject(method = "setTaskGuiProviders", at = @At("TAIL"))
     private static void setMyTaskGuiProviders(CallbackInfo ci) {
         TaskRegistry.PARCEL.setGuiProvider((gui, quest, callback) -> {
@@ -25,16 +25,5 @@ class GuiProvidersMixin {
                 }
             }).openGui();
         });
-//        TaskRegistry.PARCEL_TASK.guiProvider =
-//                TaskType.GuiProvider { gui: Panel?, quest: Quest?, callback: BiConsumer<Task?, CompoundTag?>? ->
-//        val c = ItemStackConfig(false, false)
-//        SelectItemStackScreen(c) { accepted: Boolean ->
-//                gui!!.run()
-//            if (accepted) {
-//                val itemTask = ItemTask(0L, quest).setStackAndCount(c.getValue(), c.getValue().count)
-//                callback!!.accept(itemTask, itemTask.type.makeExtraNBT())
-//            }
-//        }.openGui()
-//    }
     }
 }

@@ -41,9 +41,6 @@ public abstract class TaskButtonMixin {
     @Final
     private QuestScreen questScreen;
 
-    /**
-     * 在 TaskButton.draw() 的结尾绘制自定义图标
-     */
     @Inject(method = "draw", at = @At("TAIL"))
     private void drawOverlay(GuiGraphics graphics, Theme theme,
     int x, int y, int w, int h,
@@ -53,16 +50,14 @@ public abstract class TaskButtonMixin {
             return;
         }
 
-        // 使用较高 z-index 绘制
         PoseStack pose = graphics.pose();
         pose.pushPose();
-        pose.translate(0, 0, 300); // 高于 CHECK_ICON 的 z=200
+        pose.translate(0, 0, 300);
 
         Icon parcelIcon = Icon.getIcon("contact:item/parcel");
         RenderSystem.enableBlend();
 
-        // 绘制在右下角
-        int size = (h >= 32 ? 16 : 10); // 根据按钮大小改变图标大小
+        int size = (h >= 32 ? 16 : 10);
         int drawX = x + w - size;
         int drawY = y + h - size;
 
@@ -72,31 +67,44 @@ public abstract class TaskButtonMixin {
         pose.popPose();
     }
 
-    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"),locals = LocalCapture.CAPTURE_FAILEXCEPTION)
-    private void adaptFilter(MouseButton button, CallbackInfo ci, ContextMenuBuilder builder){
-        if (task instanceof ParcelTask parcelTask && !parcelTask.getItemStack().isEmpty()) {
-            var tags = parcelTask.getItemStack().getItem().builtInRegistryHolder().tags().toList();
-            if (!tags.isEmpty() && !ItemMatchingSystem.INSTANCE.isItemFilter(parcelTask.getItemStack())) {
-                for (ItemFilterAdapter adapter : ItemMatchingSystem.INSTANCE.adapters()) {
-                    if (adapter.hasItemTagFilter()) {
-                        builder.insertAtTop(List.of(new ContextMenuItem(Component.translatable("ftbquests.task.ftbquests.item.convert_tag", adapter.getName()),
-                                ThemeProperties.RELOAD_ICON.get(),
-                                b -> {
-                                    if (tags.size() == 1) {
-                                        contactQuests$setTagFilterAndSave(parcelTask, adapter, tags.getFirst());
-                                    } else {
-                                        new ParcelTagSelectionScreen(tags, parcelTask, adapter, questScreen).openGui();
-                                    }
-                                })
-                        ));
-                    }
-                }
+    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"), locals = LocalCapture.CAPTURE_FAILEXCEPTION)
+    private void adaptFilter(MouseButton button, CallbackInfo ci, ContextMenuBuilder builder) {
+        if (!(task instanceof ParcelTask parcelTask) || parcelTask.getItemStack().isEmpty()) {
+            return;
+        }
+
+        var tags = parcelTask.getItemStack().getItem().builtInRegistryHolder().tags().toList();
+        if (tags.isEmpty() || ItemMatchingSystem.INSTANCE.isItemFilter(parcelTask.getItemStack())) {
+            return;
+        }
+
+        addTagConversionOptions(builder, parcelTask, tags);
+    }
+
+    @Unique
+    private void addTagConversionOptions(ContextMenuBuilder builder, ParcelTask parcelTask, List<TagKey<Item>> tags) {
+        for (ItemFilterAdapter adapter : ItemMatchingSystem.INSTANCE.adapters()) {
+            if (adapter.hasItemTagFilter()) {
+                builder.insertAtTop(List.of(new ContextMenuItem(
+                        Component.translatable("ftbquests.task.ftbquests.item.convert_tag", adapter.getName()),
+                        ThemeProperties.RELOAD_ICON.get(),
+                        b -> handleTagConversion(parcelTask, adapter, tags)
+                )));
             }
         }
     }
 
     @Unique
-    private void contactQuests$setTagFilterAndSave(ParcelTask parcelTask, ItemFilterAdapter adapter, TagKey<Item> tag) {
+    private void handleTagConversion(ParcelTask parcelTask, ItemFilterAdapter adapter, List<TagKey<Item>> tags) {
+        if (tags.size() == 1) {
+            contactQuestsSetTagFilterAndSave(parcelTask, adapter, tags.getFirst());
+        } else {
+            new ParcelTagSelectionScreen(tags, parcelTask, adapter, questScreen).openGui();
+        }
+    }
+
+    @Unique
+    private void contactQuestsSetTagFilterAndSave(ParcelTask parcelTask, ItemFilterAdapter adapter, TagKey<Item> tag) {
         parcelTask.setStackAndCount(adapter.makeTagFilterStack(tag), parcelTask.getItemStack().getCount());
 
         if (parcelTask.getRawTitle().isEmpty()) {

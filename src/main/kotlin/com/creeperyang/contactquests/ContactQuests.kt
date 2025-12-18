@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.client.ContactQuestsClient
+import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.task.TaskRegistry
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
@@ -26,9 +27,25 @@ object ContactQuests {
     // the logger for our mod
     val LOGGER: Logger = LogManager.getLogger(ID)
 
+    @JvmStatic
+    fun error(format: String, vararg data: Any?) {
+        LOGGER.log(Level.ERROR, String.format(format, *data))
+    }
+
+    @JvmStatic
+    fun warn(format: String, vararg data: Any?) {
+        LOGGER.log(Level.WARN, String.format(format, *data))
+    }
+
+    @JvmStatic
+    fun info(format: String, vararg data: Any?) {
+        LOGGER.log(Level.INFO, String.format(format, *data))
+    }
+
     init {
         LOGGER.log(Level.INFO, "Contactquests init")
         TaskRegistry.init()
+        DataManager.init()
 
         val obj = runForDist(
             clientTarget = {
@@ -47,7 +64,7 @@ object ContactQuests {
      * Fired on the mod specific event bus.
      */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-//        LOGGER.log(Level.INFO, "Initializing client...")
+        LOGGER.log(Level.INFO, "Initializing client...")
         ContactQuestsClient.init()
     }
 
