@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.task
 
 import com.creeperyang.contactquests.client.gui.ValidParcelItemsScreen
-import com.creeperyang.contactquests.data.DataManager.initTask
+import com.creeperyang.contactquests.data.DataManager
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.IconAnimation
@@ -12,7 +12,6 @@ import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftbquests.FTBQuests
 import dev.ftb.mods.ftbquests.client.FTBQuestsClient
 import dev.ftb.mods.ftbquests.client.gui.CustomToast
-import dev.ftb.mods.ftbquests.events.QuestProgressEventData
 import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
 import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem.ComponentMatchType
 import dev.ftb.mods.ftbquests.item.MissingItem
@@ -27,7 +26,6 @@ import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
@@ -46,8 +44,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     var itemStack: ItemStack = ItemStack.EMPTY
     var count: Long = 1
     private var matchComponents: ComponentMatchType? = ComponentMatchType.NONE
-    var returnPostcardStyleId: ResourceLocation? = null
-    var sendTime: Int = 0
+//    var sendTime: Int = 0
 
     override fun getType(): TaskType = TaskRegistry.PARCEL
 
@@ -64,7 +61,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
         super.writeData(nbt, provider)
         nbt.putString("TargetAddressee", targetAddressee)
-        returnPostcardStyleId?.let { nbt.putString("ReturnStyle", it.toString()) }
         nbt.put("item", saveItemSingleLine(itemStack.copyWithCount(1)))
         if (count > 1) {
             nbt.putLong("count", count)
@@ -72,39 +68,33 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         if (matchComponents != ComponentMatchType.NONE) {
             nbt.putString("match_components", ComponentMatchType.NAME_MAP.getName(matchComponents))
         }
-        nbt.putInt("sendTime", sendTime)
+//        nbt.putInt("sendTime", sendTime)
     }
 
     override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
         super.readData(nbt, provider)
         targetAddressee = nbt.getString("TargetAddressee")
-        if (nbt.contains("ReturnStyle")) {
-            returnPostcardStyleId = ResourceLocation.tryParse(nbt.getString("ReturnStyle"))
-        }
         itemStack = itemOrMissingFromNBT(nbt["item"], provider)
         count = max(nbt.getLong("count"), 1L)
         matchComponents = ComponentMatchType.NAME_MAP[nbt.getString("match_components")]
-        sendTime = nbt.getInt("sendTime")
+//        sendTime = nbt.getInt("sendTime")
     }
 
     override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(targetAddressee)
-        buffer.writeBoolean(returnPostcardStyleId != null)
         ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, itemStack)
         buffer.writeVarLong(count)
         var flags = 0
         flags = Bits.setFlag(flags, 0x20, matchComponents != ComponentMatchType.NONE)
         flags = Bits.setFlag(flags, 0x40, matchComponents == ComponentMatchType.STRICT)
         buffer.writeVarInt(flags)
-        returnPostcardStyleId?.let { buffer.writeResourceLocation(it) }
-        buffer.writeInt(sendTime)
+//        buffer.writeVarInt(sendTime)
     }
 
     override fun readNetData(buffer: RegistryFriendlyByteBuf) {
         super.readNetData(buffer)
         targetAddressee = buffer.readUtf()
-        if (buffer.readBoolean()) returnPostcardStyleId = buffer.readResourceLocation()
         itemStack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer)
         count = buffer.readVarLong()
         val flags = buffer.readVarInt()
@@ -112,17 +102,17 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
             if (Bits.getFlag(flags, 0x40))
                 ComponentMatchType.STRICT else ComponentMatchType.FUZZY
         else ComponentMatchType.NONE
-        sendTime = buffer.readVarInt()
+//        sendTime = buffer.readVarInt()
     }
 
     fun getValidDisplayItems(): MutableList<ItemStack> {
         return ItemMatchingSystem.INSTANCE.getAllMatchingStacks(itemStack)
     }
 
-    @OnlyIn(Dist.CLIENT)
+//    @OnlyIn(Dist.CLIENT)
     override fun test(stack: ItemStack): Boolean {
         if (itemStack.isEmpty) {
-            return true
+            return false
         }
 
         return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, matchComponents)
@@ -132,15 +122,12 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
         config.addString("target_addressee", targetAddressee, { targetAddressee = it }, "Quest NPC")
-        config.addString("return_style", returnPostcardStyleId?.toString() ?: "", {
-            returnPostcardStyleId = if (it.isEmpty()) null else ResourceLocation.tryParse(it)
-        }, "")
         config.addItemStack("item", itemStack, { v: ItemStack -> itemStack = v }, ItemStack.EMPTY, true, false).nameKey =
             "ftbquests.task.ftbquests.item"
         config.addLong("count", count, { v: Long? -> count = v!! }, 1, 1, Long.MAX_VALUE)
         config.addEnum<ComponentMatchType?>("match_components", matchComponents,
             { v: ComponentMatchType? -> matchComponents = v }, ComponentMatchType.NAME_MAP)
-        config.addInt("sendTime", sendTime, {v:Int? -> sendTime = v!!}, 0, 0, Int.MAX_VALUE)
+//        config.addInt("sendTime", sendTime, {v:Int? -> sendTime = v!!}, 0, 0, Int.MAX_VALUE)
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -236,13 +223,12 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         return Component.literal("").append(itemStack.hoverName)
     }
 
-    override fun onStarted(data: QuestProgressEventData<*>) {
-        super.onStarted(data)
-        initTask(this)
-    }
-
     fun submitParcelTask (teamData: TeamData, player: ServerPlayer, submitItemStack: ItemStack): ItemStack{
-        if (!checkTaskSequence(teamData) || teamData.isCompleted(this) || itemStack.item is MissingItem || submitItemStack.item is MissingItem) {
+        if (teamData.isCompleted(this)){
+            DataManager.completeTask(this)
+            return itemStack
+        }
+        if (!checkTaskSequence(teamData) || itemStack.item is MissingItem || submitItemStack.item is MissingItem) {
             return itemStack
         }
         val item = insert(teamData, submitItemStack, false)
@@ -252,7 +238,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     }
 
     fun insert(teamData: TeamData, stack: ItemStack, simulate: Boolean): ItemStack{
-        if (!teamData.isCompleted(this) && consumesResources() && test(stack)) {
+        if (!teamData.isCompleted(this) && test(stack) && teamData.canStartTasks(quest)) {
             val add = min(stack.count.toLong(), count - teamData.getProgress(this))
 
             if (add > 0L) {

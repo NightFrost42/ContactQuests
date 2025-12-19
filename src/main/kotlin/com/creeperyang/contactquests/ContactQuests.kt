@@ -3,12 +3,16 @@ package com.creeperyang.contactquests
 import com.creeperyang.contactquests.client.ContactQuestsClient
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.task.TaskRegistry
+import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.fml.common.Mod
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent
+import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.event.TagsUpdatedEvent
+import net.neoforged.neoforge.event.server.ServerStartedEvent
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -42,12 +46,18 @@ object ContactQuests {
         LOGGER.log(Level.INFO, String.format(format, *data))
     }
 
-    init {
-        LOGGER.log(Level.INFO, "Contactquests init")
-        TaskRegistry.init()
-        DataManager.init()
+    @JvmStatic
+    fun debug(format: String, vararg data: Any?) {
+        LOGGER.log(Level.DEBUG, String.format(format, *data))
+    }
 
-        val obj = runForDist(
+    init {
+//        LOGGER.log(Level.INFO, "Contactquests init")
+        TaskRegistry.init()
+
+        MOD_BUS.addListener(::onCommonSetup)
+
+        runForDist(
             clientTarget = {
                 MOD_BUS.addListener(::onClientSetup)
                 Minecraft.getInstance()
@@ -56,6 +66,8 @@ object ContactQuests {
                 MOD_BUS.addListener(::onServerSetup)
                 "test"
             })
+
+        NeoForge.EVENT_BUS.register(this)
     }
 
     /**
@@ -64,7 +76,7 @@ object ContactQuests {
      * Fired on the mod specific event bus.
      */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-        LOGGER.log(Level.INFO, "Initializing client...")
+//        LOGGER.log(Level.INFO, "Initializing client...")
         ContactQuestsClient.init()
     }
 
@@ -72,11 +84,30 @@ object ContactQuests {
      * Fired on the global Forge bus.
      */
     private fun onServerSetup(event: FMLDedicatedServerSetupEvent) {
-//        LOGGER.log(Level.INFO, "Server starting...")
+
+    }
+
+    fun onCommonSetup(event: FMLCommonSetupEvent) {
+//        LOGGER.log(Level.INFO, "Hello! This is working!")
     }
 
     @SubscribeEvent
-    fun onCommonSetup(event: FMLCommonSetupEvent) {
-//        LOGGER.log(Level.INFO, "Hello! This is working!")
+    fun onServerStarted(event: ServerStartedEvent) {
+        try {
+            DataManager.init()
+        } catch (e: Exception) {
+            LOGGER.error("DataManager init failed", e)
+        }
+    }
+
+    @SubscribeEvent
+    fun onTagsUpdated(event: TagsUpdatedEvent) {
+        if (event.updateCause == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD && ServerQuestFile.INSTANCE != null) {
+            try {
+                DataManager.init()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
     }
 }

@@ -7,8 +7,7 @@ import dev.ftb.mods.ftbquests.quest.task.TaskType
 import dev.ftb.mods.ftbquests.quest.task.TaskTypes
 import net.minecraft.resources.ResourceLocation
 
-class TaskRegistry : TaskTypes {
-    companion object {
+object TaskRegistry  {
         @JvmField
         val PARCEL: TaskType = TaskTypes.register(
             ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "parcel_task"),
@@ -18,5 +17,4 @@ class TaskRegistry : TaskTypes {
         fun init() {
             //引入
         }
-    }
 }

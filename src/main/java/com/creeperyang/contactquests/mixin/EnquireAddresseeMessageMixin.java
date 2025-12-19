@@ -15,11 +15,11 @@ import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
+import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
@@ -38,7 +38,7 @@ public class EnquireAddresseeMessageMixin {
                 case ParcelItem ignored -> {
                     ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
 
-                    DataManager.INSTANCE.matchTaskItem(player, contents);
+                    DataManager.INSTANCE.matchTaskItem(player, contents, recipientName);
 
                     container.parcel.setItem(0, ItemStack.EMPTY);
                     ActionS2CMessage.create(1).sendTo(player);
@@ -58,26 +58,24 @@ public class EnquireAddresseeMessageMixin {
         }
     }
 
-    @Unique
-    private final ThreadLocal<Integer> contactQuests$insertedCount = ThreadLocal.withInitial(() -> 0);
-
+    @SuppressWarnings("UnresolvedLocalCapture")
     @Inject(
             method = "handleNormalEnquiry",
             at = @At(
-                    value = "INVOKE",
-                    target = "Ljava/util/List;isEmpty()Z"
-            )
+                    value = "FIELD",
+                    target = "Lcom/flechazo/contact/network/EnquireAddresseeMessage;shouldSend:Z",
+                    opcode = Opcodes.GETFIELD)
     )
     private void injectCustomTargetsNames(
             ServerPlayer player,
             IMailboxDataProvider data,
             String lowerIn,
             CallbackInfo ci,
-            @Local(name = "names") List<String> names
+            @Local(ordinal = 0) @Coerce List<String> names,
+            @Local(ordinal = 1) @Coerce List<Integer> ticks
     ) {
-        contactQuests$insertedCount.set(0);
 
-        Set<String> customTargets = DataManager.parcelReceiver.keySet();
+        Set<String> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         int count = 0;
 
         for (String target : customTargets) {
@@ -86,46 +84,18 @@ public class EnquireAddresseeMessageMixin {
             if (target.toLowerCase(Locale.ROOT).startsWith(lowerIn) && !names.contains(target)) {
                 //noinspection SequencedCollectionMethodCanBeUsed
                 names.add(0, target);
+                //noinspection SequencedCollectionMethodCanBeUsed
+                ticks.add(0, DataManager.INSTANCE.getSendTime(target));
                 count++;
+                ContactQuests.debug("[ContactQuests] Injecting: " + target);
             }
         }
 
         while (names.size() > 4) {
             //noinspection SequencedCollectionMethodCanBeUsed
             names.remove(names.size() - 1);
+            //noinspection SequencedCollectionMethodCanBeUsed
+            ticks.remove(ticks.size() - 1);
         }
-
-        contactQuests$insertedCount.set(count);
-    }
-
-
-    @ModifyVariable(
-            method = "handleNormalEnquiry",
-            at = @At(
-                    value = "INVOKE",
-                    target = "Ljava/util/List;isEmpty()Z"
-            ),
-            ordinal = 1
-    )
-    private List<Integer> injectCustomTargetsTicks(List<Integer> ticks) {
-        int count = contactQuests$insertedCount.get();
-
-        if (count > 0) {
-            for (int i = 0; i < count; i++) {
-                //noinspection SequencedCollectionMethodCanBeUsed
-                ticks.add(0, 0);
-            }
-
-            while (ticks.size() > 4) {
-                //noinspection SequencedCollectionMethodCanBeUsed
-                ticks.remove(ticks.size() - 1);
-            }
-
-            contactQuests$insertedCount.set(0);
-        }
-        
-        contactQuests$insertedCount.remove();
-
-        return ticks;
     }
 }
