@@ -38,7 +38,7 @@ public class EnquireAddresseeMessageMixin {
                 case ParcelItem ignored -> {
                     ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
 
-                    DataManager.INSTANCE.matchTaskItem(player, contents, recipientName);
+                    DataManager.INSTANCE.matchTaskItem(player, stackInSlot, contents, recipientName);
 
                     container.parcel.setItem(0, ItemStack.EMPTY);
                     ActionS2CMessage.create(1).sendTo(player);
@@ -48,7 +48,13 @@ public class EnquireAddresseeMessageMixin {
                     // TODO: 明信片逻辑
                 }
                 case LetterItem ignored -> {
-                    // TODO: 信件逻辑
+                    ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+
+                    DataManager.INSTANCE.matchTaskItem(player, stackInSlot, contents, recipientName);
+
+                    container.parcel.setItem(0, ItemStack.EMPTY);
+                    ActionS2CMessage.create(1).sendTo(player);
+                    ci.cancel();
                 }
                 case RedPacketItem ignored -> {
                     // TODO: 红包逻辑
@@ -75,19 +81,22 @@ public class EnquireAddresseeMessageMixin {
             @Local(ordinal = 1) @Coerce List<Integer> ticks
     ) {
 
-        Set<String> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
+        Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         int count = 0;
 
-        for (String target : customTargets) {
+        for (Map.Entry<String, Integer> entry : customTargets.entrySet()) {
             if (count >= 4) break;
 
-            if (target.toLowerCase(Locale.ROOT).startsWith(lowerIn) && !names.contains(target)) {
+            String targetName = entry.getKey();
+            int sendTime = entry.getValue();
+
+            if (targetName.toLowerCase(Locale.ROOT).startsWith(lowerIn) && !names.contains(targetName)) {
                 //noinspection SequencedCollectionMethodCanBeUsed
-                names.add(0, target);
+                names.add(0, targetName);
                 //noinspection SequencedCollectionMethodCanBeUsed
-                ticks.add(0, DataManager.INSTANCE.getSendTime(target));
+                ticks.add(0, sendTime);
                 count++;
-                ContactQuests.debug("[ContactQuests] Injecting: " + target);
+                ContactQuests.debug("[ContactQuests] Injecting: " + targetName);
             }
         }
 

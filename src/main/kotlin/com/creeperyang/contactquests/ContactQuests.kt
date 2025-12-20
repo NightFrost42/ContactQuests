@@ -1,18 +1,25 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.client.ContactQuestsClient
+import com.creeperyang.contactquests.config.ContactConfig
+import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.DataManager
+import com.creeperyang.contactquests.data.DeliverySavedData
 import com.creeperyang.contactquests.task.TaskRegistry
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.ModLoadingContext
 import net.neoforged.fml.common.Mod
+import net.neoforged.fml.config.ModConfig
+import net.neoforged.fml.event.config.ModConfigEvent
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent
 import net.neoforged.neoforge.common.NeoForge
 import net.neoforged.neoforge.event.TagsUpdatedEvent
 import net.neoforged.neoforge.event.server.ServerStartedEvent
+import net.neoforged.neoforge.event.tick.ServerTickEvent
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -52,8 +59,16 @@ object ContactQuests {
     }
 
     init {
-//        LOGGER.log(Level.INFO, "Contactquests init")
+        ModLoadingContext.get().activeContainer.registerConfig(
+            ModConfig.Type.COMMON,
+            ContactConfig.SPEC,
+            "contactquests/contactquests-common.toml"
+        )
+
         TaskRegistry.init()
+
+        MOD_BUS.addListener(::onConfigLoad)
+        MOD_BUS.addListener(::onConfigReload)
 
         MOD_BUS.addListener(::onCommonSetup)
 
@@ -88,7 +103,7 @@ object ContactQuests {
     }
 
     fun onCommonSetup(event: FMLCommonSetupEvent) {
-//        LOGGER.log(Level.INFO, "Hello! This is working!")
+        NpcConfigManager.initFile()
     }
 
     @SubscribeEvent
@@ -108,6 +123,26 @@ object ContactQuests {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        }
+    }
+
+    @SubscribeEvent
+    fun onServerTick(event: ServerTickEvent.Post) {
+        val server = event.server ?: return
+        val overworld = server.overworld()
+
+        DeliverySavedData[overworld].tick(overworld)
+    }
+
+    private fun onConfigLoad(event: ModConfigEvent.Loading) {
+        if (event.config.spec == ContactConfig.SPEC) {
+            info("Loaded ContactQuests Common Config")
+        }
+    }
+
+    private fun onConfigReload(event: ModConfigEvent.Reloading) {
+        if (event.config.spec == ContactConfig.SPEC) {
+            info("Reloaded ContactQuests Common Config")
         }
     }
 }

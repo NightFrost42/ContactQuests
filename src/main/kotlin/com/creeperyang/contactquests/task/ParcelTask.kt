@@ -68,7 +68,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         if (matchComponents != ComponentMatchType.NONE) {
             nbt.putString("match_components", ComponentMatchType.NAME_MAP.getName(matchComponents))
         }
-//        nbt.putInt("sendTime", sendTime)
     }
 
     override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
@@ -89,7 +88,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         flags = Bits.setFlag(flags, 0x20, matchComponents != ComponentMatchType.NONE)
         flags = Bits.setFlag(flags, 0x40, matchComponents == ComponentMatchType.STRICT)
         buffer.writeVarInt(flags)
-//        buffer.writeVarInt(sendTime)
     }
 
     override fun readNetData(buffer: RegistryFriendlyByteBuf) {
@@ -102,7 +100,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
             if (Bits.getFlag(flags, 0x40))
                 ComponentMatchType.STRICT else ComponentMatchType.FUZZY
         else ComponentMatchType.NONE
-//        sendTime = buffer.readVarInt()
     }
 
     fun getValidDisplayItems(): MutableList<ItemStack> {
@@ -127,7 +124,6 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         config.addLong("count", count, { v: Long? -> count = v!! }, 1, 1, Long.MAX_VALUE)
         config.addEnum<ComponentMatchType?>("match_components", matchComponents,
             { v: ComponentMatchType? -> matchComponents = v }, ComponentMatchType.NAME_MAP)
-//        config.addInt("sendTime", sendTime, {v:Int? -> sendTime = v!!}, 0, 0, Int.MAX_VALUE)
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -155,10 +151,8 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
 
     override fun addMouseOverHeader(list: TooltipList, teamData: TeamData?, advanced: Boolean) {
         if (rawTitle.isNotEmpty()) {
-            // task has had a custom title set, use that in preference to the item's tooltip
             list.add(title)
         } else {
-            // use item's tooltip, but include a count with the item name (e.g. "3 x Stick") if appropriate
             val stack = if (icon is ItemIcon) (icon as ItemIcon).stack else itemStack
             val lines = stack.getTooltipLines(
                 Item.TooltipContext.of(
