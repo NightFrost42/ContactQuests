@@ -1,18 +1,27 @@
 package com.creeperyang.contactquests.client.gui
 
+import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.client.util.ParcelAutoFiller
 import com.creeperyang.contactquests.task.ParcelTask
+import com.flechazo.contact.common.item.EnvelopeItem
+import com.flechazo.contact.common.item.WrappingPaperItem
 import dev.ftb.mods.ftblibrary.icon.Color4I
 import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftblibrary.ui.*
 import dev.ftb.mods.ftblibrary.ui.input.Key
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.CompactGridLayout
+import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftblibrary.util.client.PositionedIngredient
 import dev.ftb.mods.ftbquests.FTBQuests
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import dev.ftb.mods.ftbquests.client.gui.FTBQuestsTheme
+import net.minecraft.ChatFormatting
+import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.chat.Component
+import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket
+import net.minecraft.world.InteractionHand
 import net.minecraft.world.item.ItemStack
 import java.util.*
 import kotlin.math.max
@@ -23,8 +32,10 @@ class ValidParcelItemsScreen(): BaseScreen() {
     private lateinit var itemPanel: Panel
     private lateinit var backButton: Button
     private lateinit var submitButton: Button
+    private lateinit var task: ParcelTask
 
     constructor (task: ParcelTask, validItems: MutableList<ItemStack>) : this() {
+        this.task = task
         title = Component.translatable("contactquest.task.ftbquests.parcel.valid_for", task.title)
 
         itemPanel = object : Panel(this) {
@@ -46,6 +57,7 @@ class ValidParcelItemsScreen(): BaseScreen() {
 
                 itemPanel.x = (parent.width - width) / 2
                 backButton.setPosAndSize(itemPanel.posX - 1, height + 28, 70, 20)
+                submitButton.setPosAndSize(itemPanel.posX + 75, height + 28, 70, 20)
             }
 
             override fun drawBackground(graphics: GuiGraphics?, theme: Theme, x: Int, y: Int, w: Int, h: Int) {
@@ -55,7 +67,7 @@ class ValidParcelItemsScreen(): BaseScreen() {
 
         itemPanel.setPosAndSize(0, 22, 144, 0)
 
-        backButton = object : SimpleTextButton(this, Component.translatable("gui.back"), Color4I.empty()) {
+        backButton = object : SimpleTextButton(this, Component.translatable("contactquest.gui.back"), Color4I.empty()) {
             override fun onClicked(button: MouseButton?) {
                 playClickSound()
                 onBack()
@@ -65,12 +77,101 @@ class ValidParcelItemsScreen(): BaseScreen() {
                 return true
             }
         }
+
+        submitButton = object : SimpleTextButton(this, Component.translatable("contactquest.gui.submit"), Color4I.empty()) {
+
+            override fun onClicked(button: MouseButton?) {
+                playClickSound()
+
+                val mc = Minecraft.getInstance()
+                val player = mc.player ?: return
+                val connection = mc.connection ?: return
+
+                val slot = player.inventory.items.indexOfFirst {
+                    !it.isEmpty && (it.item is EnvelopeItem || it.item is WrappingPaperItem)
+                }
+
+                if (slot == -1) {
+                    ContactQuests.debug("ValidParcelItemsScreen: 未找到包装纸")
+                    return
+                }
+
+                mc.keyboardHandler.clipboard = task.targetAddressee
+                player.displayClientMessage(
+                    Component.translatable("contactquest.msg.copied", task.targetAddressee).withStyle(ChatFormatting.GREEN), true
+                )
+
+                ContactQuests.debug("ValidParcelItemsScreen: 准备打开槽位: $slot")
+                ParcelAutoFiller.schedule(task.targetAddressee)
+
+                executeOpenParcelInteraction(mc, player, connection, slot)
+            }
+
+            private fun executeOpenParcelInteraction(
+                mc: Minecraft,
+                player: net.minecraft.world.entity.player.Player,
+                connection: net.minecraft.client.multiplayer.ClientPacketListener,
+                slot: Int
+            ) {
+                mc.setScreen(null)
+                player.closeContainer()
+
+                if (slot >= 9) {
+                    mc.gameMode?.handlePickItem(slot)
+                } else if (player.inventory.selected != slot) {
+                    player.inventory.selected = slot
+                    connection.send(ServerboundSetCarriedItemPacket(slot))
+                }
+
+                mc.tell {
+                    if (slot < 9) connection.send(ServerboundSetCarriedItemPacket(slot))
+                    mc.gameMode?.useItem(player, InteractionHand.MAIN_HAND)
+                }
+            }
+
+            override fun renderTitleInCenter(): Boolean {
+                return true
+            }
+
+            override fun addMouseOverText(list: TooltipList) {
+
+                    list.add(Component.translatable("contactquest.gui.put_in_parcel").withStyle(ChatFormatting.GRAY))
+
+            }
+
+            override fun getWidgetType(): WidgetType {
+                return if (checkInventoryForRequiredItems()) WidgetType.NORMAL else WidgetType.DISABLED
+            }
+        }
+    }
+
+    private fun checkInventoryForRequiredItems(): Boolean {
+        val player = Minecraft.getInstance().player ?: return false
+
+        var hasParcel = false
+        var hasQuestItem = false
+
+        for (item in player.inventory.items) {
+            if (item.isEmpty) continue
+
+            if ((item.item is EnvelopeItem || item.item is WrappingPaperItem) && !hasParcel) {
+                hasParcel = true
+            }
+            else if (task.test(item) && !hasQuestItem) {
+                hasQuestItem = true
+            }
+
+            if (hasParcel && hasQuestItem) return true
+        }
+
+        return false
     }
 
     override fun addWidgets() {
         setWidth(max(156, theme.getStringWidth(title) + 12))
         add(itemPanel)
         add(backButton)
+        add(submitButton)
     }
 
     override fun getTheme(): Theme {
@@ -103,11 +204,13 @@ class ValidParcelItemsScreen(): BaseScreen() {
         return false
     }
 
-    private class ValidParcelButton(panel: Panel?, private val stack: ItemStack) : Button(
-        panel, Component.empty(), ItemIcon.getItemIcon(
-            stack
-        )
-    ) {
+    private class ValidParcelButton : Button {
+        private val stack: ItemStack
+
+        constructor(panel: Panel, stack: ItemStack): super(panel, Component.empty(), ItemIcon.getItemIcon(stack)) {
+            this.stack = stack
+        }
+
         override fun onClicked(button: MouseButton?) {
             FTBQuests.getRecipeModHelper().showRecipes(stack)
         }

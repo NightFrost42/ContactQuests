@@ -9,7 +9,6 @@ import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftblibrary.math.Bits
 import dev.ftb.mods.ftblibrary.ui.Button
 import dev.ftb.mods.ftblibrary.util.TooltipList
-import dev.ftb.mods.ftbquests.FTBQuests
 import dev.ftb.mods.ftbquests.client.FTBQuestsClient
 import dev.ftb.mods.ftbquests.client.gui.CustomToast
 import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
@@ -134,9 +133,10 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
             !it.isEmpty && it.item != Items.AIR && it.count > 0
         }.toMutableList()
 
-        if (validItems.size == 1 && FTBQuests.getRecipeModHelper().isRecipeModAvailable) {
-            FTBQuests.getRecipeModHelper().showRecipes(validItems[0])
-        } else if (validItems.isEmpty()) {
+//        if (validItems.size == 1 && FTBQuests.getRecipeModHelper().isRecipeModAvailable) {
+//            FTBQuests.getRecipeModHelper().showRecipes(validItems[0])
+//        } else
+            if (validItems.isEmpty()) {
             Minecraft.getInstance().toasts.addToast(
                 CustomToast(
                     Component.literal("No valid items!"),
@@ -172,19 +172,11 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
 
     @OnlyIn(Dist.CLIENT)
     override fun addMouseOverText(list: TooltipList, teamData: TeamData) {
-        if (getValidDisplayItems().size > 1) {
-            list.blankLine()
-            list.add(
-                Component.translatable("contactquest.task.ftbquests.item.view_items")
-                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.UNDERLINE)
-            )
-        } else if (FTBQuests.getRecipeModHelper().isRecipeModAvailable) {
-            list.blankLine()
-            list.add(
-                Component.translatable("contactquest.task.ftbquests.item.click_recipe")
-                    .withStyle(ChatFormatting.YELLOW, ChatFormatting.UNDERLINE)
-            )
-        }
+        list.blankLine()
+        list.add(
+            Component.translatable("contactquest.task.click_to_submit")
+                .withStyle(ChatFormatting.YELLOW, ChatFormatting.UNDERLINE)
+        )
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -247,5 +239,9 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         }
 
         return stack
+    }
+
+    fun getAmountNeeded(teamData: TeamData): Long{
+        return count - teamData.getProgress(this)
     }
 }

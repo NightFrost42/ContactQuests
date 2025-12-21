@@ -91,7 +91,6 @@ object ContactQuests {
      * Fired on the mod specific event bus.
      */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-//        LOGGER.log(Level.INFO, "Initializing client...")
         ContactQuestsClient.init()
     }
 
@@ -99,7 +98,7 @@ object ContactQuests {
      * Fired on the global Forge bus.
      */
     private fun onServerSetup(event: FMLDedicatedServerSetupEvent) {
-
+        //服务端函数在这里初始化
     }
 
     fun onCommonSetup(event: FMLCommonSetupEvent) {
