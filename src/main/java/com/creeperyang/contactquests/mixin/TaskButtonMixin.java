@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.task.ParcelTask;
 import com.creeperyang.contactquests.utils.ParcelTagSelectionScreen;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ftb.mods.ftblibrary.icon.Icon;
@@ -27,7 +28,6 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.List;
 
@@ -67,8 +67,8 @@ public abstract class TaskButtonMixin {
         pose.popPose();
     }
 
-    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"), locals = LocalCapture.CAPTURE_FAILEXCEPTION)
-    private void adaptFilter(MouseButton button, CallbackInfo ci, ContextMenuBuilder builder) {
+    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"))
+    private void adaptFilter(MouseButton button, CallbackInfo ci, @Local(name = "builder") ContextMenuBuilder builder) {
         if (!(task instanceof ParcelTask parcelTask) || parcelTask.getItemStack().isEmpty()) {
             return;
         }

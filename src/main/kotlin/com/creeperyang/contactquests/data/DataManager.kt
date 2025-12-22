@@ -44,7 +44,6 @@ object DataManager {
 
         val available = mutableMapOf<String, Int>()
 
-        // 读取通用开关
         val enableDelay = ContactConfig.enableDeliveryTime.get()
 
         for ((_, task) in parcelTasks) {
