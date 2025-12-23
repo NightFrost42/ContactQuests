@@ -20,6 +20,12 @@ object TaskRegistry  {
         ::RedPacketTask
     ) { Icon.getIcon("contact:item/red_packet") }
 
+    @JvmField
+    val POSTCARD: TaskType = TaskTypes.register(
+        ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "postcard_task"),
+        ::PostcardTask
+    ) { Icon.getIcon("contact:item/postcard") }
+
     fun init() {
         //引入
     }

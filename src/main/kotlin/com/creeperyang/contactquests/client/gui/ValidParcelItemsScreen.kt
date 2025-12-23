@@ -134,19 +134,38 @@ class ValidParcelItemsScreen(): BaseScreen() {
             }
 
             override fun addMouseOverText(list: TooltipList) {
+                val status = checkInventoryStatus()
 
+                if (status.hasParcel && status.hasQuestItem) {
+                    // 条件满足，显示灰色提示
                     list.add(Component.translatable("contactquest.gui.put_in_parcel").withStyle(ChatFormatting.GRAY))
+                } else {
+                    // 条件不满足，显示红色警告
+                    list.add(Component.translatable("contactquest.gui.missing_requirements").withStyle(ChatFormatting.RED))
 
+                    if (!status.hasParcel) {
+                        list.add(Component.literal("- ").append(
+                            Component.translatable("item.contact.envelope").append(
+                                " or ").append(Component.translatable("item.contact.wrapping_paper"))
+                        ).withStyle(ChatFormatting.DARK_RED))
+                    }
+
+                    if (!status.hasQuestItem) {
+                        list.add(Component.literal("- ").append(task.title).withStyle(ChatFormatting.DARK_RED))
+                    }
+                }
             }
 
             override fun getWidgetType(): WidgetType {
-                return if (checkInventoryForRequiredItems()) WidgetType.NORMAL else WidgetType.DISABLED
+                val status = checkInventoryStatus()
+                return if (status.hasParcel && status.hasQuestItem) WidgetType.NORMAL else WidgetType.DISABLED
             }
         }
     }
+    private data class InventoryStatus(val hasParcel: Boolean, val hasQuestItem: Boolean)
 
-    private fun checkInventoryForRequiredItems(): Boolean {
-        val player = Minecraft.getInstance().player ?: return false
+    private fun checkInventoryStatus(): InventoryStatus {
+        val player = Minecraft.getInstance().player ?: return InventoryStatus(hasParcel = false, hasQuestItem = false)
 
         var hasParcel = false
         var hasQuestItem = false
@@ -161,10 +180,10 @@ class ValidParcelItemsScreen(): BaseScreen() {
                 hasQuestItem = true
             }
 
-            if (hasParcel && hasQuestItem) return true
+            if (hasParcel && hasQuestItem) break
         }
 
-        return false
+        return InventoryStatus(hasParcel, hasQuestItem)
     }
 
     override fun addWidgets() {

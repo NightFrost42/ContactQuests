@@ -9,7 +9,8 @@
     "GuiProvidersMixin",
     "TaskButtonMixin",
     "EnquireAddresseeMessageMixin",
-    "RedPacketEnvelopeScreenAccessor"
+    "RedPacketEnvelopeScreenAccessor",
+    "PostcardEditScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

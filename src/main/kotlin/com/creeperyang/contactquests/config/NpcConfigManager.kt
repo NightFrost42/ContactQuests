@@ -45,13 +45,13 @@ object NpcConfigManager {
                 ContactQuests.error("读取npc_config.json失败", e)
             }
         } else {
-            save() // 如果文件不存在，创建一个新的
+            save()
         }
     }
 
-    fun syncWithQuests(parcelNpcs: Set<String>, redPacketNpcs: Set<String> = emptySet()) {
+    fun syncWithQuests(parcelNpcs: Set<String>, redPacketNpcs: Set<String> = emptySet(), postcardNpcs: Set<String> = emptySet()) {
         var hasChanges = false
-        val allNpcs = parcelNpcs + redPacketNpcs
+        val allNpcs = parcelNpcs + redPacketNpcs + postcardNpcs
 
         for (name in allNpcs) {
             if (!npcMap.containsKey(name)) {

@@ -4,6 +4,7 @@ import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.task.ParcelTask
+import com.creeperyang.contactquests.task.PostcardTask
 import com.creeperyang.contactquests.task.RedPacketTask
 import com.flechazo.contact.common.item.ParcelItem
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
@@ -25,6 +26,11 @@ object DataManager {
     val redPacketTasks: MutableMap<Long, RedPacketTask> = mutableMapOf()
     val redPacketItemTestFunc: MutableMap<Long, (ItemStack) -> Boolean> = mutableMapOf()
 
+    @JvmField
+    val postcardReceiver: MutableMap<String, MutableSet<Long>> = mutableMapOf()
+    val postcardTasks: MutableMap<Long, PostcardTask> = mutableMapOf()
+    val postcardItemTestFunc: MutableMap<Long, (ItemStack) -> Boolean> = mutableMapOf()
+
     fun init(){
         parcelReceiver.clear()
         parcelTasks.clear()
@@ -34,23 +40,34 @@ object DataManager {
         redPacketTasks.clear()
         redPacketItemTestFunc.clear()
 
+        postcardReceiver.clear()
+        postcardTasks.clear()
+        postcardItemTestFunc.clear()
+
         NpcConfigManager.reload()
 
         val questFile = ServerQuestFile.INSTANCE
         questFile.allChapters.forEach { chapter ->
             chapter.quests.forEach { quest ->
                 quest.tasks.forEach { task ->
-                    if (task is ParcelTask) {
-                        initParcelTask(task)
-                    }
-                    else if (task is RedPacketTask) {
-                        initRedPacketTask(task)
+                    when (task) {
+                        is ParcelTask -> {
+                            initParcelTask(task)
+                        }
+
+                        is RedPacketTask -> {
+                            initRedPacketTask(task)
+                        }
+
+                        is PostcardTask -> {
+                            initPostcardTask(task)
+                        }
                     }
                 }
             }
         }
 
-        NpcConfigManager.syncWithQuests(parcelReceiver.keys, redPacketReceiver.keys)
+        NpcConfigManager.syncWithQuests(parcelReceiver.keys, redPacketReceiver.keys, postcardReceiver.keys)
     }
 
     fun getAvailableTargets(player: ServerPlayer): Map<String, Int> {
@@ -72,6 +89,16 @@ object DataManager {
         }
 
         for ((_, task) in redPacketTasks) {
+            if (teamData.canStartTasks(task.quest) && !teamData.isCompleted(task)) {
+                val npcName = task.targetAddressee
+
+                val time = if (enableDelay) NpcConfigManager.getDeliveryTime(npcName) else 0
+
+                available[npcName] = time
+            }
+        }
+
+        for ((_, task) in postcardTasks) {
             if (teamData.canStartTasks(task.quest) && !teamData.isCompleted(task)) {
                 val npcName = task.targetAddressee
 
@@ -107,6 +134,18 @@ object DataManager {
         redPacketItemTestFunc[id] = redPacketTask::redPacketTest
     }
 
+    fun initPostcardTask(postcardTask: PostcardTask) {
+        val target = postcardTask.targetAddressee
+        val id = postcardTask.id
+        if (!postcardReceiver.containsKey(target)){
+            postcardReceiver[target] = mutableSetOf(id)
+        }else{
+            postcardReceiver[target]!!.add(id)
+        }
+        postcardTasks[id] = postcardTask
+        postcardItemTestFunc[id] = postcardTask::test
+    }
+
     fun completeParcelTask(parcelTask: ParcelTask) {
         val target = parcelTask.targetAddressee
         val id = parcelTask.id
@@ -127,6 +166,17 @@ object DataManager {
         }
         redPacketTasks.remove(id)
         redPacketItemTestFunc.remove(id)
+    }
+
+    fun completePostcardTask(redPacketTask: PostcardTask) {
+        val target = redPacketTask.targetAddressee
+        val id = redPacketTask.id
+        postcardReceiver[target]?.let {
+            if (it.size > 1) postcardReceiver[target]?.remove(id)
+            else postcardReceiver.remove(target)
+        }
+        postcardTasks.remove(id)
+        postcardItemTestFunc.remove(id)
     }
 
     fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, parcel: ItemContainerContents, recipientName: String): Boolean {
@@ -159,6 +209,14 @@ object DataManager {
         return false
     }
 
+    private fun isParcelTaskEligible(task: ParcelTask, teamData: TeamData, initialStack: ItemStack): Boolean {
+        val testFunc = itemTestFunc[task.id] ?: return false
+
+        return testFunc.invoke(initialStack) &&
+                teamData.canStartTasks(task.quest) &&
+                !teamData.isCompleted(task)
+    }
+
     fun matchRedPacketTaskItem(player: ServerPlayer, redPacket: ItemStack, recipientName: String): Boolean {
         val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
         val teamData = team?.let { ServerQuestFile.INSTANCE.getNullableTeamData(it.id) } ?: return false
@@ -187,16 +245,44 @@ object DataManager {
         return false
     }
 
-    private fun isParcelTaskEligible(task: ParcelTask, teamData: TeamData, initialStack: ItemStack): Boolean {
-        val testFunc = itemTestFunc[task.id] ?: return false
+    private fun isRedPacketTaskEligible(task: RedPacketTask, teamData: TeamData, initialStack: ItemStack): Boolean {
+        val testFunc = redPacketItemTestFunc[task.id] ?: return false
 
         return testFunc.invoke(initialStack) &&
                 teamData.canStartTasks(task.quest) &&
                 !teamData.isCompleted(task)
     }
 
-    private fun isRedPacketTaskEligible(task: RedPacketTask, teamData: TeamData, initialStack: ItemStack): Boolean {
-        val testFunc = redPacketItemTestFunc[task.id] ?: return false
+    fun matchPostcardTaskItem(player: ServerPlayer, postcard: ItemStack, recipientName: String): Boolean {
+        val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+        val teamData = team?.let { ServerQuestFile.INSTANCE.getNullableTeamData(it.id) } ?: return false
+
+        var anyConsumed = false
+        if (processPostcardSingleItem(player, teamData, postcard, recipientName)) {
+            anyConsumed = true
+        }
+        return anyConsumed
+    }
+
+    private fun processPostcardSingleItem(player: ServerPlayer, teamData: TeamData, postcard: ItemStack, recipientName: String): Boolean {
+        val targetTaskIds: Set<Long> = postcardReceiver[recipientName] ?: return false
+
+        for (taskId in targetTaskIds) {
+            val task = postcardTasks[taskId] ?: continue
+
+            if (!isPostcardEligible(task, teamData, postcard)) continue
+
+            val sendTime = calculateEffectiveSendTime(recipientName, postcard)
+
+            if (executePostcardDelivery(player, teamData, task, postcard, sendTime, recipientName)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun isPostcardEligible(task: PostcardTask, teamData: TeamData, initialStack: ItemStack): Boolean {
+        val testFunc = postcardItemTestFunc[task.id] ?: return false
 
         return testFunc.invoke(initialStack) &&
                 teamData.canStartTasks(task.quest) &&
@@ -264,6 +350,28 @@ object DataManager {
         }
 
         val result = task.submitRedPacketTask(teamData, player, initialStack)
+        return result.count < initialStack.count
+    }
+
+    private fun executePostcardDelivery(
+        player: ServerPlayer,
+        teamData: TeamData,
+        task: PostcardTask,
+        initialStack: ItemStack,
+        sendTime: Int,
+        recipientName: String
+    ): Boolean {
+        if (sendTime > 0) {
+            val overworld = player.server.overworld()
+
+            DeliverySavedData[overworld].addParcel(player, task.id, sendTime, recipientName)
+
+            val consumeCount = min(initialStack.count.toLong(), task.count).toInt()
+            initialStack.shrink(consumeCount)
+            return true
+        }
+
+        val result = task.submitPostcardTask(teamData, player, initialStack)
         return result.count < initialStack.count
     }
 }

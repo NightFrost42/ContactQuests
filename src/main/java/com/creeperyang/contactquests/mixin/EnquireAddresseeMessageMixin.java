@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,50 +29,66 @@ import java.util.*;
 public class EnquireAddresseeMessageMixin {
 
     @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true)
-    private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci){
-        Map<String, Set<Long>> parcelReceiver = DataManager.parcelReceiver;
-        Map<String, Set<Long>> redPacketReceiver = DataManager.redPacketReceiver;
-        if (parcelReceiver.containsKey(recipientName) && player.containerMenu instanceof PostboxScreenHandler container) {
+    private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
+        if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
+            return;
+        }
 
-            ItemStack stackInSlot = container.parcel.getItem(0);
+        ItemStack stackInSlot = container.parcel.getItem(0);
+        if (stackInSlot.isEmpty()) return;
 
-            switch (stackInSlot.getItem()) {
-                case ParcelItem ignored -> {
-                    ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
 
-                    DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, recipientName);
+        String finalRecipientKey = findKeyIgnoreCase(recipientName);
 
-                    container.parcel.setItem(0, ItemStack.EMPTY);
-                    ActionS2CMessage.create(1).sendTo(player);
-                    ci.cancel();
-                }
-                case PostcardItem ignored -> {
-                    // TODO: 明信片逻辑
-                }
-                case LetterItem ignored -> {
-                    ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+        if (finalRecipientKey == null) {
+            return;
+        }
 
-                    DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, recipientName);
+        boolean taskMatched = false;
 
-                    container.parcel.setItem(0, ItemStack.EMPTY);
-                    ActionS2CMessage.create(1).sendTo(player);
-                    ci.cancel();
-                }
-                default -> ContactQuests.warn("Unknown item in postbox: " + stackInSlot);
-            }
-        } else if (redPacketReceiver.containsKey(recipientName) && player.containerMenu instanceof PostboxScreenHandler container) {
-            ItemStack stackInSlot = container.parcel.getItem(0);
-
-            if (stackInSlot.getItem() instanceof RedPacketItem) {
-                DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, recipientName);
-
-                container.parcel.setItem(0, ItemStack.EMPTY);
-                ActionS2CMessage.create(1).sendTo(player);
-                ci.cancel();
-            } else {
-                ContactQuests.warn("Unknown item in postbox: " + stackInSlot);
+        if (stackInSlot.getItem() instanceof PostcardItem) {
+            if (DataManager.postcardReceiver.containsKey(finalRecipientKey)) {
+                DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey);
+                taskMatched = true;
             }
         }
+        else if (stackInSlot.getItem() instanceof RedPacketItem) {
+            if (DataManager.redPacketReceiver.containsKey(finalRecipientKey)) {
+                DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey);
+                taskMatched = true;
+            }
+        }
+        else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
+            if (DataManager.parcelReceiver.containsKey(finalRecipientKey)) {
+                ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+                DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey);
+                taskMatched = true;
+            }
+        } else {
+            ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
+        }
+
+        if (taskMatched) {
+            container.parcel.setItem(0, ItemStack.EMPTY);
+            ActionS2CMessage.create(1).sendTo(player);
+            ci.cancel();
+        }
+    }
+
+    @SuppressWarnings("AddedMixinMembersNamePattern")
+    @Unique
+    private String findKeyIgnoreCase(String inputName) {
+        Set<String> allKeys = new HashSet<>();
+        allKeys.addAll(DataManager.parcelReceiver.keySet());
+        allKeys.addAll(DataManager.redPacketReceiver.keySet());
+        allKeys.addAll(DataManager.postcardReceiver.keySet());
+
+        for (String key : allKeys) {
+            if (key.equalsIgnoreCase(inputName)) {
+                return key;
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("UnresolvedLocalCapture")
@@ -90,24 +107,40 @@ public class EnquireAddresseeMessageMixin {
             @Local(ordinal = 0) @Coerce List<String> names,
             @Local(ordinal = 1) @Coerce List<Integer> ticks
     ) {
-
         Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
-        int count = 0;
+        List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : customTargets.entrySet()) {
-            if (count >= 4) break;
-
             String targetName = entry.getKey();
-            int sendTime = entry.getValue();
 
             if (targetName.toLowerCase(Locale.ROOT).startsWith(lowerIn) && !names.contains(targetName)) {
-                //noinspection SequencedCollectionMethodCanBeUsed
-                names.add(0, targetName);
-                //noinspection SequencedCollectionMethodCanBeUsed
-                ticks.add(0, sendTime);
-                count++;
-                ContactQuests.debug("[ContactQuests] Injecting: " + targetName);
+                matches.add(entry);
             }
+        }
+
+        matches.sort((e1, e2) -> {
+            String name1 = e1.getKey();
+            String name2 = e2.getKey();
+            String lower1 = name1.toLowerCase(Locale.ROOT);
+            String lower2 = name2.toLowerCase(Locale.ROOT);
+
+            boolean exact1 = lower1.equals(lowerIn);
+            boolean exact2 = lower2.equals(lowerIn);
+            if (exact1 && !exact2) return -1;
+            if (!exact1 && exact2) return 1;
+
+            int lenCompare = Integer.compare(name1.length(), name2.length());
+            if (lenCompare != 0) return lenCompare;
+
+            return name1.compareTo(name2);
+        });
+
+        for (int i = matches.size() - 1; i >= 0; i--) {
+            Map.Entry<String, Integer> entry = matches.get(i);
+            //noinspection SequencedCollectionMethodCanBeUsed
+            names.add(0, entry.getKey());
+            //noinspection SequencedCollectionMethodCanBeUsed
+            ticks.add(0, entry.getValue());
         }
 
         while (names.size() > 4) {

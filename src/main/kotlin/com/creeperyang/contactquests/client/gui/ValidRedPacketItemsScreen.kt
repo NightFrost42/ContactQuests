@@ -136,19 +136,38 @@ class ValidRedPacketItemsScreen(): BaseScreen() {
             }
 
             override fun addMouseOverText(list: TooltipList) {
+                val status = checkInventoryStatus()
 
+                if (status.hasRedPacket && status.hasQuestItem) {
                     list.add(Component.translatable("contactquest.gui.put_in_redpacket").withStyle(ChatFormatting.GRAY))
+                } else {
+                    list.add(Component.translatable("contactquest.gui.missing_requirements").withStyle(ChatFormatting.RED))
 
+                    if (!status.hasRedPacket) {
+                        list.add(Component.literal("- ").append(
+                            Component.translatable("item.contact.red_packet_envelope")
+                        ).withStyle(ChatFormatting.DARK_RED))
+                    }
+
+                    if (!status.hasQuestItem) {
+                        list.add(Component.literal("- ").append(task.title).withStyle(ChatFormatting.DARK_RED))
+                    }
+                }
             }
 
             override fun getWidgetType(): WidgetType {
-                return if (checkInventoryForRequiredItems()) WidgetType.NORMAL else WidgetType.DISABLED
+                val status = checkInventoryStatus()
+                return if (status.hasRedPacket && status.hasQuestItem) WidgetType.NORMAL else WidgetType.DISABLED
             }
         }
     }
+    private data class InventoryStatus(val hasRedPacket: Boolean, val hasQuestItem: Boolean)
 
-    private fun checkInventoryForRequiredItems(): Boolean {
-        val player = Minecraft.getInstance().player ?: return false
+    private fun checkInventoryStatus(): InventoryStatus {
+        val player = Minecraft.getInstance().player ?: return InventoryStatus(
+            hasRedPacket = false,
+            hasQuestItem = false
+        )
 
         var hasRedPacket = false
         var hasQuestItem = false
@@ -163,12 +182,10 @@ class ValidRedPacketItemsScreen(): BaseScreen() {
                 hasQuestItem = true
             }
 
-            if (hasRedPacket && hasQuestItem) return true
+            if (hasRedPacket && hasQuestItem) break
         }
 
-        ContactQuests.debug("$hasRedPacket, $hasQuestItem")
-
-        return false
+        return InventoryStatus(hasRedPacket, hasQuestItem)
     }
 
     override fun addWidgets() {
