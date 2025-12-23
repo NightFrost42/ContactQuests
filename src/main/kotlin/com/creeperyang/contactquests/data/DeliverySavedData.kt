@@ -1,6 +1,8 @@
 package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.task.ParcelTask
+import com.creeperyang.contactquests.task.RedPacketTask
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.HolderLookup
@@ -27,11 +29,13 @@ class DeliverySavedData: SavedData() {
         val entry = PendingParcel(player.uuid, taskId, duration, target)
         pendingParcels.add(entry)
         setDirty()
-        ContactQuests.debug("Parcel added for ${player.name.string}, task $taskId, duration $duration ticks")
+        ContactQuests.debug("为${player.name.string}添加包裹, 任务id $taskId, 剩余时间 $duration ticks")
     }
 
     fun tick(level: ServerLevel) {
         if (pendingParcels.isEmpty()) return
+
+        val notifiedThisTick = mutableSetOf<Pair<UUID, String>>()
 
         val iterator = pendingParcels.iterator()
         while (iterator.hasNext()) {
@@ -39,48 +43,71 @@ class DeliverySavedData: SavedData() {
             parcel.ticksLeft--
 
             if (parcel.ticksLeft <= 0) {
-                if (completeDelivery(level, parcel)) {
+                if (completeDelivery(level, parcel, notifiedThisTick)) {
                     iterator.remove()
                     setDirty()
                 } else {
-                    ContactQuests.warn("Failed to deliver parcel to ${parcel.target}, removing from queue.")
+                    ContactQuests.warn("未能将包裹送达${parcel.target}，已从队列中移除。")
                     iterator.remove()
                     setDirty()
                 }
             }
-
             setDirty()
         }
     }
 
-    private fun completeDelivery(level: ServerLevel, parcel: PendingParcel) :Boolean{
+    private fun completeDelivery(
+        level: ServerLevel,
+        parcel: PendingParcel,
+        notifiedTargets: MutableSet<Pair<UUID, String>>
+    ) :Boolean {
         val teamManager = FTBTeamsAPI.api().manager
 
         val team = teamManager.getTeamForPlayerID(parcel.playerUUID).orElse(null)
 
         if (team == null) {
-            ContactQuests.warn("Team not found for player UUID: ${parcel.playerUUID}")
+            ContactQuests.warn("未找到玩家UUID的队伍：${parcel.playerUUID}")
             return false
         }
 
-        val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id)
+        val questFile = ServerQuestFile.INSTANCE
+        if (questFile == null) {
+            ContactQuests.warn("ServerQuestFile 还没加载。")
+            return false
+        }
+
+        val teamData = questFile.getNullableTeamData(team.id)
 
         if (teamData == null) {
-            ContactQuests.warn("Quest TeamData not found for team: ${team.id}")
+            ContactQuests.warn("任务 Team未找到团队数据：${team.id}")
             return false
         }
 
-        val task = DataManager.parcelTasks[parcel.taskId]
+        val task = questFile.getTask(parcel.taskId)
 
         if (task == null) {
-            ContactQuests.warn("访问的任务已经不存在")
+            ContactQuests.warn("任务已从文件中删除或 ID 已变更 (Task ID: ${parcel.taskId})")
             return true
         }
 
-        teamData.addProgress(task, task.count)
+        val countToSubmit = if (task is ParcelTask) task.count else if (task is RedPacketTask) task.count else 1L
+
+        teamData.addProgress(task, countToSubmit)
 
         val player = level.server.playerList.getPlayer(parcel.playerUUID)
-        player?.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a包裹已送达: ${task.targetAddressee}"))
+
+        if (player != null) {
+            val notificationKey = Pair(parcel.playerUUID, parcel.target)
+
+            if (!notifiedTargets.contains(notificationKey)) {
+                val addresseeName = if (task is ParcelTask) task.targetAddressee else if (task is RedPacketTask) task.targetAddressee else parcel.target
+
+                player.sendSystemMessage(net.minecraft.network.chat.Component.literal("§a包裹已送达: $addresseeName"))
+
+                notifiedTargets.add(notificationKey)
+            }
+        }
+
         return true
     }
 

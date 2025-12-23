@@ -30,6 +30,7 @@ public class EnquireAddresseeMessageMixin {
     @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true)
     private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci){
         Map<String, Set<Long>> parcelReceiver = DataManager.parcelReceiver;
+        Map<String, Set<Long>> redPacketReceiver = DataManager.redPacketReceiver;
         if (parcelReceiver.containsKey(recipientName) && player.containerMenu instanceof PostboxScreenHandler container) {
 
             ItemStack stackInSlot = container.parcel.getItem(0);
@@ -38,7 +39,7 @@ public class EnquireAddresseeMessageMixin {
                 case ParcelItem ignored -> {
                     ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
 
-                    DataManager.INSTANCE.matchTaskItem(player, stackInSlot, contents, recipientName);
+                    DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, recipientName);
 
                     container.parcel.setItem(0, ItemStack.EMPTY);
                     ActionS2CMessage.create(1).sendTo(player);
@@ -50,16 +51,25 @@ public class EnquireAddresseeMessageMixin {
                 case LetterItem ignored -> {
                     ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
 
-                    DataManager.INSTANCE.matchTaskItem(player, stackInSlot, contents, recipientName);
+                    DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, recipientName);
 
                     container.parcel.setItem(0, ItemStack.EMPTY);
                     ActionS2CMessage.create(1).sendTo(player);
                     ci.cancel();
                 }
-                case RedPacketItem ignored -> {
-                    // TODO: 红包逻辑
-                }
                 default -> ContactQuests.warn("Unknown item in postbox: " + stackInSlot);
+            }
+        } else if (redPacketReceiver.containsKey(recipientName) && player.containerMenu instanceof PostboxScreenHandler container) {
+            ItemStack stackInSlot = container.parcel.getItem(0);
+
+            if (stackInSlot.getItem() instanceof RedPacketItem) {
+                DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, recipientName);
+
+                container.parcel.setItem(0, ItemStack.EMPTY);
+                ActionS2CMessage.create(1).sendTo(player);
+                ci.cancel();
+            } else {
+                ContactQuests.warn("Unknown item in postbox: " + stackInSlot);
             }
         }
     }

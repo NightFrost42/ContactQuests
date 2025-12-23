@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.task.ParcelTask;
+import com.creeperyang.contactquests.task.RedPacketTask;
 import com.creeperyang.contactquests.task.TaskRegistry;
 import dev.ftb.mods.ftblibrary.config.ItemStackConfig;
 import dev.ftb.mods.ftblibrary.config.ui.resource.SelectItemStackScreen;
@@ -21,6 +22,17 @@ public abstract class GuiProvidersMixin {
                 gui.run();
                 if (accepted) {
                     ParcelTask parcelTask = new ParcelTask(0L, quest).setStackAndCount(c.getValue(), c.getValue().getCount());
+                    callback.accept(parcelTask, parcelTask.getType().makeExtraNBT());
+                }
+            }).openGui();
+        });
+        TaskRegistry.RED_PACKET.setGuiProvider((gui, quest, callback) -> {
+            ItemStackConfig c = new ItemStackConfig(false, false);
+
+            new SelectItemStackScreen(c, accepted -> {
+                gui.run();
+                if (accepted) {
+                    RedPacketTask parcelTask = new RedPacketTask(0L, quest).setStackAndCount(c.getValue(), c.getValue().getCount());
                     callback.accept(parcelTask, parcelTask.getType().makeExtraNBT());
                 }
             }).openGui();

@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.task.ParcelTask;
+import com.creeperyang.contactquests.task.RedPacketTask;
 import com.creeperyang.contactquests.utils.ParcelTagSelectionScreen;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -46,22 +47,28 @@ public abstract class TaskButtonMixin {
     int x, int y, int w, int h,
     CallbackInfo ci) {
 
-        if (!(task instanceof ParcelTask)) {
-            return;
+        Icon icon;
+
+        if (task instanceof ParcelTask) {
+            icon = Icon.getIcon("contact:item/parcel");
         }
+        else if (task instanceof RedPacketTask) {
+            icon = Icon.getIcon("contact:item/red_packet");
+        }
+        else return;
 
         PoseStack pose = graphics.pose();
         pose.pushPose();
         pose.translate(0, 0, 300);
 
-        Icon parcelIcon = Icon.getIcon("contact:item/parcel");
+
         RenderSystem.enableBlend();
 
         int size = (h >= 32 ? 16 : 10);
         int drawX = x + w - size;
         int drawY = y + h - size;
 
-        parcelIcon.draw(graphics, drawX, drawY, size, size);
+        icon.draw(graphics, drawX, drawY, size, size);
 
         RenderSystem.disableBlend();
         pose.popPose();

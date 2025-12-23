@@ -22,7 +22,15 @@ object NpcConfigManager {
 
     fun initFile() {
         if (!CONFIG_DIR.exists()) CONFIG_DIR.mkdirs()
+        loadFromDisk()
+    }
 
+    fun reload() {
+        loadFromDisk()
+        ContactQuests.info("从硬盘重载NPC数据")
+    }
+
+    private fun loadFromDisk() {
         if (CONFIG_FILE.exists()) {
             try {
                 FileReader(CONFIG_FILE).use { reader ->
@@ -33,20 +41,19 @@ object NpcConfigManager {
                         npcMap.putAll(loaded)
                     }
                 }
-                ContactQuests.info("Initialized NPC Config from disk.")
             } catch (e: Exception) {
-                ContactQuests.error("Failed to read npc_config.json", e)
+                ContactQuests.error("读取npc_config.json失败", e)
             }
         } else {
-            save()
-            ContactQuests.info("Created empty NPC Config file.")
+            save() // 如果文件不存在，创建一个新的
         }
     }
 
-    fun syncWithQuests(allNpcNames: Set<String>) {
+    fun syncWithQuests(parcelNpcs: Set<String>, redPacketNpcs: Set<String> = emptySet()) {
         var hasChanges = false
+        val allNpcs = parcelNpcs + redPacketNpcs
 
-        for (name in allNpcNames) {
+        for (name in allNpcs) {
             if (!npcMap.containsKey(name)) {
                 npcMap[name] = NpcData(deliveryTime = 0)
                 hasChanges = true
@@ -55,7 +62,7 @@ object NpcConfigManager {
 
         if (hasChanges) {
             save()
-            ContactQuests.info("Synced new NPCs to config.")
+            ContactQuests.info("同步新NPC到配置文件")
         }
     }
 
@@ -73,7 +80,7 @@ object NpcConfigManager {
                 GSON.toJson(npcMap, writer)
             }
         } catch (e: Exception) {
-            ContactQuests.error("Failed to save npc_config.json", e)
+            ContactQuests.error("保存npc_config.json失败", e)
         }
     }
 }

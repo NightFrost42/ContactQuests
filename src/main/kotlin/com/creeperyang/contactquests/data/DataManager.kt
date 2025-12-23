@@ -4,6 +4,7 @@ import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.task.ParcelTask
+import com.creeperyang.contactquests.task.RedPacketTask
 import com.flechazo.contact.common.item.ParcelItem
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
@@ -19,23 +20,37 @@ object DataManager {
     val parcelTasks: MutableMap<Long, ParcelTask> = mutableMapOf()
     val itemTestFunc: MutableMap<Long, (ItemStack) -> Boolean> = mutableMapOf()
 
+    @JvmField
+    val redPacketReceiver: MutableMap<String, MutableSet<Long>> = mutableMapOf()
+    val redPacketTasks: MutableMap<Long, RedPacketTask> = mutableMapOf()
+    val redPacketItemTestFunc: MutableMap<Long, (ItemStack) -> Boolean> = mutableMapOf()
+
     fun init(){
         parcelReceiver.clear()
         parcelTasks.clear()
         itemTestFunc.clear()
+
+        redPacketReceiver.clear()
+        redPacketTasks.clear()
+        redPacketItemTestFunc.clear()
+
+        NpcConfigManager.reload()
 
         val questFile = ServerQuestFile.INSTANCE
         questFile.allChapters.forEach { chapter ->
             chapter.quests.forEach { quest ->
                 quest.tasks.forEach { task ->
                     if (task is ParcelTask) {
-                        initTask(task)
+                        initParcelTask(task)
+                    }
+                    else if (task is RedPacketTask) {
+                        initRedPacketTask(task)
                     }
                 }
             }
         }
 
-        NpcConfigManager.syncWithQuests(parcelReceiver.keys)
+        NpcConfigManager.syncWithQuests(parcelReceiver.keys, redPacketReceiver.keys)
     }
 
     fun getAvailableTargets(player: ServerPlayer): Map<String, Int> {
@@ -55,10 +70,20 @@ object DataManager {
                 available[npcName] = time
             }
         }
+
+        for ((_, task) in redPacketTasks) {
+            if (teamData.canStartTasks(task.quest) && !teamData.isCompleted(task)) {
+                val npcName = task.targetAddressee
+
+                val time = if (enableDelay) NpcConfigManager.getDeliveryTime(npcName) else 0
+
+                available[npcName] = time
+            }
+        }
         return available
     }
 
-    fun initTask(parcelTask: ParcelTask) {
+    fun initParcelTask(parcelTask: ParcelTask) {
         val target = parcelTask.targetAddressee
         val id = parcelTask.id
         if (!parcelReceiver.containsKey(target)){
@@ -70,7 +95,19 @@ object DataManager {
         itemTestFunc[id] = parcelTask::test
     }
 
-    fun completeTask(parcelTask: ParcelTask) {
+    fun initRedPacketTask(redPacketTask: RedPacketTask) {
+        val target = redPacketTask.targetAddressee
+        val id = redPacketTask.id
+        if (!redPacketReceiver.containsKey(target)){
+            redPacketReceiver[target] = mutableSetOf(id)
+        } else {
+            redPacketReceiver[target]!!.add(id)
+        }
+        redPacketTasks[id] = redPacketTask
+        redPacketItemTestFunc[id] = redPacketTask::redPacketTest
+    }
+
+    fun completeParcelTask(parcelTask: ParcelTask) {
         val target = parcelTask.targetAddressee
         val id = parcelTask.id
         parcelReceiver[target]?.let {
@@ -81,38 +118,85 @@ object DataManager {
         itemTestFunc.remove(id)
     }
 
-    fun matchTaskItem(player: ServerPlayer, parcelStack: ItemStack, parcel: ItemContainerContents, recipientName: String): Boolean {
+    fun completeRedPacketTask(redPacketTask: RedPacketTask) {
+        val target = redPacketTask.targetAddressee
+        val id = redPacketTask.id
+        redPacketReceiver[target]?.let {
+            if (it.size > 1) redPacketReceiver[target]?.remove(id)
+            else redPacketReceiver.remove(target)
+        }
+        redPacketTasks.remove(id)
+        redPacketItemTestFunc.remove(id)
+    }
+
+    fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, parcel: ItemContainerContents, recipientName: String): Boolean {
         val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
         val teamData = team?.let { ServerQuestFile.INSTANCE.getNullableTeamData(it.id) } ?: return false
 
         var anyConsumed = false
         parcel.stream().forEach { itemStack ->
-            if (processSingleItem(player, teamData, itemStack, parcelStack, recipientName)) {
+            if (processParcelSingleItem(player, teamData, itemStack, parcelStack, recipientName)) {
                 anyConsumed = true
             }
         }
         return anyConsumed
     }
 
-    private fun processSingleItem(player: ServerPlayer, teamData: TeamData, initialStack: ItemStack, parcelStack: ItemStack, recipientName: String): Boolean {
+    private fun processParcelSingleItem(player: ServerPlayer, teamData: TeamData, initialStack: ItemStack, parcelStack: ItemStack, recipientName: String): Boolean {
         val targetTaskIds: Set<Long> = parcelReceiver[recipientName] ?: return false
 
         for (taskId in targetTaskIds) {
             val task = parcelTasks[taskId] ?: continue
 
-            if (!isTaskEligible(task, teamData, initialStack)) continue
+            if (!isParcelTaskEligible(task, teamData, initialStack)) continue
 
             val sendTime = calculateEffectiveSendTime(recipientName, parcelStack)
 
-            if (executeDelivery(player, teamData, task, initialStack, sendTime, recipientName)) {
+            if (executeParcelDelivery(player, teamData, task, initialStack, sendTime, recipientName)) {
                 return true
             }
         }
         return false
     }
 
-    private fun isTaskEligible(task: ParcelTask, teamData: TeamData, initialStack: ItemStack): Boolean {
+    fun matchRedPacketTaskItem(player: ServerPlayer, redPacket: ItemStack, recipientName: String): Boolean {
+        val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+        val teamData = team?.let { ServerQuestFile.INSTANCE.getNullableTeamData(it.id) } ?: return false
+
+        var anyConsumed = false
+        if (processRedPacketSingleItem(player, teamData, redPacket, recipientName)) {
+            anyConsumed = true
+        }
+        return anyConsumed
+    }
+
+    private fun processRedPacketSingleItem(player: ServerPlayer, teamData: TeamData, redPacket: ItemStack, recipientName: String): Boolean {
+        val targetTaskIds: Set<Long> = redPacketReceiver[recipientName] ?: return false
+
+        for (taskId in targetTaskIds) {
+            val task = redPacketTasks[taskId] ?: continue
+
+            if (!isRedPacketTaskEligible(task, teamData, redPacket)) continue
+
+            val sendTime = calculateEffectiveSendTime(recipientName, redPacket)
+
+            if (executeRedPacketDelivery(player, teamData, task, redPacket, sendTime, recipientName)) {
+                return true
+            }
+        }
+        return false
+    }
+
+    private fun isParcelTaskEligible(task: ParcelTask, teamData: TeamData, initialStack: ItemStack): Boolean {
         val testFunc = itemTestFunc[task.id] ?: return false
+
+        return testFunc.invoke(initialStack) &&
+                teamData.canStartTasks(task.quest) &&
+                !teamData.isCompleted(task)
+    }
+
+    private fun isRedPacketTaskEligible(task: RedPacketTask, teamData: TeamData, initialStack: ItemStack): Boolean {
+        val testFunc = redPacketItemTestFunc[task.id] ?: return false
 
         return testFunc.invoke(initialStack) &&
                 teamData.canStartTasks(task.quest) &&
@@ -139,7 +223,7 @@ object DataManager {
         return configTime
     }
 
-    private fun executeDelivery(
+    private fun executeParcelDelivery(
         player: ServerPlayer,
         teamData: TeamData,
         task: ParcelTask,
@@ -158,6 +242,28 @@ object DataManager {
         }
 
         val result = task.submitParcelTask(teamData, player, initialStack)
+        return result.count < initialStack.count
+    }
+
+    private fun executeRedPacketDelivery(
+        player: ServerPlayer,
+        teamData: TeamData,
+        task: RedPacketTask,
+        initialStack: ItemStack,
+        sendTime: Int,
+        recipientName: String
+    ): Boolean {
+        if (sendTime > 0) {
+            val overworld = player.server.overworld()
+
+            DeliverySavedData[overworld].addParcel(player, task.id, sendTime, recipientName)
+
+            val consumeCount = min(initialStack.count.toLong(), task.count).toInt()
+            initialStack.shrink(consumeCount)
+            return true
+        }
+
+        val result = task.submitRedPacketTask(teamData, player, initialStack)
         return result.count < initialStack.count
     }
 }

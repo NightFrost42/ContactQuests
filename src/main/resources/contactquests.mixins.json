@@ -8,7 +8,8 @@
   "client": [
     "GuiProvidersMixin",
     "TaskButtonMixin",
-    "EnquireAddresseeMessageMixin"
+    "EnquireAddresseeMessageMixin",
+    "RedPacketEnvelopeScreenAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

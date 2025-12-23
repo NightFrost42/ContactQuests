@@ -1,7 +1,8 @@
 package com.creeperyang.contactquests.task
 
-import com.creeperyang.contactquests.client.gui.ValidParcelItemsScreen
+import com.creeperyang.contactquests.client.gui.ValidRedPacketItemsScreen
 import com.creeperyang.contactquests.data.DataManager
+import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.IconAnimation
@@ -21,15 +22,20 @@ import dev.ftb.mods.ftbquests.quest.task.TaskType
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.core.HolderLookup
+import net.minecraft.core.component.DataComponentType
+import net.minecraft.core.component.DataComponents
+import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
+import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.Item
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraft.world.item.TooltipFlag
+import net.minecraft.world.item.component.ItemContainerContents
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 import java.util.function.Consumer
@@ -37,21 +43,21 @@ import java.util.function.Predicate
 import kotlin.math.max
 import kotlin.math.min
 
-class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack> {
+class RedPacketTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack> {
 
     var targetAddressee: String = "QuestNPC"
-    var itemStack: ItemStack = ItemStack.EMPTY
     var count: Long = 1
-    private var matchComponents: ComponentMatchType? = ComponentMatchType.NONE
-//    var sendTime: Int = 0
+    var itemStack: ItemStack = ItemStack.EMPTY
+    var blessing: String = ""
+    var matchComponents: ComponentMatchType? = ComponentMatchType.NONE
 
-    override fun getType(): TaskType = TaskRegistry.PARCEL
+    override fun getType(): TaskType = TaskRegistry.RED_PACKET
 
     override fun getMaxProgress(): Long {
         return count
     }
 
-    fun setStackAndCount(stack: ItemStack, count: Int): ParcelTask {
+    fun setStackAndCount(stack: ItemStack, count: Int): RedPacketTask {
         itemStack = stack.copy()
         this.count = count.toLong()
         return this
@@ -60,7 +66,8 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
         super.writeData(nbt, provider)
         nbt.putString("TargetAddressee", targetAddressee)
-        nbt.put("item", saveItemSingleLine(itemStack.copyWithCount(1)))
+        nbt.putString("blessing", blessing)
+        nbt.put("inner_item", saveItemSingleLine(itemStack))
         if (count > 1) {
             nbt.putLong("count", count)
         }
@@ -72,15 +79,16 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
         super.readData(nbt, provider)
         targetAddressee = nbt.getString("TargetAddressee")
-        itemStack = itemOrMissingFromNBT(nbt["item"], provider)
+        blessing = nbt.getString("blessing")
+        itemStack = itemOrMissingFromNBT(nbt["inner_item"], provider)
         count = max(nbt.getLong("count"), 1L)
         matchComponents = ComponentMatchType.NAME_MAP[nbt.getString("match_components")]
-//        sendTime = nbt.getInt("sendTime")
     }
 
     override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(targetAddressee)
+        buffer.writeUtf(blessing)
         ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, itemStack)
         buffer.writeVarLong(count)
         var flags = 0
@@ -92,6 +100,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     override fun readNetData(buffer: RegistryFriendlyByteBuf) {
         super.readNetData(buffer)
         targetAddressee = buffer.readUtf()
+        blessing = buffer.readUtf()
         itemStack = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer)
         count = buffer.readVarLong()
         val flags = buffer.readVarInt()
@@ -105,7 +114,14 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         return ItemMatchingSystem.INSTANCE.getAllMatchingStacks(itemStack)
     }
 
-//    @OnlyIn(Dist.CLIENT)
+    private val blessingComponentType: DataComponentType<String>?
+        get() {
+            val id = ResourceLocation.fromNamespaceAndPath("contact", "red_packet_blessing")
+            val type = BuiltInRegistries.DATA_COMPONENT_TYPE.get(id)
+            @Suppress("UNCHECKED_CAST")
+            return type as? DataComponentType<String>
+        }
+
     override fun test(stack: ItemStack): Boolean {
         if (itemStack.isEmpty) {
             return false
@@ -114,12 +130,36 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, matchComponents)
     }
 
+    fun redPacketTest(stack: ItemStack): Boolean {
+        if (stack.isEmpty || stack.item !is RedPacketItem) {
+            return false
+        }
+
+        if (blessing.isNotEmpty()) {
+            val compType = blessingComponentType
+            val stackBlessing = if (compType != null) stack.get(compType) ?: "" else ""
+
+            if (stackBlessing != blessing) return false
+        }
+
+        if (itemStack.isEmpty) {
+            return true
+        }
+
+        val contentStack = stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
+            .stream().findFirst().orElse(ItemStack.EMPTY)
+
+        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, contentStack, matchComponents)
+    }
+
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
         config.addString("target_addressee", targetAddressee, { targetAddressee = it }, "Quest NPC")
-        config.addItemStack("item", itemStack, { v: ItemStack -> itemStack = v }, ItemStack.EMPTY, true, false).nameKey =
-            "contactquest.task.parcel.item"
+        config.addString("blessing", blessing, { blessing = it }, "")
+            .setNameKey("contactquest.task.red_packet.blessing")
+        config.addItemStack("item", itemStack, { v: ItemStack -> itemStack = v }, ItemStack.EMPTY, true, false)
+            .setNameKey("contactquest.task.red_packet.item")
         config.addLong("count", count, { v: Long? -> count = v!! }, 1, 1, Long.MAX_VALUE)
         config.addEnum<ComponentMatchType?>("match_components", matchComponents,
             { v: ComponentMatchType? -> matchComponents = v }, ComponentMatchType.NAME_MAP)
@@ -133,10 +173,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
             !it.isEmpty && it.item != Items.AIR && it.count > 0
         }.toMutableList()
 
-//        if (validItems.size == 1 && FTBQuests.getRecipeModHelper().isRecipeModAvailable) {
-//            FTBQuests.getRecipeModHelper().showRecipes(validItems[0])
-//        } else
-            if (validItems.isEmpty()) {
+        if (validItems.isEmpty()) {
             Minecraft.getInstance().toasts.addToast(
                 CustomToast(
                     Component.literal("No valid items!"),
@@ -145,7 +182,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
                 )
             )
         } else {
-            ValidParcelItemsScreen(this, validItems).openGui()
+            ValidRedPacketItemsScreen(this, validItems).openGui()
         }
     }
 
@@ -182,15 +219,11 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon? {
         val icons = ArrayList<Icon?>()
-
         for (stack in getValidDisplayItems()) {
             val copy = stack.copy()
             copy.count = 1
             val icon = ItemIcon.getItemIcon(copy)
-
-            if (!icon.isEmpty) {
-                icons.add(icon)
-            }
+            if (!icon.isEmpty) icons.add(icon)
         }
 
         if (icons.isEmpty()) {
@@ -209,22 +242,19 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         return Component.literal("").append(itemStack.hoverName)
     }
 
-    fun submitParcelTask (teamData: TeamData, player: ServerPlayer, submitItemStack: ItemStack): ItemStack{
+    fun submitRedPacketTask(teamData: TeamData, player: ServerPlayer, submitItemStack: ItemStack): ItemStack {
         if (teamData.isCompleted(this)){
-            DataManager.completeParcelTask(this)
-            return itemStack
+            DataManager.completeRedPacketTask(this)
+            return submitItemStack
         }
         if (!checkTaskSequence(teamData) || itemStack.item is MissingItem || submitItemStack.item is MissingItem) {
-            return itemStack
+            return submitItemStack
         }
-        val item = insert(teamData, submitItemStack, false)
-        val returnItem = if (item.isEmpty) ItemStack.EMPTY else item
-
-        return returnItem
+        return insert(teamData, submitItemStack, false)
     }
 
-    fun insert(teamData: TeamData, stack: ItemStack, simulate: Boolean): ItemStack{
-        if (!teamData.isCompleted(this) && test(stack) && teamData.canStartTasks(quest)) {
+    fun insert(teamData: TeamData, stack: ItemStack, simulate: Boolean): ItemStack {
+        if (!teamData.isCompleted(this) && redPacketTest(stack) && teamData.canStartTasks(quest)) {
             val add = min(stack.count.toLong(), count - teamData.getProgress(this))
 
             if (add > 0L) {
@@ -241,7 +271,7 @@ class ParcelTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack>
         return stack
     }
 
-    fun getAmountNeeded(teamData: TeamData): Long{
+    fun getAmountNeeded(teamData: TeamData): Long {
         return count - teamData.getProgress(this)
     }
 }
