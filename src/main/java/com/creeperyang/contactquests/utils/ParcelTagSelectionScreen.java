@@ -65,16 +65,6 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
         questScreen.openGui();
     }
 
-    private void setTagFilterAndSave(ParcelTask parcelTask, ItemFilterAdapter adapter, TagKey<Item> tag) {
-        parcelTask.setStackAndCount(adapter.makeTagFilterStack(tag), parcelTask.getItemStack().getCount());
-
-        if (parcelTask.getRawTitle().isEmpty()) {
-            parcelTask.setRawTitle("Any #" + tag.location());
-        }
-
-        EditObjectMessage.sendToServer(parcelTask);
-    }
-
     private class TagSelectionButton extends SimpleTextButton {
         private final TagKey<Item> tag;
 
@@ -95,6 +85,16 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
                 Color4I.WHITE.withAlpha(30).draw(graphics, x, y, w, h);
             }
             Color4I.GRAY.withAlpha(40).draw(graphics, x, y + h, w, 1);
+        }
+
+        private void setTagFilterAndSave(ParcelTask parcelTask, ItemFilterAdapter adapter, TagKey<Item> tag) {
+            parcelTask.setStackAndCount(adapter.makeTagFilterStack(tag), parcelTask.getItemStack().getCount());
+
+            if (parcelTask.getRawTitle().isEmpty()) {
+                parcelTask.setRawTitle("Any #" + tag.location());
+            }
+
+            EditObjectMessage.sendToServer(parcelTask);
         }
     }
 }
