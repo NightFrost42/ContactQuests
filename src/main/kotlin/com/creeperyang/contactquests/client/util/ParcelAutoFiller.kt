@@ -9,6 +9,8 @@ import com.flechazo.contact.common.screenhandler.WrappingPaperScreenHandler
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
 import net.minecraft.client.Minecraft
+import net.minecraft.client.gui.screens.Screen
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.AbstractContainerMenu
 import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.item.ItemStack
@@ -19,17 +21,15 @@ import net.neoforged.neoforge.client.event.ClientTickEvent
 import kotlin.math.min
 
 @OnlyIn(Dist.CLIENT)
-object ParcelAutoFiller {
+object ParcelAutoFiller : BaseAutoFiller<String>() {
+
     private enum class State { IDLE, PICKUP_SOURCE, DEPOSIT_ONE, RETURN_REST }
 
-    private var pendingReceiver: String? = null
-    private var isTaskScheduled = false
-
     private var currentState = State.IDLE
+
     private var currentSourceSlot = -1
     private var currentTargetSlot = -1
     private var itemsToDeposit = 0
-    private var executionDelay = 0
 
     private const val CLICKS_PER_TICK = 4
 
@@ -39,54 +39,42 @@ object ParcelAutoFiller {
         val debugName: String
     )
 
-    fun schedule(receiverName: String) {
-        ContactQuests.debug("ParcelAutoFiller: 任务已调度! 收件人: $receiverName")
-        pendingReceiver = receiverName
-        isTaskScheduled = true
-        executionDelay = 0
-        resetState()
-    }
-
-    private fun resetState() {
+    override fun resetState() {
         currentState = State.IDLE
         currentSourceSlot = -1
         currentTargetSlot = -1
         itemsToDeposit = 0
+        actionDelay = 5
+    }
+
+    override fun isValidScreen(screen: Screen?): Boolean {
+        return screen is WrappingPaperScreen || screen is EnvelopeScreen
     }
 
     @SubscribeEvent
-    fun onClientTick(event: ClientTickEvent.Post) {
-        if (!isTaskScheduled) return
+    override fun onClientTick(event: ClientTickEvent.Post) {
+        super.onClientTick(event)
+    }
 
-        val minecraft = Minecraft.getInstance()
-        val player = minecraft.player ?: return
-        val currentScreen = minecraft.screen
+    override fun runLogic(mc: Minecraft, player: Player, screen: Screen) {
+        val (menu, contentCount) = resolveScreenContext(screen) ?: return
 
-        val context = resolveScreenContext(currentScreen)
-
-        if (context == null) {
-            handleScreenClosedOrInvalid()
+        if (player.containerMenu.containerId != menu.containerId) {
+            actionDelay++
             return
         }
 
-        val (menu, contentCount) = context
-
-        if (executionDelay < 5) {
-            executionDelay++
-            return
+        when (currentState) {
+            State.IDLE -> handleIdleState(mc, menu, contentCount)
+            State.PICKUP_SOURCE -> handlePickupSource(mc, menu, player)
+            State.DEPOSIT_ONE -> handleDepositOne(mc, menu, player)
+            State.RETURN_REST -> handleReturnRest(mc, menu, player)
         }
-
-        if (player.containerMenu.containerId == 0 || player.containerMenu.containerId != menu.containerId) {
-            if (executionDelay > 60) finishTask("容器同步超时") else executionDelay++
-            return
-        }
-
-        runStateMachine(minecraft, player, menu, contentCount)
     }
 
     private data class ScreenContext(val menu: AbstractContainerMenu, val contentCount: Int)
 
-    private fun resolveScreenContext(screen: net.minecraft.client.gui.screens.Screen?): ScreenContext? {
+    private fun resolveScreenContext(screen: Screen?): ScreenContext? {
         return when (screen) {
             is WrappingPaperScreen -> ScreenContext(screen.menu, WrappingPaperScreenHandler.CONTENT_COUNT)
             is EnvelopeScreen -> ScreenContext(screen.menu, EnvelopeScreenHandler.CONTENT_COUNT)
@@ -94,29 +82,14 @@ object ParcelAutoFiller {
         }
     }
 
-    private fun handleScreenClosedOrInvalid() {
-        executionDelay++
-        if (executionDelay > 60) {
-            finishTask("界面关闭或超时")
-        }
-    }
-
-    private fun runStateMachine(mc: Minecraft, player: net.minecraft.world.entity.player.Player, menu: AbstractContainerMenu, contentCount: Int) {
-        when (currentState) {
-            State.IDLE -> handleIdleState(mc, player, menu, contentCount)
-            State.PICKUP_SOURCE -> handlePickupSource(mc, menu, player)
-            State.DEPOSIT_ONE -> handleDepositOne(mc, menu, player)
-            State.RETURN_REST -> handleReturnRest(mc, menu, player)
-        }
-    }
-
-    private fun handleIdleState(mc: Minecraft, player: net.minecraft.world.entity.player.Player, menu: AbstractContainerMenu, contentCount: Int) {
+    private fun handleIdleState(mc: Minecraft, menu: AbstractContainerMenu, contentCount: Int) {
+        val player = mc.player ?: return
         if (!player.containerMenu.carried.isEmpty) return
 
-        val receiver = pendingReceiver ?: return
+        val receiverName = taskData ?: return
         val teamData = ClientQuestFile.INSTANCE.selfTeamData
 
-        val requirements = getRequirementsForReceiver(receiver, teamData)
+        val requirements = getRequirementsForReceiver(receiverName, teamData)
         if (requirements.isEmpty()) {
             finishTask("无需求")
             return
@@ -130,15 +103,15 @@ object ParcelAutoFiller {
             return
         }
 
-        scanInventoryAndSetupAction(mc, menu, player, activeReqs, contentCount)
+        scanInventoryAndSetupAction(menu, player, activeReqs, contentCount)
     }
 
-    private fun handlePickupSource(mc: Minecraft, menu: AbstractContainerMenu, player: net.minecraft.world.entity.player.Player) {
+    private fun handlePickupSource(mc: Minecraft, menu: AbstractContainerMenu, player: Player) {
         click(mc, menu.containerId, currentSourceSlot, 0, ClickType.PICKUP, player)
         currentState = State.DEPOSIT_ONE
     }
 
-    private fun handleDepositOne(mc: Minecraft, menu: AbstractContainerMenu, player: net.minecraft.world.entity.player.Player) {
+    private fun handleDepositOne(mc: Minecraft, menu: AbstractContainerMenu, player: Player) {
         var clicksThisTick = 0
         while (itemsToDeposit > 0 && clicksThisTick < CLICKS_PER_TICK) {
             click(mc, menu.containerId, currentTargetSlot, 1, ClickType.PICKUP, player)
@@ -151,7 +124,7 @@ object ParcelAutoFiller {
         }
     }
 
-    private fun handleReturnRest(mc: Minecraft, menu: AbstractContainerMenu, player: net.minecraft.world.entity.player.Player) {
+    private fun handleReturnRest(mc: Minecraft, menu: AbstractContainerMenu, player: Player) {
         click(mc, menu.containerId, currentSourceSlot, 0, ClickType.PICKUP, player)
         resetState()
     }
@@ -170,11 +143,8 @@ object ParcelAutoFiller {
     }
 
     private fun scanInventoryAndSetupAction(
-        mc: Minecraft,
-        menu: AbstractContainerMenu,
-        player: net.minecraft.world.entity.player.Player,
-        activeReqs: List<TaskRequirement>,
-        contentCount: Int
+        menu: AbstractContainerMenu, player: Player,
+        activeReqs: List<TaskRequirement>, contentCount: Int
     ) {
         val inventoryEnd = menu.slots.size
 
@@ -191,7 +161,7 @@ object ParcelAutoFiller {
                         return
                     }
 
-                    setupTransferAction(mc, menu.containerId, player, slotIndex, targetIdx, stack, req.amountNeeded)
+                    setupTransferAction(menu.containerId, player, slotIndex, targetIdx, stack, req.amountNeeded)
                     return
                 }
             }
@@ -207,15 +177,11 @@ object ParcelAutoFiller {
     }
 
     private fun setupTransferAction(
-        mc: Minecraft,
-        containerId: Int,
-        player: net.minecraft.world.entity.player.Player,
-        sourceSlot: Int,
-        targetSlot: Int,
-        stack: ItemStack,
-        amountNeeded: Long
+        containerId: Int, player: Player, sourceSlot: Int, targetSlot: Int,
+        stack: ItemStack, amountNeeded: Long
     ) {
         val have = stack.count.toLong()
+        val mc = Minecraft.getInstance()
 
         if (have <= amountNeeded) {
             ContactQuests.debug("ParcelAutoFiller: 快速移动全部 ${stack.hoverName.string}")
@@ -231,17 +197,6 @@ object ParcelAutoFiller {
         }
     }
 
-    private fun finishTask(reason: String) {
-        ContactQuests.debug("ParcelAutoFiller: 任务结束 ($reason)")
-        isTaskScheduled = false
-        pendingReceiver = null
-        resetState()
-    }
-
-    private fun click(mc: Minecraft, containerId: Int, slotId: Int, button: Int, type: ClickType, player: net.minecraft.world.entity.player.Player) {
-        mc.gameMode?.handleInventoryMouseClick(containerId, slotId, button, type, player)
-    }
-
     private fun getRequirementsForReceiver(receiverName: String, teamData: TeamData): List<TaskRequirement> {
         val questFile = ClientQuestFile.INSTANCE ?: return emptyList()
         val targetName = receiverName.trim()
@@ -251,9 +206,7 @@ object ParcelAutoFiller {
             .filter { teamData.canStartTasks(it) }
             .flatMap { it.tasks }
             .filterIsInstance<ParcelTask>()
-            .filter { task ->
-                task.targetAddressee.trim() == targetName && !teamData.isCompleted(task)
-            }
+            .filter { task -> task.targetAddressee.trim() == targetName && !teamData.isCompleted(task) }
             .mapNotNull { task ->
                 val needed = task.getAmountNeeded(teamData)
                 if (needed > 0) {
