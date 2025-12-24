@@ -131,7 +131,7 @@ object DataManager {
             redPacketReceiver[target]!!.add(id)
         }
         redPacketTasks[id] = redPacketTask
-        redPacketItemTestFunc[id] = redPacketTask::redPacketTest
+        redPacketItemTestFunc[id] = redPacketTask::test
     }
 
     fun initPostcardTask(postcardTask: PostcardTask) {

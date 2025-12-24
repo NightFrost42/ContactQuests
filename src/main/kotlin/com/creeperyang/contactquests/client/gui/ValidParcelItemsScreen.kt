@@ -151,7 +151,11 @@ class ValidParcelItemsScreen(): BaseScreen() {
                     }
 
                     if (!status.hasQuestItem) {
-                        list.add(Component.literal("- ").append(task.title).withStyle(ChatFormatting.DARK_RED))
+                        val missingItemName = task.itemStack.hoverName
+                        list.add(Component.literal("- ")
+                            .append("${task.count}x ") // (可选) 显示需要的数量
+                            .append(missingItemName)
+                            .withStyle(ChatFormatting.DARK_RED))
                     }
                 }
             }

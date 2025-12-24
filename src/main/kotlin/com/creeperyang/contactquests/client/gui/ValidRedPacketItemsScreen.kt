@@ -150,7 +150,11 @@ class ValidRedPacketItemsScreen(): BaseScreen() {
                     }
 
                     if (!status.hasQuestItem) {
-                        list.add(Component.literal("- ").append(task.title).withStyle(ChatFormatting.DARK_RED))
+                        val missingItemName = task.itemStack.hoverName
+                        list.add(Component.literal("- ")
+                            .append("${task.count}x ") // (可选) 显示需要的数量
+                            .append(missingItemName)
+                            .withStyle(ChatFormatting.DARK_RED))
                     }
                 }
             }
@@ -178,7 +182,7 @@ class ValidRedPacketItemsScreen(): BaseScreen() {
             if ((item.item is RedPacketEnvelopeItem) && !hasRedPacket) {
                 hasRedPacket = true
             }
-            else if (task.test(item) && !hasQuestItem) {
+            else if (task.checkContent(item) && !hasQuestItem) {
                 hasQuestItem = true
             }
 

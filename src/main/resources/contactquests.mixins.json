@@ -4,11 +4,11 @@
   "package": "com.creeperyang.contactquests.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
+    "EnquireAddresseeMessageMixin"
   ],
   "client": [
     "GuiProvidersMixin",
     "TaskButtonMixin",
-    "EnquireAddresseeMessageMixin",
     "RedPacketEnvelopeScreenAccessor",
     "PostcardEditScreenAccessor"
   ],
