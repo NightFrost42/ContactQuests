@@ -4,8 +4,15 @@ import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
+import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
-import dev.ftb.mods.ftblibrary.config.NameMap
+import dev.ftb.mods.ftblibrary.config.ConfigValue
+import dev.ftb.mods.ftblibrary.icon.Color4I
+import dev.ftb.mods.ftblibrary.ui.Panel
+import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
+import dev.ftb.mods.ftblibrary.ui.Widget
+import dev.ftb.mods.ftblibrary.ui.input.MouseButton
+import dev.ftb.mods.ftblibrary.ui.misc.ButtonListBaseScreen
 import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
@@ -74,7 +81,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         if (postcardStyle.isEmpty()) return true
 
         val styleType = getComponent<ResourceLocation>("postcard_style_id") ?: return false
-        val itemStyle = stack.get(styleType)?.toString() ?: return false
+        val itemStyle = stack[styleType]?.toString() ?: return false
 
         return itemStyle.contains(postcardStyle) || postcardStyle.contains(itemStyle)
     }
@@ -83,7 +90,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         if (postcardText.isEmpty()) return true
 
         val textType = getComponent<String>("postcard_text") ?: return false
-        val itemText = stack.get(textType) ?: return false
+        val itemText = stack[textType] ?: return false
 
         val normalizedConfig = postcardText.replace("\\n", "\n").trim()
         val normalizedItem = itemText.trim()
@@ -105,12 +112,62 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
+
         val allStyles = PostcardDataManager.getPostcards().keys.map { it.toString() }.sorted().toMutableList()
         if (!allStyles.contains("")) allStyles.add(0, "")
 
-        config.addEnum("postcard_style", postcardStyle, { postcardStyle = it },
-            NameMap.of("", allStyles).nameKey { id -> id.ifEmpty { "Any" } }.create()
-        ).nameKey = "contactquest.task.postcard.style"
+        fun getStyleDisplayName(id: String?): Component {
+            if (id.isNullOrEmpty()) {
+                return Component.translatable("contactquest.postcard.any")
+            }
+            val rl = ResourceLocation.tryParse(id)
+            if (rl != null) {
+                return Component.translatable("tooltip.postcard.${rl.namespace}.${rl.path}")
+            }
+            return Component.literal(id)
+        }
+
+        val customValue = object : ConfigValue<String>() {
+
+            init {
+                this.value = postcardStyle
+            }
+
+            override fun getStringForGUI(v: String?): Component {
+                return getStyleDisplayName(v)
+            }
+
+            override fun onClicked(widget: Widget, button: MouseButton, callback: ConfigCallback) {
+                val self = this
+
+                object : ButtonListBaseScreen() {
+                    init {
+                        this.title = Component.translatable("contactquest.task.postcard.style")
+                    }
+
+                    override fun addButtons(panel: Panel) {
+                        for (styleId in allStyles) {
+                            val btnName = getStyleDisplayName(styleId)
+
+                            panel.add(object : SimpleTextButton(panel, btnName, Color4I.empty()) {
+                                override fun onClicked(btn: MouseButton?) {
+                                    playClickSound()
+
+                                    self.value = styleId
+
+                                    callback.save(true)
+
+                                    closeGui()
+                                }
+                            })
+                        }
+                    }
+                }.openGui()
+            }
+        }
+
+        config.add("postcard_style", customValue, postcardStyle, { postcardStyle = it }, "")
+            .nameKey = "contactquest.task.postcard.style"
 
         config.addString("postcard_text", postcardText, { postcardText = it }, "").nameKey = "contactquest.task.postcard.text"
     }
@@ -126,8 +183,15 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         list.add(Component.translatable("contactquest.task.parcel.recipient", targetAddressee).withStyle(ChatFormatting.GRAY))
 
         if (postcardStyle.isNotEmpty()) {
-            list.add(Component.translatable("contactquest.task.postcard.req_style")
-                .append(Component.literal(postcardStyle).withStyle(ChatFormatting.AQUA)))
+            val rl = ResourceLocation.tryParse(postcardStyle)
+            if (rl != null) {
+                val styleName =
+                    Component.translatable("tooltip.postcard.${rl.namespace}.${rl.path}").withStyle(ChatFormatting.AQUA)
+                list.add(
+                    Component.translatable("contactquest.task.postcard.req_style")
+                        .append(styleName.withStyle(ChatFormatting.AQUA))
+                )
+            }
         }
         if (postcardText.isNotEmpty()) {
             list.add(Component.translatable("contactquest.task.postcard.req_text")

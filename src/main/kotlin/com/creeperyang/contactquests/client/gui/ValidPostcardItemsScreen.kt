@@ -21,6 +21,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
+import kotlin.math.max
 import com.flechazo.contact.helper.GuiHelper as ContactGuiHelper
 
 class ValidPostcardItemsScreen(task: PostcardTask) :
@@ -46,15 +47,24 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
 
                 setSize(cardWidth + 20, cardHeight + 20)
 
-                parent.setHeight(height + 50)
+                val screen = this@ValidPostcardItemsScreen
 
-                x = (parent.width - width) / 2
+                val minScreenWidth = max(cardWidth + 40, theme.getStringWidth(screen.titleComponent) + 30)
+
+                screen.setWidth(minScreenWidth)
+                screen.setHeight(height + 50)
+
+                setPos((screen.width - width) / 2, 22)
 
                 backButton.setPosAndSize(posX, height + 24, 70, 20)
                 submitButton.setPosAndSize(posX + width - 70, height + 24, 70, 20)
             }
 
             override fun drawBackground(graphics: GuiGraphics, theme: Theme, x: Int, y: Int, w: Int, h: Int) {
+                theme.drawButton(graphics, x, y, w, h, WidgetType.NORMAL)
+                RenderSystem.setShader(GameRenderer::getPositionTexShader)
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F)
+
                 theme.drawButton(graphics, x, y, w, h, WidgetType.NORMAL)
                 RenderSystem.setShader(GameRenderer::getPositionTexShader)
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F)
