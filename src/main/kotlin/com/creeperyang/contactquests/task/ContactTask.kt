@@ -95,9 +95,9 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
         if (validItems.isEmpty()) {
             Minecraft.getInstance().toasts.addToast(
                 CustomToast(
-                    Component.literal("No valid items!"),
+                    Component.translatable("contactquest.task.no_valid_items"),
                     ItemIcon.getItemIcon("ftbquests:missing_item"),
-                    Component.literal("Check Mod Items or Config!")
+                    Component.translatable("contactquest.task.error_check")
                 )
             )
         } else {

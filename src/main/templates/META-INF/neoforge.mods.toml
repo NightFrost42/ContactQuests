@@ -97,3 +97,9 @@ side="BOTH"
 # stop your mod loading on the server for example.
 #[features."${mod_id}"]
 #openGLVersion="[3.2,)"
+[[dependencies."${mod_id}"]]
+modId = "jade"
+type = "optional" # ⚠️ 这里是 optional，意味着不装也能运行
+versionRange = "[15,)" # 针对 1.21 的 Jade 版本
+ordering = "AFTER"
+side = "CLIENT" # 主要是客户端依赖

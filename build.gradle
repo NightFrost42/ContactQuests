@@ -112,6 +112,7 @@ dependencies {
     implementation "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
     implementation "curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}"
     implementation "curse.maven:ftb-filter-system-943925:${filter_system_neoforge_21}"
+    implementation "curse.maven:jade-324717:${jade_neoforge_21}"
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

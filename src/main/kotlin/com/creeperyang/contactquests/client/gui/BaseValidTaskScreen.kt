@@ -78,7 +78,7 @@ abstract class BaseValidTaskScreen<T : Task>(
 
         val slot = findValidSlot(player)
         if (slot == -1) {
-            ContactQuests.debug("Screen: No valid slot found.")
+            ContactQuests.debug("屏幕：未找到有效槽位。")
             return
         }
 

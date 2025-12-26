@@ -34,7 +34,7 @@ class ParcelTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
 
     fun submitParcelTask(teamData: TeamData, player: ServerPlayer, submitItemStack: ItemStack): ItemStack {
         if (teamData.isCompleted(this)){
-            DataManager.completeParcelTask(this) // 原有的特定回调
+            DataManager.completeParcelTask(this)
             return itemStack
         }
         if (itemStack.item is MissingItem || submitItemStack.item is MissingItem) return itemStack

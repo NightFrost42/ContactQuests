@@ -1,10 +1,12 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.client.ContactQuestsClient
+import com.creeperyang.contactquests.command.ModCommands
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.DeliverySavedData
+import com.creeperyang.contactquests.registry.ModItems
 import com.creeperyang.contactquests.task.TaskRegistry
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
@@ -66,6 +68,8 @@ object ContactQuests {
         )
 
         TaskRegistry.init()
+        ModItems.register(MOD_BUS)
+        NeoForge.EVENT_BUS.register(ModCommands)
 
         MOD_BUS.addListener(::onConfigLoad)
         MOD_BUS.addListener(::onConfigReload)
@@ -74,6 +78,8 @@ object ContactQuests {
 
         runForDist(
             clientTarget = {
+                ContactQuestsClient.init()
+
                 MOD_BUS.addListener(::onClientSetup)
                 Minecraft.getInstance()
             },
@@ -91,7 +97,7 @@ object ContactQuests {
      * Fired on the mod specific event bus.
      */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-        ContactQuestsClient.init()
+//        ContactQuestsClient.init()
     }
 
     /**
