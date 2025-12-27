@@ -11,7 +11,7 @@ object RewardRegistry {
         ResourceLocation.fromNamespaceAndPath("contactquests", "parcel"),
         { id, quest -> ParcelReward(id, quest) },
         { Icon.getIcon("contact:item/parcel") }
-    )
+    ).setExcludeFromListRewards(true)
 
     val PARCEL_RANDOM: RewardType = RewardTypes.register(
         ResourceLocation.fromNamespaceAndPath("contactquests", "parcel_random"),
