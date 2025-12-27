@@ -11,6 +11,8 @@ object ContactConfig {
 
     val autoFillSpeed: ModConfigSpec.IntValue
 
+    val retryInterval: ModConfigSpec.IntValue
+
     init {
         BUILDER.comment("Contact Quests General Configuration").push("general")
 
@@ -25,6 +27,11 @@ object ContactConfig {
             .comment("0 = 立即填充 (关闭打字机效果 / Instant fill)")
             .comment("1 = 极快 (Very Fast), 2 = 正常 (Normal), >2 = 慢速 (Slow)")
             .defineInRange("auto_fill_speed", 1, 0, 100)
+
+        retryInterval = BUILDER
+            .comment("邮箱已满或发送失败时的重试检测间隔 (Retry interval when mailbox is full)")
+            .comment("单位：Tick")
+            .defineInRange("retry_interval", 10, 1, 12000)
 
         BUILDER.pop()
 

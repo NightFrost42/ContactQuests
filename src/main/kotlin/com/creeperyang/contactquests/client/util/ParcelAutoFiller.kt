@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.client.util
 
 import com.creeperyang.contactquests.ContactQuests
-import com.creeperyang.contactquests.task.ParcelTask
+import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.flechazo.contact.client.gui.screen.EnvelopeScreen
 import com.flechazo.contact.client.gui.screen.WrappingPaperScreen
 import com.flechazo.contact.common.screenhandler.EnvelopeScreenHandler

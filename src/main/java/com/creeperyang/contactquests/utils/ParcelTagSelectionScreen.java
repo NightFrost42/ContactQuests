@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.utils;
 
-import com.creeperyang.contactquests.task.ParcelTask;
+import com.creeperyang.contactquests.quest.task.ParcelTask;
 import dev.ftb.mods.ftblibrary.icon.Color4I;
 import dev.ftb.mods.ftblibrary.icon.Icon;
 import dev.ftb.mods.ftblibrary.ui.Panel;

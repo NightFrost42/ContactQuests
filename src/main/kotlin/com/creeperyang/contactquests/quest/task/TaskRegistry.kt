@@ -1,4 +1,4 @@
-package com.creeperyang.contactquests.task
+package com.creeperyang.contactquests.quest.task
 
 
 import com.creeperyang.contactquests.ContactQuests

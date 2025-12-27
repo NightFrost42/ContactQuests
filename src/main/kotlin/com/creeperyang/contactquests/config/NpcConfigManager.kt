@@ -49,9 +49,14 @@ object NpcConfigManager {
         }
     }
 
-    fun syncWithQuests(parcelNpcs: Set<String>, redPacketNpcs: Set<String> = emptySet(), postcardNpcs: Set<String> = emptySet()) {
+    fun syncWithQuests(
+        parcelNpcs: Set<String>,
+        redPacketNpcs: Set<String> = emptySet(),
+        postcardNpcs: Set<String> = emptySet(),
+        rewardNpcs: Set<String> = emptySet()
+    ) {
         var hasChanges = false
-        val allNpcs = parcelNpcs + redPacketNpcs + postcardNpcs
+        val allNpcs = parcelNpcs + redPacketNpcs + postcardNpcs + rewardNpcs
 
         for (name in allNpcs) {
             if (!npcMap.containsKey(name)) {

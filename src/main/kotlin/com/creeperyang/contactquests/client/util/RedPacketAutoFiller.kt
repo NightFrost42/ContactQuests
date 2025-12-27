@@ -2,7 +2,7 @@ package com.creeperyang.contactquests.client.util
 
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.mixin.RedPacketEnvelopeScreenAccessor
-import com.creeperyang.contactquests.task.RedPacketTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.flechazo.contact.client.gui.screen.RedPacketEnvelopeScreen
 import com.flechazo.contact.common.screenhandler.RedPacketEnvelopeScreenHandler
 import dev.ftb.mods.ftbquests.client.ClientQuestFile

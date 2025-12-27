@@ -35,5 +35,6 @@
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
   "message.contactquests.binding.uuid": "队伍 UUID：%s",
   "jade.contactquests.unknown_team": "未知队伍 (ID: %s...)",
-  "config.jade.plugin_contactquests.mailbox_team_info": "邮箱队伍信息"
+  "config.jade.plugin_contactquests.mailbox_team_info": "邮箱队伍信息",
+  "contactquests.message.parcel_received": "你的队伍收到了一个新的任务包裹！"
 }

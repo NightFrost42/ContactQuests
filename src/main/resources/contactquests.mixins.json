@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "EnquireAddresseeMessageMixin",
+    "ItemRewardAccessor",
     "MailboxBlockEntityMixin",
     "MailboxBlockMixin"
   ],
@@ -12,6 +13,7 @@
     "GuiProvidersMixin",
     "PostcardEditScreenAccessor",
     "RedPacketEnvelopeScreenAccessor",
+    "RewardButtonMixin",
     "TaskButtonMixin"
   ],
   "injectors": {

@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.client.util.RedPacketAutoFiller
-import com.creeperyang.contactquests.task.RedPacketTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.flechazo.contact.common.item.RedPacketEnvelopeItem
 import dev.ftb.mods.ftblibrary.util.TooltipList
 import net.minecraft.ChatFormatting

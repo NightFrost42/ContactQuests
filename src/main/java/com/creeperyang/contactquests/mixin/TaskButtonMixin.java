@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.mixin;
 
-import com.creeperyang.contactquests.task.ParcelTask;
-import com.creeperyang.contactquests.task.RedPacketTask;
+import com.creeperyang.contactquests.quest.task.ParcelTask;
+import com.creeperyang.contactquests.quest.task.RedPacketTask;
 import com.creeperyang.contactquests.utils.ParcelTagSelectionScreen;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;

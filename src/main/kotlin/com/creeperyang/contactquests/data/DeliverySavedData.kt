@@ -1,8 +1,8 @@
 package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.ContactQuests
-import com.creeperyang.contactquests.task.ParcelTask
-import com.creeperyang.contactquests.task.RedPacketTask
+import com.creeperyang.contactquests.quest.task.ParcelTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.HolderLookup

@@ -3,7 +3,7 @@ package com.creeperyang.contactquests.client.util
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.mixin.PostcardEditScreenAccessor
-import com.creeperyang.contactquests.task.PostcardTask
+import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.screen.PostcardEditScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen

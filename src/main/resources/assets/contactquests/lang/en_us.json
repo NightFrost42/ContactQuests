@@ -35,5 +35,6 @@
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
   "message.contactquests.binding.uuid": "Team UUID: %s",
   "jade.contactquests.unknown_team": "Unknown Team (ID: %s...)",
-  "config.jade.plugin_contactquests.mailbox_team_info": "Mailbox Team Info"
+  "config.jade.plugin_contactquests.mailbox_team_info": "Mailbox Team Info",
+  "contactquests.message.parcel_received": "Your team has received a new quest parcel!"
 }

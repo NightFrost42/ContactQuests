@@ -22,16 +22,25 @@ public class MailboxBlockMixin {
             )
     )
     private boolean interceptOwnerCheck(Object ownerUuidObj, Object playerUuidObj) {
-        if (!(ownerUuidObj instanceof UUID mailboxTeamID) || !(playerUuidObj instanceof UUID playerUUID)) {
+        if (!(ownerUuidObj instanceof UUID mailboxID) || !(playerUuidObj instanceof UUID playerUUID)) {
             return Objects.equals(ownerUuidObj, playerUuidObj);
         }
 
-        Optional<Team> teamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayerID(playerUUID);
+        if (mailboxID.equals(playerUUID)) {
+            return true;
+        }
 
-        if (teamOpt.isPresent()) {
-            UUID currentPlayerTeamID = teamOpt.get().getId();
+        try {
+            Optional<Team> teamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayerID(playerUUID);
 
-            return mailboxTeamID.equals(currentPlayerTeamID);
+            if (teamOpt.isPresent()) {
+                UUID currentPlayerTeamID = teamOpt.get().getId();
+                if (mailboxID.equals(currentPlayerTeamID)) {
+                    return true;
+                }
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         return false;

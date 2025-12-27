@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.client.util.PostcardAutoFiller
-import com.creeperyang.contactquests.task.PostcardTask
+import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.hud.TexturePos
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager

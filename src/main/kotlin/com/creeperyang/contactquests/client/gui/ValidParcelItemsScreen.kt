@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.client.util.ParcelAutoFiller
-import com.creeperyang.contactquests.task.ParcelTask
+import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.flechazo.contact.common.item.EnvelopeItem
 import com.flechazo.contact.common.item.WrappingPaperItem
 import dev.ftb.mods.ftblibrary.util.TooltipList

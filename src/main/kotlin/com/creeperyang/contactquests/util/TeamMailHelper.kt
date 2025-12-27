@@ -2,8 +2,10 @@ package com.creeperyang.contactquests.util
 
 import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.common.storage.MailboxDataManager
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
+import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.ItemStack
@@ -43,6 +45,26 @@ object TeamMailHelper {
 
         if (pos.dimension() == level.dimension() && level.isLoaded(pos.pos())) {
             MailboxManager.updateState(level, pos.pos())
+        }
+
+        if (!level.isClientSide) {
+            val server = level.server
+            val teamManager = FTBTeamsAPI.api().manager
+
+            val team = teamManager.getTeamByID(teamId).orElse(null)
+
+            if (team != null) {
+                val message = Component.translatable("contactquests.message.parcel_received")
+                    .withStyle(net.minecraft.ChatFormatting.GREEN)
+
+                val members = team.members
+
+                for (player in server.playerList.players) {
+                    if (members.contains(player.uuid)) {
+                        player.sendSystemMessage(message)
+                    }
+                }
+            }
         }
 
         return null

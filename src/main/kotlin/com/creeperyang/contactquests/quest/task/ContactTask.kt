@@ -1,4 +1,4 @@
-package com.creeperyang.contactquests.task
+package com.creeperyang.contactquests.quest.task
 
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon

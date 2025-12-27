@@ -3,9 +3,10 @@ package com.creeperyang.contactquests.data
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
-import com.creeperyang.contactquests.task.ParcelTask
-import com.creeperyang.contactquests.task.PostcardTask
-import com.creeperyang.contactquests.task.RedPacketTask
+import com.creeperyang.contactquests.quest.reward.ParcelRewardBase
+import com.creeperyang.contactquests.quest.task.ParcelTask
+import com.creeperyang.contactquests.quest.task.PostcardTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.flechazo.contact.common.item.ParcelItem
 import com.flechazo.contact.common.item.PostcardItem
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
@@ -30,6 +31,9 @@ object DataManager {
     val postcardTasks: MutableMap<Long, PostcardTask> = mutableMapOf()
     val postcardItemTestFunc: MutableMap<Long, (ItemStack) -> Boolean> = mutableMapOf()
 
+    @JvmField
+    val rewardSenders: MutableSet<String> = mutableSetOf()
+
     fun init() {
         clearAllMaps()
         NpcConfigManager.reload()
@@ -43,10 +47,21 @@ object DataManager {
                         is PostcardTask -> registerTask(task, task.targetAddressee, postcardReceiver, postcardTasks, postcardItemTestFunc, task::test)
                     }
                 }
+
+                quest.rewards.forEach { reward ->
+                    if (reward is ParcelRewardBase) {
+                        rewardSenders.add(reward.targetAddressee)
+                    }
+                }
             }
         }
 
-        NpcConfigManager.syncWithQuests(parcelReceiver.keys, redPacketReceiver.keys, postcardReceiver.keys)
+        NpcConfigManager.syncWithQuests(
+            parcelReceiver.keys,
+            redPacketReceiver.keys,
+            postcardReceiver.keys,
+            rewardSenders
+        )
     }
 
     private fun clearAllMaps() {
