@@ -74,7 +74,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         super.fillConfigGroup(config)
         config.addItemStack("item", item, { v -> item = v }, ItemStack.EMPTY, true, false).nameKey =
             "ftbquests.reward.ftbquests.item"
-        config.addInt("count", count, { v -> count = v }, 1, 1, 8192)
+        config.addInt("count", count, { v -> count = v }, 1, 1, 8192).nameKey = "ftbquests.reward.parcel.item_count"
         config.addInt("random_bonus", randomBonus, { v -> randomBonus = v }, 0, 0, 8192).nameKey =
             "ftbquests.reward.random_bonus"
     }

@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.data
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.flechazo.contact.common.item.ParcelItem
+import com.flechazo.contact.common.item.PostcardItem
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -17,25 +18,24 @@ object RewardDistributionManager {
 
     private val buffer: MutableMap<UUID, MutableMap<String, MutableList<ItemStack>>> = mutableMapOf()
 
-    private data class DeliveryKey(val sender: String, val isEnder: Boolean, val packaging: PackagingType) {
-        override fun toString(): String = "$sender|$isEnder|${packaging.id}"
+    private data class DeliveryKey(val sender: String, val isEnder: Boolean) {
+        override fun toString(): String = "$sender|$isEnder"
 
         companion object {
             fun fromString(str: String): DeliveryKey {
                 val parts = str.split("|")
                 return DeliveryKey(
                     parts[0],
-                    parts[1].toBoolean(),
-                    PackagingType.entries.find { it.id == parts[2] } ?: PackagingType.PARCEL
+                    parts[1].toBoolean()
                 )
             }
         }
     }
 
-    fun distribute(player: ServerPlayer, stack: ItemStack, sender: String, isEnder: Boolean, packaging: PackagingType) {
+    fun distribute(player: ServerPlayer, stack: ItemStack, sender: String, isEnder: Boolean) {
         if (stack.isEmpty) return
 
-        val key = DeliveryKey(sender, isEnder, packaging).toString()
+        val key = DeliveryKey(sender, isEnder).toString()
         val playerMap = buffer.computeIfAbsent(player.uuid) { mutableMapOf() }
         val items = playerMap.computeIfAbsent(key) { mutableListOf() }
 
@@ -70,9 +70,8 @@ object RewardDistributionManager {
         buffer.forEach { (playerId, keyMap) ->
             keyMap.forEach { (keyStr, items) ->
                 val key = DeliveryKey.fromString(keyStr)
-                val parcels = packItems(items, key.isEnder, key.packaging, key.sender)
+                val parcels = packItems(items, key.isEnder, key.sender)
 
-                // 计算延迟：如果是 Ender 或者 Config 关闭了延迟，则为 0
                 val delayTicks =
                     if (key.isEnder || !ContactConfig.enableDeliveryTime.get()) 0 else NpcConfigManager.getDeliveryTime(
                         key.sender
@@ -89,7 +88,6 @@ object RewardDistributionManager {
     private fun packItems(
         items: List<ItemStack>,
         isEnder: Boolean,
-        packaging: PackagingType,
         sender: String
     ): List<ItemStack> {
         val resultParcels = mutableListOf<ItemStack>()
@@ -105,6 +103,11 @@ object RewardDistributionManager {
         var slotIndex = 0
 
         for (item in items) {
+            if (item.item is PostcardItem) {
+                resultParcels.add(item)
+                continue
+            }
+
             var remaining = item.copy()
             while (!remaining.isEmpty) {
                 if (slotIndex >= slotsPerParcel) {

@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase;
+import com.creeperyang.contactquests.quest.reward.PostcardReward;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ftb.mods.ftblibrary.icon.Icon;
@@ -27,7 +28,7 @@ public abstract class RewardButtonMixin {
 
     @Inject(method = "draw", at = @At("TAIL"))
     private void contactQuests_drawOverlay(GuiGraphics graphics, Theme theme, int x, int y, int w, int h, CallbackInfo ci) {
-        if (!(reward instanceof ParcelRewardBase parcelReward)) {
+        if (!(reward instanceof ParcelRewardBase parcelReward) || reward instanceof PostcardReward) {
             return;
         }
 

@@ -25,6 +25,12 @@ object RewardRegistry {
         { Icons.COLOR_HSB }
     ).setExcludeFromListRewards(true)
 
+    val POSTCARD: RewardType = RewardTypes.register(
+        ResourceLocation.fromNamespaceAndPath("contactquests", "postcard"),
+        { id, quest -> PostcardReward(id, quest) },
+        { Icon.getIcon("contact:item/postcard") }
+    ).setExcludeFromListRewards(true)
+
     fun init() {
         // Class loading trigger
     }

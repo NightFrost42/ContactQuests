@@ -1,5 +1,8 @@
 {
   "command.contactquests.getbinder.success": "已获取 FTB 队伍绑定卡",
+  "config.jade.plugin_contactquests.mailbox_team_info": "邮箱队伍信息",
+  "contact.quest.is_ender": "是否为末影样式",
+  "contact.quest.sender_name": "发送者名",
   "contactquest.gui.back": "返回",
   "contactquest.gui.fill_postcard": "一键填充明信片",
   "contactquest.gui.missing_postcard": "缺少明信片",
@@ -9,6 +12,7 @@
   "contactquest.gui.submit": "提交",
   "contactquest.msg.copied": "收件人已复制到剪贴板",
   "contactquest.postcard.any": "任意样式",
+  "contactquest.postcard.default_style": "默认样式",
   "contactquest.task.click_to_submit": "点击以提交",
   "contactquest.task.error_check": "检查你的Mod物品或设置",
   "contactquest.task.ftbquests.parcel.valid_for": "需要的包裹内容",
@@ -22,6 +26,12 @@
   "contactquest.task.postcard.text": "明信片内容（用\\n代表换行）",
   "contactquest.task.red_packet.blessing": "红包中祝福语",
   "contactquests.command.give_binder": "已获取 FTB 队伍绑定器",
+  "contactquests.message.parcel_received": "你的队伍收到了一个新的任务包裹！",
+  "ftbquests.reward.contactquests.parcel": "包裹",
+  "ftbquests.reward.contactquests.parcel_all_table": "全table奖励包裹",
+  "ftbquests.reward.contactquests.parcel_random": "随机奖励包裹",
+  "ftbquests.reward.contactquests.postcard": "明信片",
+  "ftbquests.reward.parcel.item_count": "物品数量",
   "ftbquests.task.contactquests.parcel_task": "邮递任务",
   "ftbquests.task.contactquests.parcel_task.count": "需要邮寄的数量",
   "ftbquests.task.contactquests.postcard_task": "明信片任务",
@@ -30,11 +40,9 @@
   "ftbquests.task.contactquests.red_packet_task.count": "红包中需要的物品数量",
   "item.contactquests.team_binding_card": "团队绑定器",
   "jade.contactquests.team_owner": "所属队伍: %s",
+  "jade.contactquests.unknown_team": "未知队伍 (ID: %s...)",
   "message.contactquests.binding.exists": "绑定失败：该队伍已在 %2$s 的 %1$s 处绑定了邮箱！请先拆除旧邮箱。",
   "message.contactquests.binding.no_team": "绑定失败：你未加入任何 FTB 队伍！",
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
-  "message.contactquests.binding.uuid": "队伍 UUID：%s",
-  "jade.contactquests.unknown_team": "未知队伍 (ID: %s...)",
-  "config.jade.plugin_contactquests.mailbox_team_info": "邮箱队伍信息",
-  "contactquests.message.parcel_received": "你的队伍收到了一个新的任务包裹！"
+  "message.contactquests.binding.uuid": "队伍 UUID：%s"
 }

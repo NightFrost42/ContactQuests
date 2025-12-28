@@ -1,5 +1,8 @@
 {
   "command.contactquests.getbinder.success": "Given FTB Team Binding Card",
+  "config.jade.plugin_contactquests.mailbox_team_info": "Mailbox Team Info",
+  "contact.quest.is_ender": "whether it is an ender type",
+  "contact.quest.sender_name": "sender",
   "contactquest.gui.back": "back",
   "contactquest.gui.fill_postcard": "fill postcards with one click",
   "contactquest.gui.missing_postcard": "missing postcards",
@@ -9,6 +12,7 @@
   "contactquest.gui.submit": "submit",
   "contactquest.msg.copied": "the recipient has been copied to the clipboard",
   "contactquest.postcard.any": "any style",
+  "contactquest.postcard.default_style": "Default style",
   "contactquest.task.click_to_submit": "click to submit",
   "contactquest.task.error_check": "Check Mod Items or Config!",
   "contactquest.task.ftbquests.parcel.valid_for": "required package contents",
@@ -22,6 +26,12 @@
   "contactquest.task.postcard.text": "Postcard content (use \\n for line breaks)",
   "contactquest.task.red_packet.blessing": "blessings in red envelopes",
   "contactquests.command.give_binder": "acquired the ftb team binder",
+  "contactquests.message.parcel_received": "Your team has received a new quest parcel!",
+  "ftbquests.reward.contactquests.parcel": "parcel",
+  "ftbquests.reward.contactquests.parcel_all_table": "All table reward parcel",
+  "ftbquests.reward.contactquests.parcel_random": "random reward parcel",
+  "ftbquests.reward.contactquests.postcard": "postcard",
+  "ftbquests.reward.parcel.item_count": "item count",
   "ftbquests.task.contactquests.parcel_task": "parcel tasks",
   "ftbquests.task.contactquests.parcel_task.count": "quantity to be mailed",
   "ftbquests.task.contactquests.postcard_task": "postcard tasks",
@@ -30,11 +40,9 @@
   "ftbquests.task.contactquests.red_packet_task.count": "the number of items needed in the red envelope",
   "item.contactquests.team_binding_card": "team binding card",
   "jade.contactquests.team_owner": "Team Owner: %s",
+  "jade.contactquests.unknown_team": "Unknown Team (ID: %s...)",
   "message.contactquests.binding.exists": "Binding failed: Team already has a mailbox at %1$s in %2$s! Please remove the old one first.",
   "message.contactquests.binding.no_team": "Binding failed: You are not in any FTB Team!",
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
-  "message.contactquests.binding.uuid": "Team UUID: %s",
-  "jade.contactquests.unknown_team": "Unknown Team (ID: %s...)",
-  "config.jade.plugin_contactquests.mailbox_team_info": "Mailbox Team Info",
-  "contactquests.message.parcel_received": "Your team has received a new quest parcel!"
+  "message.contactquests.binding.uuid": "Team UUID: %s"
 }
