@@ -50,7 +50,7 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
                 .map(t -> getTheme().getStringWidth(t.location().toString()))
                 .max(Comparator.naturalOrder())
                 .orElse(100);
-        setSize(Math.max(titleW, w) + 20, getScreen().getGuiScaledHeight() * 3 / 4);
+        setSize(Math.max(titleW, w) + 20, getGui().getWindow().getGuiScaledHeight() * 3 / 4);
 
         return true;
     }

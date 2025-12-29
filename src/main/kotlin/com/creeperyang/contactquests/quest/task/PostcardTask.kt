@@ -12,7 +12,7 @@ import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
 import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
-import dev.ftb.mods.ftblibrary.ui.misc.ButtonListBaseScreen
+import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
@@ -140,9 +140,16 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
             override fun onClicked(widget: Widget, button: MouseButton, callback: ConfigCallback) {
                 val self = this
 
-                object : ButtonListBaseScreen() {
+                object : AbstractButtonListScreen() {
                     init {
-                        this.title = Component.translatable("contactquest.task.postcard.style")
+
+                        title = Component.translatable("contactquest.task.postcard.style")
+
+                        setHasSearchBox(true)
+
+                        showBottomPanel(false)
+
+                        showCloseButton(true)
                     }
 
                     override fun addButtons(panel: Panel) {
@@ -161,6 +168,14 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
                                 }
                             })
                         }
+                    }
+
+                    override fun doCancel() {
+                        closeGui()
+                    }
+
+                    override fun doAccept() {
+                        closeGui()
                     }
                 }.openGui()
             }

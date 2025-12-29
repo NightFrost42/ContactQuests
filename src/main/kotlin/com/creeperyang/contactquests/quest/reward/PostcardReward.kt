@@ -12,7 +12,7 @@ import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
 import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
-import dev.ftb.mods.ftblibrary.ui.misc.ButtonListBaseScreen
+import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
 import net.minecraft.core.HolderLookup
@@ -152,10 +152,13 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         private val configValue: PostcardStyleConfig,
         private val callback: ConfigCallback,
         private val reward: PostcardReward
-    ) : ButtonListBaseScreen() {
+    ) : AbstractButtonListScreen() {
 
         init {
-            this.title = Component.translatable("contactquest.task.postcard.style")
+            title = Component.translatable("contactquest.task.postcard.style")
+            setHasSearchBox(true)
+            showBottomPanel(false)
+            showCloseButton(true)
         }
 
         override fun addButtons(panel: Panel) {
@@ -166,6 +169,14 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
                 val btnName = reward.getStyleDisplayName(styleId)
                 panel.add(StyleButton(panel, btnName, styleId))
             }
+        }
+
+        override fun doCancel() {
+            closeGui()
+        }
+
+        override fun doAccept() {
+            closeGui()
         }
 
         private inner class StyleButton(panel: Panel, title: Component, val styleId: String) :

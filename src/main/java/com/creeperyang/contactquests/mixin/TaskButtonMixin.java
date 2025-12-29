@@ -80,7 +80,7 @@ public abstract class TaskButtonMixin {
             return;
         }
 
-        var tags = parcelTask.getItemStack().getItem().builtInRegistryHolder().tags().toList();
+        var tags = parcelTask.getItemStack().getTags().toList();
         if (tags.isEmpty() || ItemMatchingSystem.INSTANCE.isItemFilter(parcelTask.getItemStack())) {
             return;
         }

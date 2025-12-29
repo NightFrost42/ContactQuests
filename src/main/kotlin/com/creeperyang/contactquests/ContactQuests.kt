@@ -5,8 +5,8 @@ import com.creeperyang.contactquests.command.ModCommands
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.data.DeliverySavedData
 import com.creeperyang.contactquests.data.RewardDistributionManager
+import com.creeperyang.contactquests.data.TaskDeliverySavedData
 import com.creeperyang.contactquests.quest.reward.RewardRegistry
 import com.creeperyang.contactquests.quest.task.TaskRegistry
 import com.creeperyang.contactquests.registry.ModItems
@@ -139,7 +139,7 @@ object ContactQuests {
         val server = event.server ?: return
         val overworld = server.overworld()
 
-        DeliverySavedData[overworld].tick(overworld)
+        TaskDeliverySavedData[overworld].tick(overworld)
         RewardDistributionManager.onServerTick(overworld)
     }
 

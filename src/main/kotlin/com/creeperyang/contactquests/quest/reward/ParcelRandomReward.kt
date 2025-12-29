@@ -13,6 +13,7 @@ import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.QuestObjectType
 import dev.ftb.mods.ftbquests.quest.loot.RewardTable
 import dev.ftb.mods.ftbquests.quest.reward.ItemReward
+import dev.ftb.mods.ftbquests.quest.reward.Reward
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
 import dev.ftb.mods.ftbquests.util.ConfigQuestObject
 import net.minecraft.core.HolderLookup
@@ -41,19 +42,22 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
         val rewards = currentTable.generateWeightedRandomRewards(player.random, 1, false)
 
         rewards.forEach { weightedReward ->
-            val reward = weightedReward.reward
-            if (reward is ItemReward) {
-                val stack = reward.item.copy()
+            handleReward(player, weightedReward.reward, notify)
+        }
+    }
 
-                val rBonus = (reward as ItemRewardAccessor).`contactquests$getRandomBonus`()
-                val bonus = player.level().random.nextInt(rBonus + 1)
+    protected fun handleReward(player: ServerPlayer, reward: Reward, notify: Boolean) {
+        if (reward is ItemReward) {
+            val stack = reward.item.copy()
 
-                stack.count = reward.count + bonus
+            val rBonus = (reward as ItemRewardAccessor).`contactquests$getRandomBonus`()
+            val bonus = player.level().random.nextInt(rBonus + 1)
 
-                distributeItem(player, stack)
-            } else {
-                reward.claim(player, notify)
-            }
+            stack.count = reward.count + bonus
+
+            distributeItem(player, stack)
+        } else {
+            reward.claim(player, notify)
         }
     }
 

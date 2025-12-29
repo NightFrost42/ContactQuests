@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.quest.reward
 
+import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftbquests.quest.Quest
@@ -19,6 +20,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
     protected fun distributeItem(player: ServerPlayer, stack: ItemStack) {
         if (stack.isEmpty) return
         RewardDistributionManager.distribute(player, stack, targetAddressee, isEnder)
+        CollectionSavedData.get(player.serverLevel()).returnReward(player, targetAddressee)
     }
 
     override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {

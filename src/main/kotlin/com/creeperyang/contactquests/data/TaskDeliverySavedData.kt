@@ -15,7 +15,7 @@ import net.minecraft.util.datafix.DataFixTypes
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.*
 
-class DeliverySavedData: SavedData() {
+class TaskDeliverySavedData : SavedData() {
     data class PendingParcel(
         val playerUUID: UUID,
         val taskId: Long,
@@ -128,16 +128,16 @@ class DeliverySavedData: SavedData() {
     }
 
     companion object {
-        operator fun get(level: ServerLevel): DeliverySavedData {
+        operator fun get(level: ServerLevel): TaskDeliverySavedData {
             val storage = level.dataStorage
             return storage.computeIfAbsent(
-                Factory(::DeliverySavedData, ::load, DataFixTypes.LEVEL),
+                Factory(::TaskDeliverySavedData, ::load, DataFixTypes.LEVEL),
                 "contactquests_deliveries"
             )
         }
 
-        private fun load(tag: CompoundTag, provider: HolderLookup.Provider): DeliverySavedData {
-            val data = DeliverySavedData()
+        private fun load(tag: CompoundTag, provider: HolderLookup.Provider): TaskDeliverySavedData {
+            val data = TaskDeliverySavedData()
             val list = tag.getList("PendingParcels", Tag.TAG_COMPOUND.toInt())
             for (i in 0 until list.size) {
                 val pTag = list.getCompound(i)

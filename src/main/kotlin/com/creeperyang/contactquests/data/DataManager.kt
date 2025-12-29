@@ -190,6 +190,8 @@ object DataManager {
                 return true
             }
         }
+        CollectionSavedData.get(player.server.overworld()).addItem(player, recipientName, initialStack)
+
         return false
     }
 
@@ -204,7 +206,7 @@ object DataManager {
     ): Boolean {
         if (sendTime > 0) {
             val overworld = player.server.overworld()
-            DeliverySavedData[overworld].addParcel(player, task.id, sendTime, recipientName)
+            TaskDeliverySavedData[overworld].addParcel(player, task.id, sendTime, recipientName)
 
             val taskCount = when (task) {
                 is ParcelTask -> task.count

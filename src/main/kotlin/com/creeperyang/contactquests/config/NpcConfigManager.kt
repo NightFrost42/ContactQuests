@@ -3,14 +3,62 @@ package com.creeperyang.contactquests.config
 import com.creeperyang.contactquests.ContactQuests
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
 import net.neoforged.fml.loading.FMLPaths
 import java.io.File
 import java.io.FileReader
 import java.io.FileWriter
+import kotlin.random.Random
+
+enum class ErrorSolveType {
+    @SerializedName("NOW")
+    NOW,
+
+    @SerializedName("Save")
+    SAVE,
+
+    @SerializedName("WithReward")
+    WITHREWARDS,
+
+    @SerializedName("Discard")
+    DISCARD;
+}
+
+enum class StyleType {
+    @SerializedName("Random")
+    RANDOM,
+
+    @SerializedName("Specific")
+    SPECIFIC,
+
+    @SerializedName("Same")
+    SAME;
+}
+
+data class MessageData(
+    var text: String = "Hello World!",
+    var style: String = "default",
+    var isEnder: Boolean = false
+)
+
+data class ErrorSolveData(
+    var count: Int = 1,
+
+    var returnType: ErrorSolveType = ErrorSolveType.NOW,
+
+    var styleType: StyleType = StyleType.RANDOM,
+
+    var style: String = "default",
+
+    var isAllEnder: Boolean = false,
+
+    var message: MutableList<MessageData> = mutableListOf(MessageData())
+)
 
 data class NpcData(
-    var deliveryTime: Int = 0
+    var deliveryTime: Int = 0,
+    var errorSolve: MutableList<ErrorSolveData> = mutableListOf(ErrorSolveData())
 )
 
 object NpcConfigManager {
@@ -42,7 +90,7 @@ object NpcConfigManager {
                     }
                 }
             } catch (e: Exception) {
-                ContactQuests.error("读取npc_config.json失败", e)
+                ContactQuests.error("读取npc_config.json失败，可能是JSON结构不匹配", e)
             }
         } else {
             save()
@@ -77,6 +125,19 @@ object NpcConfigManager {
 
     fun getDeliveryTime(name: String): Int {
         return getNpcData(name).deliveryTime
+    }
+
+    fun getErrorSolve(name: String, limit: Int): ErrorSolveData? {
+        val data = getNpcData(name)
+        return data.errorSolve
+            .filter { it.count < limit }
+            .maxByOrNull { it.count }
+    }
+
+    fun getMessage(data: ErrorSolveData): MessageData {
+        val messageCount = data.message.size
+        val randomNum = Random.nextInt(messageCount)
+        return data.message[randomNum]
     }
 
     private fun save() {
