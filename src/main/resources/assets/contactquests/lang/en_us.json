@@ -47,5 +47,6 @@
   "message.contactquests.binding.no_team": "Binding failed: You are not in any FTB Team!",
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
   "message.contactquests.binding.uuid": "Team UUID: %s",
-  "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d."
+  "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d.",
+  "contactquests.sidebar.get_binder": "Click to get Team Mailbox Binder"
 }

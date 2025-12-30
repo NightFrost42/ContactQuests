@@ -7,6 +7,7 @@ import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.data.TaskDeliverySavedData
+import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.quest.reward.RewardRegistry
 import com.creeperyang.contactquests.quest.task.TaskRegistry
 import com.creeperyang.contactquests.registry.ModItems
@@ -76,8 +77,8 @@ object ContactQuests {
 
         MOD_BUS.addListener(::onConfigLoad)
         MOD_BUS.addListener(::onConfigReload)
-
         MOD_BUS.addListener(::onCommonSetup)
+        MOD_BUS.addListener(NetworkHandler::register)
 
         runForDist(
             clientTarget = {
