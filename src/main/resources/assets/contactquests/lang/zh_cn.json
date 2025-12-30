@@ -47,5 +47,6 @@
   "message.contactquests.binding.no_team": "绑定失败：你未加入任何 FTB 队伍！",
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
   "message.contactquests.binding.uuid": "队伍 UUID：%s",
-  "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。"
+  "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。",
+  "contactquests.sidebar.get_binder": "点击以获得团队邮箱绑定器"
 }

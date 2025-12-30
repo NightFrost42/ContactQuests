@@ -32,34 +32,60 @@ object ModCommands {
 
         dispatcher.register(
             Commands.literal("contactquests")
-                .requires { source -> source.hasPermission(2) }
                 .then(
-                    Commands.literal("givebinder")
-                        .then(
-                            Commands.argument("target", EntityArgument.player())
-                                .executes(this::giveBinder)
-                        )
+                    Commands.literal("get_binder_internal")
+                        .executes(this::giveSlefBinder)
                 )
                 .then(
-                    Commands.literal("removedata")
+                    Commands.literal("admin")
                         .then(
-                            Commands.argument("npc", StringArgumentType.string())
-                                .suggests(NPC_NAME_SUGGESTION_PROVIDER)
-                                .executes(this::removeData)
-                        )
-                )
-                .then(
-                    Commands.literal("setcount")
-                        .then(
-                            Commands.argument("npc", StringArgumentType.string())
-                                .suggests(NPC_NAME_SUGGESTION_PROVIDER)
+                            Commands.literal("givebinder")
                                 .then(
-                                    Commands.argument("count", IntegerArgumentType.integer(0))
-                                        .executes(this::setCount)
+                                    Commands.argument("target", EntityArgument.player())
+                                        .executes(this::giveBinder)
                                 )
                         )
-                )
+                        .then(
+                            Commands.literal("removedata")
+                                .then(
+                                    Commands.argument("npc", StringArgumentType.string())
+                                        .suggests(NPC_NAME_SUGGESTION_PROVIDER)
+                                        .executes(this::removeData)
+                                )
+                        )
+                        .then(
+                            Commands.literal("setcount")
+                                .then(
+                                    Commands.argument("npc", StringArgumentType.string())
+                                        .suggests(NPC_NAME_SUGGESTION_PROVIDER)
+                                        .then(
+                                            Commands.argument("count", IntegerArgumentType.integer(0))
+                                                .executes(this::setCount)
+                                        )
+                                )
+                        )
+                ).requires { source -> source.hasPermission(2) }
         )
+    }
+
+    private fun giveSlefBinder(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val player = context.source.playerOrException
+            val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
+
+            if (!player.inventory.add(itemStack)) {
+                player.drop(itemStack, false)
+            }
+
+            context.source.sendSuccess(
+                { Component.translatable("contactquests.command.give_binder") },
+                false
+            )
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing command", e)
+            return 0
+        }
     }
 
     private fun giveBinder(context: CommandContext<CommandSourceStack>): Int {
