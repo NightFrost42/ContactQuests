@@ -120,3 +120,5 @@ runs/
 /qodana.yaml
 /src/main/resources/assets/contactquests/textures/TeamMailBound.aseprite
 /src/main/resources/assets/contactquests/textures/item/team_binding_card.aseprite
+!/frontpage.png
+!/logo.png
