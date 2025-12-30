@@ -96,23 +96,39 @@ object DataManager {
     fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, parcel: ItemContainerContents, recipientName: String): Boolean {
         val teamData = getTeamData(player) ?: return false
         var anyConsumed = false
-
+        val rejectedItems = ArrayList<ItemStack>()
         parcel.stream().forEach { itemStack ->
-            if (processSingleItem(player, teamData, itemStack, parcelStack, recipientName, parcelStrategy)) {
+            val consumed = processSingleItem(player, teamData, itemStack, parcelStack, recipientName, parcelStrategy)
+            if (consumed) {
                 anyConsumed = true
+            } else {
+                rejectedItems.add(itemStack)
             }
         }
+
+        if (rejectedItems.isNotEmpty()) {
+            CollectionSavedData.get(player.server.overworld()).addItems(player, recipientName, rejectedItems)
+        }
+
         return anyConsumed
     }
 
     fun matchRedPacketTaskItem(player: ServerPlayer, redPacket: ItemStack, recipientName: String): Boolean {
         val teamData = getTeamData(player) ?: return false
-        return processSingleItem(player, teamData, redPacket, redPacket, recipientName, redPacketStrategy)
+        val consumed = processSingleItem(player, teamData, redPacket, redPacket, recipientName, redPacketStrategy)
+        if (!consumed) {
+            CollectionSavedData.get(player.server.overworld()).addItem(player, recipientName, redPacket)
+        }
+        return consumed
     }
 
     fun matchPostcardTaskItem(player: ServerPlayer, postcard: ItemStack, recipientName: String): Boolean {
         val teamData = getTeamData(player) ?: return false
-        return processSingleItem(player, teamData, postcard, postcard, recipientName, postcardStrategy)
+        val consumed = processSingleItem(player, teamData, postcard, postcard, recipientName, postcardStrategy)
+        if (!consumed) {
+            CollectionSavedData.get(player.server.overworld()).addItem(player, recipientName, postcard)
+        }
+        return consumed
     }
 
     private fun getTeamData(player: ServerPlayer): TeamData? {
@@ -190,7 +206,6 @@ object DataManager {
                 return true
             }
         }
-        CollectionSavedData.get(player.server.overworld()).addItem(player, recipientName, initialStack)
 
         return false
     }

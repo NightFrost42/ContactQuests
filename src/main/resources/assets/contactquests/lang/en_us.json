@@ -1,5 +1,4 @@
 {
-  "command.contactquests.getbinder.success": "Given FTB Team Binding Card",
   "config.jade.plugin_contactquests.mailbox_team_info": "Mailbox Team Info",
   "contact.quest.is_ender": "whether it is an ender type",
   "contact.quest.sender_name": "sender",
@@ -26,6 +25,9 @@
   "contactquest.task.postcard.text": "Postcard content (use \\n for line breaks)",
   "contactquest.task.red_packet.blessing": "blessings in red envelopes",
   "contactquests.command.give_binder": "acquired the ftb team binder",
+  "contactquests.command.give_binder.success": "Successfully gave Team Binding Card to %s.",
+  "contactquests.command.remove_data.failure": "No data found for NPC [%s].",
+  "contactquests.command.remove_data.success": "Successfully removed cached data for NPC [%s].",
   "contactquests.message.parcel_received": "Your team has received a new quest parcel!",
   "ftbquests.reward.contactquests.parcel": "parcel",
   "ftbquests.reward.contactquests.parcel_all_table": "All table reward parcel",
@@ -44,5 +46,6 @@
   "message.contactquests.binding.exists": "Binding failed: Team already has a mailbox at %1$s in %2$s! Please remove the old one first.",
   "message.contactquests.binding.no_team": "Binding failed: You are not in any FTB Team!",
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
-  "message.contactquests.binding.uuid": "Team UUID: %s"
+  "message.contactquests.binding.uuid": "Team UUID: %s",
+  "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d."
 }

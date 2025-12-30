@@ -130,7 +130,7 @@ object NpcConfigManager {
     fun getErrorSolve(name: String, limit: Int): ErrorSolveData? {
         val data = getNpcData(name)
         return data.errorSolve
-            .filter { it.count < limit }
+            .filter { it.count <= limit }
             .maxByOrNull { it.count }
     }
 

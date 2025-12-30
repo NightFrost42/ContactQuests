@@ -29,83 +29,120 @@ class CollectionSavedData : SavedData() {
     private val dataMap: MutableMap<String, ErrorData> = Collections.synchronizedMap(HashMap())
 
     fun addItem(player: ServerPlayer, name: String, stack: ItemStack) {
-        if (stack.isEmpty) return
-        val solveType = NpcConfigManager.getErrorSolve(name, getTriggerCountByName(name) + 1)?.returnType
-        when {
-            solveType == ErrorSolveType.NOW -> {
-                returnNow(player, name, stack)
-                return
+        addItems(player, name, listOf(stack))
+    }
+
+    fun addItems(player: ServerPlayer, name: String, stacks: List<ItemStack>) {
+        if (stacks.isEmpty()) return
+
+        val validStacks = stacks.filter { !it.isEmpty }
+        if (validStacks.isEmpty()) return
+
+        synchronized(dataMap) {
+            val data = dataMap.computeIfAbsent(name) {
+                ErrorData(it, 0, ArrayList())
             }
 
-            solveType != ErrorSolveType.DISCARD -> {
-                returnDiscard(player, name)
-                return
-            }
+            data.triggerCount++
+            val currentCount = data.triggerCount
 
-            else -> synchronized(dataMap) {
-                val data = dataMap.computeIfAbsent(name) {
-                    ErrorData(it, 0, ArrayList())
+            val solveType = NpcConfigManager.getErrorSolve(name, currentCount)?.returnType
+
+            when (solveType) {
+                ErrorSolveType.NOW -> {
+                    val itemsToSend = ArrayList(validStacks.map { it.copy() })
+                    returnNow(player, name, itemsToSend, currentCount)
                 }
 
-                data.triggerCount++
-
-                var merged = false
-                for (existingStack in data.itemStacks) {
-                    if (ItemStack.isSameItemSameComponents(existingStack, stack)) {
-                        existingStack.grow(stack.count)
-                        merged = true
-                        break
-                    }
+                ErrorSolveType.DISCARD -> {
+                    returnDiscard(player, name, currentCount)
                 }
 
-                if (!merged) {
-                    data.itemStacks.add(stack.copy())
+                else -> {
+                    mergeItemsIntoData(data, validStacks)
+                    setDirty()
+                    returnSave(player, name, currentCount)
                 }
-
-                setDirty()
             }
         }
     }
 
-    fun returnNow(player: ServerPlayer, name: String, stack: ItemStack) {
-        val npcData = NpcConfigManager.getErrorSolve(name, getTriggerCountByName(name) + 1) ?: return
+    private fun mergeItemsIntoData(data: ErrorData, stacks: List<ItemStack>) {
+        for (stack in stacks) {
+            var merged = false
+            for (existingStack in data.itemStacks) {
+                if (ItemStack.isSameItemSameComponents(existingStack, stack)) {
+                    existingStack.grow(stack.count)
+                    merged = true
+                    break
+                }
+            }
+            if (!merged) {
+                data.itemStacks.add(stack.copy())
+            }
+        }
+    }
+
+    private fun processAndDistribute(
+        player: ServerPlayer,
+        name: String,
+        npcData: ErrorSolveData,
+        itemsToSend: MutableList<ItemStack>
+    ) {
         val message = NpcConfigManager.getMessage(npcData)
         val isEnder: Boolean = npcData.isAllEnder || message.isEnder
-        val stacks = getStacksByName(name)
-        stacks.add(stack.copy())
-        if (stacks.first() == ItemStack.EMPTY) {
-            stacks.removeFirst()
-        }
-        stacks.add(generatePostcard(name, npcData, message))
-        for (item in stacks) {
+
+        itemsToSend.add(generatePostcard(name, npcData, message))
+
+        for (item in itemsToSend) {
             RewardDistributionManager.distribute(player, item, name, isEnder)
         }
-        dataMap[name]?.itemStacks?.clear()
     }
 
-    fun returnDiscard(player: ServerPlayer, name: String) {
-        val npcData = NpcConfigManager.getErrorSolve(name, getTriggerCountByName(name)) ?: return
-        val message = NpcConfigManager.getMessage(npcData)
-        val isEnder: Boolean = npcData.isAllEnder || message.isEnder
-        val stack = generatePostcard(name, npcData, message)
-        RewardDistributionManager.distribute(player, stack, name, isEnder)
+    fun returnNow(player: ServerPlayer, name: String, stacks: MutableList<ItemStack>, countOverride: Int? = null) {
+        val count = countOverride ?: getTriggerCountByName(name)
+        val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
+        processAndDistribute(player, name, npcData, stacks)
+    }
+
+    fun returnDiscard(player: ServerPlayer, name: String, countOverride: Int? = null) {
+        val count = countOverride ?: (getTriggerCountByName(name) + 1)
+        val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
+        val itemsToSend = mutableListOf<ItemStack>()
+        processAndDistribute(player, name, npcData, itemsToSend)
+    }
+
+    fun returnSave(player: ServerPlayer, name: String, countOverride: Int? = null) {
+        val count = countOverride ?: getTriggerCountByName(name)
+        val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
+
+        val itemsToSend = mutableListOf<ItemStack>()
+
+        processAndDistribute(player, name, npcData, itemsToSend)
     }
 
     fun returnReward(player: ServerPlayer, name: String) {
-        val solveType = NpcConfigManager.getErrorSolve(name, getTriggerCountByName(name) + 1)?.returnType
+        val currentCount = getTriggerCountByName(name) + 1
+        val solveType = NpcConfigManager.getErrorSolve(name, currentCount)?.returnType
         if (solveType == ErrorSolveType.WITHREWARDS) {
-            val npcData = NpcConfigManager.getErrorSolve(name, getTriggerCountByName(name)) ?: return
-            val message = NpcConfigManager.getMessage(npcData)
-            val isEnder = npcData.isAllEnder || message.isEnder
-            val stacks = getStacksByName(name)
-            if (stacks.first() == ItemStack.EMPTY) {
-                stacks.removeFirst()
+            val npcData = NpcConfigManager.getErrorSolve(name, currentCount) ?: return
+
+            val savedStacks = getStacksByName(name)
+            if (savedStacks.isNotEmpty() && savedStacks.first().isEmpty) {
+                savedStacks.removeFirst()
             }
-            stacks.add(generatePostcard(name, npcData, message))
-            for (item in stacks) {
+
+            val itemsToSend = ArrayList(savedStacks)
+
+            val message = NpcConfigManager.getMessage(npcData)
+            val isEnder: Boolean = npcData.isAllEnder || message.isEnder
+
+            for (item in itemsToSend) {
                 RewardDistributionManager.distribute(player, item, name, isEnder)
             }
+
             dataMap[name]?.itemStacks?.clear()
+            setDirty()
         }
     }
 
@@ -134,8 +171,11 @@ class CollectionSavedData : SavedData() {
         } else {
             PostcardItem.getPostcard(ResourceLocation.fromNamespaceAndPath("contact", "default"), isEnder)
         }
+
+        var message = messageData.text.replace("\\n", "\n")
+        message += "\n现在次数：" + getTriggerCountByName(name).toString()
         if (messageData.text.isNotEmpty()) {
-            val processedText = messageData.text.replace("\\n", "\n")
+            val processedText = message
             postcard = PostcardItem.setText(postcard, processedText)
         }
 
@@ -162,11 +202,27 @@ class CollectionSavedData : SavedData() {
         return dataMap[name]?.triggerCount ?: 0
     }
 
+    fun setTriggerCount(name: String, count: Int) {
+        synchronized(dataMap) {
+            val data = dataMap.computeIfAbsent(name) {
+                ErrorData(it, 0, ArrayList())
+            }
+            data.triggerCount = count
+            setDirty()
+        }
+    }
+
     fun removeData(name: String) {
         synchronized(dataMap) {
             if (dataMap.remove(name) != null) {
                 setDirty()
             }
+        }
+    }
+
+    fun getStoredNpcNames(): Set<String> {
+        synchronized(dataMap) {
+            return HashSet(dataMap.keys)
         }
     }
 

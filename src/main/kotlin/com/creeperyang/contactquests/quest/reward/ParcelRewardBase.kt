@@ -14,7 +14,7 @@ import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 
 abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
-    var targetAddressee: String = "Quest System"
+    var targetAddressee: String = "QuestNPC"
     var isEnder: Boolean = false
 
     protected fun distributeItem(player: ServerPlayer, stack: ItemStack) {
@@ -50,7 +50,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
-        config.addString("target_addressee", targetAddressee, { v -> targetAddressee = v }, "Quest System")
+        config.addString("target_addressee", targetAddressee, { v -> targetAddressee = v }, "QuestNPC")
             .setNameKey("contact.quest.sender_name")
             .setOrder(-3)
 

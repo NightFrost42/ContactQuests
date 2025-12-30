@@ -1,5 +1,4 @@
 {
-  "command.contactquests.getbinder.success": "已获取 FTB 队伍绑定卡",
   "config.jade.plugin_contactquests.mailbox_team_info": "邮箱队伍信息",
   "contact.quest.is_ender": "是否为末影样式",
   "contact.quest.sender_name": "发送者名",
@@ -26,6 +25,9 @@
   "contactquest.task.postcard.text": "明信片内容（用\\n代表换行）",
   "contactquest.task.red_packet.blessing": "红包中祝福语",
   "contactquests.command.give_binder": "已获取 FTB 队伍绑定器",
+  "contactquests.command.give_binder.success": "已给予 %s 团队绑定卡。",
+  "contactquests.command.remove_data.failure": "未找到 NPC [%s] 的数据。",
+  "contactquests.command.remove_data.success": "已成功清除 NPC [%s] 的缓存数据。",
   "contactquests.message.parcel_received": "你的队伍收到了一个新的任务包裹！",
   "ftbquests.reward.contactquests.parcel": "包裹",
   "ftbquests.reward.contactquests.parcel_all_table": "全table奖励包裹",
@@ -44,5 +46,6 @@
   "message.contactquests.binding.exists": "绑定失败：该队伍已在 %2$s 的 %1$s 处绑定了邮箱！请先拆除旧邮箱。",
   "message.contactquests.binding.no_team": "绑定失败：你未加入任何 FTB 队伍！",
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
-  "message.contactquests.binding.uuid": "队伍 UUID：%s"
+  "message.contactquests.binding.uuid": "队伍 UUID：%s",
+  "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。"
 }
