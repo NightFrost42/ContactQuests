@@ -72,6 +72,14 @@ versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
 
+
+[[dependencies."${mod_id}"]]
+modId = "kotlin_for_forge"
+type = "required"
+versionRange = "[5.3.0,)"
+ordering = "NONE"
+side = "BOTH"
+
 [[dependencies."${mod_id}"]]
 modId="ftbquests"
 type = "required"
