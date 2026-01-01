@@ -74,7 +74,7 @@ side = "BOTH"
 
 
 [[dependencies."${mod_id}"]]
-modId = "kotlin_for_forge"
+modId = "kotlinforforge"
 type = "required"
 versionRange = "[5.3.0,)"
 ordering = "NONE"

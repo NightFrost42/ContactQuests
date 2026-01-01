@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.client.ContactQuestsClient
+import com.creeperyang.contactquests.client.gui.ContactConfigScreen
 import com.creeperyang.contactquests.command.ModCommands
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
@@ -21,7 +22,8 @@ import net.neoforged.fml.event.config.ModConfigEvent
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent
-import net.neoforged.neoforge.common.NeoForge
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory
+import net.neoforged.neoforge.common.NeoForge.EVENT_BUS
 import net.neoforged.neoforge.event.TagsUpdatedEvent
 import net.neoforged.neoforge.event.server.ServerStartedEvent
 import net.neoforged.neoforge.event.tick.ServerTickEvent
@@ -73,12 +75,20 @@ object ContactQuests {
         TaskRegistry.init()
         RewardRegistry.init()
         ModItems.register(MOD_BUS)
-        NeoForge.EVENT_BUS.register(ModCommands)
+        EVENT_BUS.register(ModCommands)
 
         MOD_BUS.addListener(::onConfigLoad)
         MOD_BUS.addListener(::onConfigReload)
         MOD_BUS.addListener(::onCommonSetup)
         MOD_BUS.addListener(NetworkHandler::register)
+
+        ModLoadingContext.get().registerExtensionPoint(
+            IConfigScreenFactory::class.java
+        ) {
+            IConfigScreenFactory { _, parent ->
+                ContactConfigScreen(parent)
+            }
+        }
 
         runForDist(
             clientTarget = {
@@ -92,7 +102,7 @@ object ContactQuests {
                 "test"
             })
 
-        NeoForge.EVENT_BUS.register(this)
+        EVENT_BUS.register(this)
     }
 
     /**
@@ -122,6 +132,7 @@ object ContactQuests {
         } catch (e: Exception) {
             LOGGER.error("DataManager init failed", e)
         }
+
     }
 
     @SubscribeEvent

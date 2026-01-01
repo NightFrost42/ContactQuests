@@ -28,7 +28,13 @@
   "contactquests.command.give_binder.success": "已给予 %s 团队绑定卡。",
   "contactquests.command.remove_data.failure": "未找到 NPC [%s] 的数据。",
   "contactquests.command.remove_data.success": "已成功清除 NPC [%s] 的缓存数据。",
+  "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。",
+  "contactquests.config.auto_fill_speed": "自动填充间隔 (Ticks)",
+  "contactquests.config.enable_delivery": "启用物流延迟 (Delivery Delay)",
+  "contactquests.config.retry_interval": "重试间隔 (Ticks)",
+  "contactquests.config.title": "Contact Quests 设置",
   "contactquests.message.parcel_received": "你的队伍收到了一个新的任务包裹！",
+  "contactquests.sidebar.get_binder": "点击以获得团队邮箱绑定器",
   "ftbquests.reward.contactquests.parcel": "包裹",
   "ftbquests.reward.contactquests.parcel_all_table": "全table奖励包裹",
   "ftbquests.reward.contactquests.parcel_random": "随机奖励包裹",
@@ -46,7 +52,5 @@
   "message.contactquests.binding.exists": "绑定失败：该队伍已在 %2$s 的 %1$s 处绑定了邮箱！请先拆除旧邮箱。",
   "message.contactquests.binding.no_team": "绑定失败：你未加入任何 FTB 队伍！",
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
-  "message.contactquests.binding.uuid": "队伍 UUID：%s",
-  "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。",
-  "contactquests.sidebar.get_binder": "点击以获得团队邮箱绑定器"
+  "message.contactquests.binding.uuid": "队伍 UUID：%s"
 }

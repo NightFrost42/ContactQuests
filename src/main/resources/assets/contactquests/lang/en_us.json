@@ -28,7 +28,13 @@
   "contactquests.command.give_binder.success": "Successfully gave Team Binding Card to %s.",
   "contactquests.command.remove_data.failure": "No data found for NPC [%s].",
   "contactquests.command.remove_data.success": "Successfully removed cached data for NPC [%s].",
+  "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d.",
+  "contactquests.config.auto_fill_speed": "Auto Fill Speed (Ticks)",
+  "contactquests.config.enable_delivery": "Delivery Delay",
+  "contactquests.config.retry_interval": "Retry Interval (Ticks)",
+  "contactquests.config.title": "Contact Quests Config",
   "contactquests.message.parcel_received": "Your team has received a new quest parcel!",
+  "contactquests.sidebar.get_binder": "Click to get Team Mailbox Binder",
   "ftbquests.reward.contactquests.parcel": "parcel",
   "ftbquests.reward.contactquests.parcel_all_table": "All table reward parcel",
   "ftbquests.reward.contactquests.parcel_random": "random reward parcel",
@@ -46,7 +52,5 @@
   "message.contactquests.binding.exists": "Binding failed: Team already has a mailbox at %1$s in %2$s! Please remove the old one first.",
   "message.contactquests.binding.no_team": "Binding failed: You are not in any FTB Team!",
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
-  "message.contactquests.binding.uuid": "Team UUID: %s",
-  "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d.",
-  "contactquests.sidebar.get_binder": "Click to get Team Mailbox Binder"
+  "message.contactquests.binding.uuid": "Team UUID: %s"
 }
