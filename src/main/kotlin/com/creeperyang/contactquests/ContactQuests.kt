@@ -13,23 +13,23 @@ import com.creeperyang.contactquests.quest.task.TaskRegistry
 import com.creeperyang.contactquests.registry.ModItems
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.fml.ModLoadingContext
-import net.neoforged.fml.common.Mod
-import net.neoforged.fml.config.ModConfig
-import net.neoforged.fml.event.config.ModConfigEvent
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
-import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent
-import net.neoforged.neoforge.common.NeoForge
-import net.neoforged.neoforge.event.TagsUpdatedEvent
-import net.neoforged.neoforge.event.server.ServerStartedEvent
-import net.neoforged.neoforge.event.tick.ServerTickEvent
+import net.minecraftforge.common.MinecraftForge.EVENT_BUS
+import net.minecraftforge.event.TagsUpdatedEvent
+import net.minecraftforge.event.TickEvent.ServerTickEvent
+import net.minecraftforge.event.server.ServerStartedEvent
+import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.fml.ModLoadingContext
+import net.minecraftforge.fml.common.Mod
+import net.minecraftforge.fml.config.ModConfig
+import net.minecraftforge.fml.event.config.ModConfigEvent
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent
+import net.minecraftforge.fml.event.lifecycle.FMLDedicatedServerSetupEvent
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
-import thedarkcolour.kotlinforforge.neoforge.forge.runForDist
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
+import thedarkcolour.kotlinforforge.forge.runForDist
 
 /**
  * Main mod class.
@@ -73,7 +73,7 @@ object ContactQuests {
         TaskRegistry.init()
         RewardRegistry.init()
         ModItems.register(MOD_BUS)
-        NeoForge.EVENT_BUS.register(ModCommands)
+        EVENT_BUS.register(ModCommands)
 
         MOD_BUS.addListener(::onConfigLoad)
         MOD_BUS.addListener(::onConfigReload)
@@ -92,7 +92,7 @@ object ContactQuests {
                 "test"
             })
 
-        NeoForge.EVENT_BUS.register(this)
+        EVENT_BUS.register(this)
     }
 
     /**

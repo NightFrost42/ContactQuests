@@ -1,18 +1,16 @@
 package com.creeperyang.contactquests.network
 
-import io.netty.buffer.ByteBuf
-import net.minecraft.network.codec.StreamCodec
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.network.FriendlyByteBuf
 
-data object RequestBinderPayload : CustomPacketPayload {
-    val TYPE = CustomPacketPayload.Type<RequestBinderPayload>(
-        ResourceLocation.fromNamespaceAndPath("contactquests", "request_binder")
-    )
+class RequestBinderPayload {
 
-    val STREAM_CODEC: StreamCodec<ByteBuf, RequestBinderPayload> = StreamCodec.unit(this)
+    companion object {
+        fun encode(msg: RequestBinderPayload, buf: FriendlyByteBuf) {
 
-    override fun type(): CustomPacketPayload.Type<RequestBinderPayload> {
-        return TYPE
+        }
+
+        fun decode(buf: FriendlyByteBuf): RequestBinderPayload {
+            return RequestBinderPayload()
+        }
     }
 }

@@ -5,20 +5,20 @@ import com.creeperyang.contactquests.client.util.ParcelAutoFiller
 import com.creeperyang.contactquests.client.util.PostcardAutoFiller
 import com.creeperyang.contactquests.client.util.RedPacketAutoFiller
 import dev.ftb.mods.ftbquests.client.GuiProviders
-import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
-import net.neoforged.neoforge.common.NeoForge
-import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
+import net.minecraftforge.common.MinecraftForge.EVENT_BUS
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent
+import thedarkcolour.kotlinforforge.forge.MOD_BUS
 
 object ContactQuestsClient {
 
     fun init() {
         MOD_BUS.addListener(::onClientSetup)
 
-        NeoForge.EVENT_BUS.register(ParcelAutoFiller)
-        NeoForge.EVENT_BUS.register(RedPacketAutoFiller)
-        NeoForge.EVENT_BUS.register(PostcardAutoFiller)
+        EVENT_BUS.register(ParcelAutoFiller)
+        EVENT_BUS.register(RedPacketAutoFiller)
+        EVENT_BUS.register(PostcardAutoFiller)
 
-        NeoForge.EVENT_BUS.register(MailboxGlobalRenderer)
+        EVENT_BUS.register(MailboxGlobalRenderer)
     }
 
     private fun onClientSetup(event: FMLClientSetupEvent) {

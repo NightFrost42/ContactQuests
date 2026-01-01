@@ -4,7 +4,6 @@ import com.creeperyang.contactquests.config.*
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import net.minecraft.core.HolderLookup
-import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag

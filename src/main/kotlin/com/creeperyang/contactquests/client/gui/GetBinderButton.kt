@@ -11,7 +11,7 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import net.neoforged.neoforge.network.PacketDistributor
+import net.minecraftforge.network.PacketDistributor
 
 class GetBinderButton(panel: Panel) : TabButton(
     panel,

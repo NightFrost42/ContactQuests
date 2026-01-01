@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.config
 
-import net.neoforged.neoforge.common.ModConfigSpec
+import net.minecraftforge.common.ModConfigSpec
 
 object ContactConfig {
     private val BUILDER = ModConfigSpec.Builder()

@@ -14,8 +14,8 @@ import net.minecraft.commands.SharedSuggestionProvider
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.event.RegisterCommandsEvent
+import net.minecraftforge.event.RegisterCommandsEvent
+import net.minecraftforge.eventbus.api.SubscribeEvent
 
 object ModCommands {
 

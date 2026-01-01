@@ -15,7 +15,6 @@ import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.component.ItemContainerContents
 import kotlin.math.min
 
 object DataManager {

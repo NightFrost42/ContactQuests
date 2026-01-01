@@ -8,10 +8,9 @@ import com.flechazo.contact.client.gui.screen.PostcardEditScreen
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.world.entity.player.Player
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ClientTickEvent
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.eventbus.api.SubscribeEvent
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 

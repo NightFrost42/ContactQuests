@@ -3,7 +3,6 @@ package com.creeperyang.contactquests.util
 import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.common.storage.MailboxDataManager
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
-import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation

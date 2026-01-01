@@ -3,14 +3,13 @@ package com.creeperyang.contactquests.quest.task
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.math.Bits
 import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
-import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem.ComponentMatchType
 import dev.ftb.mods.ftbquests.quest.Quest
 import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.world.item.ItemStack
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 
 abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 

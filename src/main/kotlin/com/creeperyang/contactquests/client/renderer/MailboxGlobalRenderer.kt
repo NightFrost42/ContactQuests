@@ -11,9 +11,9 @@ import net.minecraft.client.renderer.MultiBufferSource
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
-import net.neoforged.bus.api.SubscribeEvent
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent
-import net.neoforged.neoforge.client.event.RenderLevelStageEvent
+import net.minecraftforge.client.event.ClientPlayerNetworkEvent
+import net.minecraftforge.client.event.RenderLevelStageEvent
+import net.minecraftforge.eventbus.api.SubscribeEvent
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
