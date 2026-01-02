@@ -4,8 +4,8 @@ import com.creeperyang.contactquests.client.util.PostcardAutoFiller
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.hud.TexturePos
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.data.PostcardDataManager
-import com.flechazo.contact.data.PostcardStyle
+import com.flechazo.contact.resourse.PostcardDataManager
+import com.flechazo.contact.resourse.PostcardStyle
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.Theme
@@ -15,7 +15,6 @@ import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.client.renderer.GameRenderer
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.world.entity.player.Player
@@ -121,8 +120,21 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
 
     @Suppress("UNCHECKED_CAST")
     private fun getStackStyleId(stack: ItemStack): String? {
-        val id = ResourceLocation.fromNamespaceAndPath("contact", "postcard_style_id")
-        val type = BuiltInRegistries.DATA_COMPONENT_TYPE[id] as? DataComponentType<ResourceLocation>
-        return if (type != null) stack[type]?.toString() else null
+        if (!stack.hasTag()) return null
+
+        val tag = stack.tag!!
+
+        if (tag.contains("CardID")) {
+            return tag.getString("CardID")
+        }
+
+        if (tag.contains("Info")) {
+            val info = tag.getCompound("Info")
+            if (info.contains("ID")) {
+                return "contact:" + info.getString("ID")
+            }
+        }
+
+        return null
     }
 }

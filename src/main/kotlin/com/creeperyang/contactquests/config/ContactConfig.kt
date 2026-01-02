@@ -1,17 +1,17 @@
 package com.creeperyang.contactquests.config
 
-import net.minecraftforge.common.ModConfigSpec
+import net.minecraftforge.common.ForgeConfigSpec
 
 object ContactConfig {
-    private val BUILDER = ModConfigSpec.Builder()
+    private val BUILDER = ForgeConfigSpec.Builder()
 
-    val SPEC: ModConfigSpec
+    val SPEC: ForgeConfigSpec
 
-    val enableDeliveryTime: ModConfigSpec.BooleanValue
+    val enableDeliveryTime: ForgeConfigSpec.BooleanValue
 
-    val autoFillSpeed: ModConfigSpec.IntValue
+    val autoFillSpeed: ForgeConfigSpec.IntValue
 
-    val retryInterval: ModConfigSpec.IntValue
+    val retryInterval: ForgeConfigSpec.IntValue
 
     init {
         BUILDER.comment("Contact Quests General Configuration").push("general")

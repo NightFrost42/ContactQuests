@@ -10,19 +10,19 @@ import net.minecraft.resources.ResourceLocation
 object TaskRegistry  {
     @JvmField
     val PARCEL: TaskType = TaskTypes.register(
-        ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "parcel_task"),
+        ResourceLocation(ContactQuests.ID, "parcel_task"),
         ::ParcelTask
     ) { Icon.getIcon("contact:item/parcel") }
 
     @JvmField
     val RED_PACKET: TaskType = TaskTypes.register(
-        ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "red_packet_task"),
+        ResourceLocation(ContactQuests.ID, "red_packet_task"),
         ::RedPacketTask
     ) { Icon.getIcon("contact:item/red_packet") }
 
     @JvmField
     val POSTCARD: TaskType = TaskTypes.register(
-        ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "postcard_task"),
+        ResourceLocation(ContactQuests.ID, "postcard_task"),
         ::PostcardTask
     ) { Icon.getIcon("contact:item/postcard") }
 

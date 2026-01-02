@@ -24,7 +24,7 @@ class ParcelTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
 
     override fun test(stack: ItemStack): Boolean {
         if (itemStack.isEmpty) return false
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, matchComponents)
+        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, shouldMatchNBT(), weakNBTmatch)
     }
 
     @OnlyIn(Dist.CLIENT)

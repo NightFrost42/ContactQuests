@@ -3,9 +3,7 @@ package com.creeperyang.contactquests.util
 import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.common.storage.MailboxDataManager
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.network.chat.Component
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.ItemStack
 import java.util.*
@@ -27,17 +25,13 @@ object TeamMailHelper {
 
         val toSend = content.copy()
 
-        val senderComponentId = ResourceLocation.fromNamespaceAndPath("contact", "postcard_sender")
-        val componentTypeOpt = BuiltInRegistries.DATA_COMPONENT_TYPE.getOptional(senderComponentId)
+        val tag = toSend.getOrCreateTag()
+        tag.putString("Sender", senderName)
 
-        componentTypeOpt.ifPresent { type ->
-            try {
-                @Suppress("UNCHECKED_CAST")
-                val stringType = type as DataComponentType<String>
-                toSend[stringType] = senderName
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+        dataManager.addMailboxContents(teamId, toSend)
+
+        if (pos.dimension() == level.dimension() && level.isLoaded(pos.pos())) {
+            MailboxManager.updateState(level, pos.pos())
         }
 
         dataManager.addMailboxContents(teamId, toSend)

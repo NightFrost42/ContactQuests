@@ -8,25 +8,25 @@ import net.minecraft.resources.ResourceLocation
 
 object RewardRegistry {
     val PARCEL: RewardType = RewardTypes.register(
-        ResourceLocation.fromNamespaceAndPath("contactquests", "parcel"),
+        ResourceLocation("contactquests", "parcel"),
         { id, quest -> ParcelReward(id, quest) },
         { Icon.getIcon("contact:item/parcel") }
     ).setExcludeFromListRewards(true)
 
     val PARCEL_RANDOM: RewardType = RewardTypes.register(
-        ResourceLocation.fromNamespaceAndPath("contactquests", "parcel_random"),
+        ResourceLocation("contactquests", "parcel_random"),
         { id, quest -> ParcelRandomReward(id, quest) },
         { Icons.DICE }
     ).setExcludeFromListRewards(true)
 
     val PARCEL_ALL_TABLE: RewardType = RewardTypes.register(
-        ResourceLocation.fromNamespaceAndPath("contactquests", "parcel_all_table"),
+        ResourceLocation("contactquests", "parcel_all_table"),
         { id, quest -> ParcelAllTableReward(id, quest) },
         { Icons.COLOR_HSB }
     ).setExcludeFromListRewards(true)
 
     val POSTCARD: RewardType = RewardTypes.register(
-        ResourceLocation.fromNamespaceAndPath("contactquests", "postcard"),
+        ResourceLocation("contactquests", "postcard"),
         { id, quest -> PostcardReward(id, quest) },
         { Icon.getIcon("contact:item/postcard") }
     ).setExcludeFromListRewards(true)

@@ -4,9 +4,11 @@ import com.creeperyang.contactquests.registry.ModItems
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
+import net.minecraftforge.network.NetworkDirection
 import net.minecraftforge.network.NetworkEvent
 import net.minecraftforge.network.NetworkRegistry
 import net.minecraftforge.network.simple.SimpleChannel
+import java.util.function.BiConsumer
 import java.util.function.Supplier
 
 object NetworkHandler {
@@ -24,7 +26,7 @@ object NetworkHandler {
         CHANNEL.messageBuilder(RequestBinderPayload::class.java, id++, NetworkDirection.PLAY_TO_SERVER)
             .encoder { msg, buf -> RequestBinderPayload.encode(msg, buf) }
             .decoder { buf -> RequestBinderPayload.decode(buf) }
-            .consumerNetworkThread { msg, ctx -> handleRequestBinder(msg, ctx) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> handleRequestBinder(msg, ctx) })
             .add()
     }
 

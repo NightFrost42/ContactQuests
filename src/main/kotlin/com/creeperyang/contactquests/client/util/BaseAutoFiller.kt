@@ -6,6 +6,7 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.inventory.ClickType
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.event.TickEvent
 
 @OnlyIn(Dist.CLIENT)
 abstract class BaseAutoFiller<T> {
@@ -39,7 +40,7 @@ abstract class BaseAutoFiller<T> {
 
     protected abstract fun runLogic(mc: Minecraft, player: Player, screen: net.minecraft.client.gui.screens.Screen)
 
-    open fun onClientTick(event: ClientTickEvent.Post) {
+    open fun onClientTick(event: TickEvent.ClientTickEvent) {
         if (!isTaskScheduled) return
 
         val mc = Minecraft.getInstance()

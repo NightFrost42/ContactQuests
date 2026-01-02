@@ -12,9 +12,8 @@ import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.Task
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
-import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
@@ -52,25 +51,25 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
         return stack
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         nbt.putString("TargetAddressee", targetAddressee)
         if (count > 1) nbt.putLong("count", count)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         targetAddressee = nbt.getString("TargetAddressee")
         count = max(nbt.getLong("count"), 1L)
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(targetAddressee)
         buffer.writeVarLong(count)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         targetAddressee = buffer.readUtf()
         count = buffer.readVarLong()

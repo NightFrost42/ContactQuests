@@ -16,6 +16,7 @@ import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import kotlin.math.min
 
@@ -51,7 +52,7 @@ object ParcelAutoFiller : BaseAutoFiller<String>() {
     }
 
     @SubscribeEvent
-    override fun onClientTick(event: ClientTickEvent.Post) {
+    override fun onClientTick(event: TickEvent.ClientTickEvent) {
         super.onClientTick(event)
     }
 

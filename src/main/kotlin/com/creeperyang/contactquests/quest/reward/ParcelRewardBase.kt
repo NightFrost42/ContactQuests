@@ -5,13 +5,12 @@ import com.creeperyang.contactquests.data.RewardDistributionManager
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.Reward
-import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 
 abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
     var targetAddressee: String = "QuestNPC"
@@ -23,25 +22,25 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         CollectionSavedData.get(player.serverLevel()).returnReward(player, targetAddressee)
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         nbt.putString("target_addressee", targetAddressee)
         nbt.putBoolean("is_ender", isEnder)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         if (nbt.contains("target_addressee")) targetAddressee = nbt.getString("target_addressee")
         isEnder = nbt.getBoolean("is_ender")
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(targetAddressee)
         buffer.writeBoolean(isEnder)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         targetAddressee = buffer.readUtf()
         isEnder = buffer.readBoolean()

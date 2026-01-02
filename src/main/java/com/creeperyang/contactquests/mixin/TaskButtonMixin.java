@@ -3,7 +3,6 @@ package com.creeperyang.contactquests.mixin;
 import com.creeperyang.contactquests.quest.task.ParcelTask;
 import com.creeperyang.contactquests.quest.task.RedPacketTask;
 import com.creeperyang.contactquests.utils.ParcelTagSelectionScreen;
-import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ftb.mods.ftblibrary.icon.Icon;
@@ -29,20 +28,21 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.List;
 
 @Mixin(TaskButton.class)
 public abstract class TaskButtonMixin {
 
-    @Shadow
+    @Shadow(remap = false)
     Task task;
 
     @Shadow(remap = false)
     @Final
     private QuestScreen questScreen;
 
-    @Inject(method = "draw", at = @At("TAIL"))
+    @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void drawOverlay(GuiGraphics graphics, Theme theme,
     int x, int y, int w, int h,
     CallbackInfo ci) {
@@ -74,8 +74,8 @@ public abstract class TaskButtonMixin {
         pose.popPose();
     }
 
-    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"))
-    private void adaptFilter(MouseButton button, CallbackInfo ci, @Local(name = "builder") ContextMenuBuilder builder) {
+    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"), locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
+    private void adaptFilter(MouseButton button, CallbackInfo ci, ContextMenuBuilder builder) {
         if (!(task instanceof ParcelTask parcelTask) || parcelTask.getItemStack().isEmpty()) {
             return;
         }
@@ -118,6 +118,6 @@ public abstract class TaskButtonMixin {
             parcelTask.setRawTitle("Any #" + tag.location());
         }
 
-        EditObjectMessage.sendToServer(parcelTask);
+        new EditObjectMessage(parcelTask).sendToServer();
     }
 }

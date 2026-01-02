@@ -9,6 +9,7 @@ import dev.ftb.mods.ftblibrary.ui.Theme;
 import dev.ftb.mods.ftbquests.client.gui.quests.RewardButton;
 import dev.ftb.mods.ftbquests.quest.reward.Reward;
 import net.minecraft.client.gui.GuiGraphics;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -23,10 +24,11 @@ public abstract class RewardButtonMixin {
     private static final Icon OVERLAY_PARCEL = Icon.getIcon("contact:item/parcel");
     @Unique
     private static final Icon OVERLAY_ENDER_PARCEL = Icon.getIcon("contact:item/ender_parcel");
-    @Shadow
-    Reward reward;
+    @Final
+    @Shadow(remap = false)
+    private Reward reward;
 
-    @Inject(method = "draw", at = @At("TAIL"))
+    @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void contactQuests_drawOverlay(GuiGraphics graphics, Theme theme, int x, int y, int w, int h, CallbackInfo ci) {
         if (!(reward instanceof ParcelRewardBase parcelReward) || reward instanceof PostcardReward) {
             return;

@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.quest.reward
 
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.data.PostcardDataManager
+import com.flechazo.contact.resourse.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
@@ -15,16 +15,13 @@ import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
-import net.minecraft.core.HolderLookup
-import net.minecraft.core.component.DataComponentType
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 
 class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
@@ -39,7 +36,7 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         var postcardStack = if (styleId != null) {
             PostcardItem.getPostcard(styleId, isEnder)
         } else {
-            PostcardItem.getPostcard(ResourceLocation.fromNamespaceAndPath("contact", "default"), isEnder)
+            PostcardItem.getPostcard(ResourceLocation("contact", "default"), isEnder)
         }
 
         if (postcardText.isNotEmpty()) {
@@ -48,43 +45,31 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         }
 
         if (targetAddressee.isNotEmpty()) {
-            try {
-                val componentId = ResourceLocation.fromNamespaceAndPath("contact", "postcard_sender")
-                val rawComponentType = BuiltInRegistries.DATA_COMPONENT_TYPE[componentId]
-
-                @Suppress("UNCHECKED_CAST")
-                val senderComponentType = rawComponentType as? DataComponentType<String>
-
-                if (senderComponentType != null) {
-                    postcardStack.set(senderComponentType, targetAddressee)
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+            postcardStack.getOrCreateTag().putString("Sender", targetAddressee)
         }
 
         distributeItem(player, postcardStack)
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         nbt.putString("postcard_style", postcardStyle)
         nbt.putString("postcard_text", postcardText)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         postcardStyle = nbt.getString("postcard_style")
         postcardText = nbt.getString("postcard_text")
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(postcardStyle)
         buffer.writeUtf(postcardText)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         postcardStyle = buffer.readUtf()
         postcardText = buffer.readUtf()

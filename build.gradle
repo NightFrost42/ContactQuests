@@ -44,7 +44,6 @@ java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 kotlin.jvmToolchain(21)
 
 mixin {
-    // 自动添加 refmap，假设您的 mixin 配置文件名为 contactquests.mixins.json
     add sourceSets.main, "${mod_id}.refmap.json"
     config "${mod_id}.mixins.json"
 
@@ -53,13 +52,8 @@ mixin {
 }
 
 minecraft {
-    // 使用 Forge 的 mappings 配置
     mappings channel: 'parchment', version: "${parchment_mappings_version}-${parchment_minecraft_version}"
 
-    // 这一行是可选的。Access Transformers 会被自动检测
-    // accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
-
-    // 默认运行配置
     runs {
         client {
             workingDirectory project.file('run')
@@ -67,7 +61,6 @@ minecraft {
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
 
-            // Mixin 必要配置
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
@@ -132,21 +125,15 @@ minecraft {
     }
 }
 
-// 包含数据生成器生成的资源
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
-    // Minecraft Forge 核心依赖 (请确保 gradle.properties 中有 forge_version)
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    // Kotlin for Forge (1.20.1 需使用 4.x 版本，且 artifactId 为 kotlinforforge)
     implementation 'thedarkcolour:kotlinforforge:4.11.0'
 
-    // Mixin 注解处理器
     annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
 
-    // 模组依赖 - ForgeGradle 需要使用 fg.deobf 包裹以支持运行时重映射
-    // 变量名保持不变，请确保 properties 中的 ID 已更新为 Forge 版本
     implementation fg.deobf("curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}")
     implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}")
     implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}")
@@ -154,56 +141,29 @@ dependencies {
     implementation fg.deobf("curse.maven:ftb-filter-system-943925:${filter_system_neoforge_21}")
     implementation fg.deobf("curse.maven:jade-324717:${jade_neoforge_21}")
 
-    // JEI 依赖 (注意 artifact 改为 -forge)
-    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${mc_version}-forge-api:${jei_version}"
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 
-    runtimeOnly fg.deobf("curse.maven:architectury-api-419699:${architectury_api_neoforge_21}")
+    implementation fg.deobf("curse.maven:architectury-api-419699:${architectury_api_neoforge_21}")
     runtimeOnly fg.deobf("curse.maven:jupiter-1072905:${jupiter_neoforge_21}")
     runtimeOnly fg.deobf("curse.maven:oelib-1319210:${oelib_neoforge_21}")
     runtimeOnly fg.deobf("curse.maven:ftb-xmod-compat-889915:${ftb_xmod_compat_neoforge_21}")
 }
 
-// 资源处理与元数据生成
-// Forge 1.20.1 读取 META-INF/mods.toml，这里将 neoforge.mods.toml 自动重命名
-var generateModMetadata = tasks.register("generateModMetadata", ProcessResources) {
-    var replaceProperties = [minecraft_version      : minecraft_version,
-                             minecraft_version_range: minecraft_version_range,
-                             forge_version      : forge_version, // 确保 properties 中有此变量
-                             forge_version_range: forge_version_range, // 确保 properties 中有此变量
-                             loader_version_range   : loader_version_range,
-                             mod_id                 : mod_id,
-                             mod_name               : mod_name,
-                             mod_license            : mod_license,
-                             mod_version            : mod_version,
-                             mod_authors            : mod_authors,
-                             mod_description        : mod_description]
+tasks.named('processResources', ProcessResources).configure {
+    var replaceProperties = [
+            minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version       : forge_version, forge_version_range: forge_version_range,
+            loader_version_range: loader_version_range,
+            mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors         : mod_authors, mod_description: mod_description,
+    ]
     inputs.properties replaceProperties
 
-    from("src/main/templates") {
-        include 'META-INF/neoforge.mods.toml'
-        // 关键步骤：重命名为 Forge 标准文件名
-        rename 'neoforge.mods.toml', 'mods.toml'
-        expand replaceProperties
+    filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
+        expand replaceProperties + [project: project]
     }
-
-    // 如果有其他模板文件，正常复制
-    from("src/main/templates") {
-        exclude 'META-INF/neoforge.mods.toml'
-        expand replaceProperties
-    }
-
-    into "build/generated/sources/modMetadata"
 }
 
-// 将生成的资源目录添加到 sourceSets
-sourceSets.main.resources.srcDir generateModMetadata
-
-// 确保在 IDE 同步时运行
-idea.module.generatedSourceDirs += file("build/generated/sources/modMetadata")
-
-// 配置 Jar 任务，写入 Mixin 配置
 jar {
     manifest {
         attributes([

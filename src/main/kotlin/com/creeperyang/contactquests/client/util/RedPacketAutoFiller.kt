@@ -15,6 +15,7 @@ import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 
 @OnlyIn(Dist.CLIENT)
@@ -41,7 +42,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     }
 
     @SubscribeEvent
-    override fun onClientTick(event: ClientTickEvent.Post) {
+    override fun onClientTick(event: TickEvent.ClientTickEvent) {
         super.onClientTick(event)
     }
 
@@ -76,7 +77,12 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         val isItemCorrect = if (slotItem.isEmpty) {
             req.itemStack.isEmpty
         } else {
-            ItemMatchingSystem.INSTANCE.doesItemMatch(req.itemStack, slotItem, taskData?.matchComponents)
+            ItemMatchingSystem.INSTANCE.doesItemMatch(
+                req.itemStack,
+                slotItem,
+                taskData!!.shouldMatchNBT(),
+                taskData!!.weakNBTmatch
+            )
         }
 
         if (isItemCorrect) {
@@ -123,7 +129,13 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
 
         for (i in inventoryStart until inventoryEnd) {
             val stack = menu.getSlot(i).item
-            if (ItemMatchingSystem.INSTANCE.doesItemMatch(req.itemStack, stack, taskData?.matchComponents)) {
+            if (ItemMatchingSystem.INSTANCE.doesItemMatch(
+                    req.itemStack,
+                    stack,
+                    taskData!!.shouldMatchNBT(),
+                    taskData!!.weakNBTmatch
+                )
+            ) {
                 currentSourceSlot = i
                 currentState = State.PICKUP_SOURCE
                 ContactQuests.debug("RedPacketAutoFiller: 找到物品在槽位 $i")

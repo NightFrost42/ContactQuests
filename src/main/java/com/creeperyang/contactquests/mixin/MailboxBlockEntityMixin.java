@@ -4,7 +4,6 @@ import com.creeperyang.contactquests.client.renderer.MailboxGlobalRenderer;
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor;
 import com.flechazo.contact.common.tileentity.MailboxBlockEntity;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
@@ -67,14 +66,14 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
     }
 
     @Inject(method = "saveAdditional", at = @At("TAIL"))
-    private void onSaveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries, CallbackInfo ci) {
+    private void onSaveAdditional(@NotNull CompoundTag tag, CallbackInfo ci) {
         if (contactQuestsTeamId != null) {
             tag.putUUID(TEAM_ID_NBT_KEY, contactQuestsTeamId);
         }
     }
 
-    @Inject(method = "loadAdditional", at = @At("TAIL"))
-    private void onLoadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries, CallbackInfo ci) {
+    @Inject(method = "load", at = @At("TAIL"))
+    private void onLoad(@NotNull CompoundTag tag, CallbackInfo ci) {
         if (tag.hasUUID(TEAM_ID_NBT_KEY)) {
             contactQuestsTeamId = tag.getUUID(TEAM_ID_NBT_KEY);
         } else {
@@ -83,7 +82,7 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
     }
 
     @Inject(method = "getUpdateTag", at = @At("RETURN"))
-    private void onGetUpdateTag(@NotNull HolderLookup.Provider registries, CallbackInfoReturnable<CompoundTag> cir) {
+    private void onGetUpdateTag(CallbackInfoReturnable<CompoundTag> cir) {
         CompoundTag tag = cir.getReturnValue();
         if (tag != null && contactQuestsTeamId != null) {
             tag.putUUID(TEAM_ID_NBT_KEY, contactQuestsTeamId);
@@ -97,10 +96,10 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
     }
 
     @Override
-    public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.@NotNull Provider lookupProvider) {
-        super.onDataPacket(net, pkt, lookupProvider);
+    public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
+        super.onDataPacket(net, pkt);
         CompoundTag tag = pkt.getTag();
-        if (tag.hasUUID(TEAM_ID_NBT_KEY)) {
+        if (tag != null && tag.hasUUID(TEAM_ID_NBT_KEY)) {
             this.contactQuestsTeamId = tag.getUUID(TEAM_ID_NBT_KEY);
             if (this.level != null && this.level.isClientSide) {
                 MailboxGlobalRenderer.INSTANCE.track((MailboxBlockEntity) (Object) this);

@@ -7,16 +7,15 @@ import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.util.client.PositionedIngredient
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
-import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.MutableComponent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 import java.util.*
 
 class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
@@ -35,17 +34,21 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         distributeItem(player, stackToSend)
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
-        if (!item.isEmpty) nbt.put("item", item.save(provider))
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
+        if (!item.isEmpty) {
+            val itemTag = CompoundTag()
+            item.save(itemTag)
+            nbt.put("item", itemTag)
+        }
         if (count > 1) nbt.putInt("count", count)
         if (randomBonus > 0) nbt.putInt("random_bonus", randomBonus)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         if (nbt.contains("item")) {
-            item = ItemStack.parseOptional(provider, nbt.getCompound("item"))
+            item = ItemStack.of(nbt.getCompound("item"))
         }
         count = nbt.getInt("count")
         if (count == 0) {
@@ -55,16 +58,16 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         randomBonus = nbt.getInt("random_bonus")
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
-        ItemStack.OPTIONAL_STREAM_CODEC.encode(buffer, item)
+        buffer.writeItem(item)
         buffer.writeVarInt(count)
         buffer.writeVarInt(randomBonus)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
-        item = ItemStack.OPTIONAL_STREAM_CODEC.decode(buffer)
+        item = buffer.readItem()
         count = buffer.readVarInt()
         randomBonus = buffer.readVarInt()
     }

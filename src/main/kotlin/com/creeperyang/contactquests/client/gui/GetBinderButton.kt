@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.client.gui
 
+import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.network.RequestBinderPayload
 import com.creeperyang.contactquests.registry.ModItems
 import dev.ftb.mods.ftblibrary.icon.ItemIcon
@@ -11,7 +12,6 @@ import net.minecraft.client.Minecraft
 import net.minecraft.client.resources.sounds.SimpleSoundInstance
 import net.minecraft.network.chat.Component
 import net.minecraft.sounds.SoundEvents
-import net.minecraftforge.network.PacketDistributor
 
 class GetBinderButton(panel: Panel) : TabButton(
     panel,
@@ -22,7 +22,7 @@ class GetBinderButton(panel: Panel) : TabButton(
         Minecraft.getInstance().soundManager.play(
             SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0f)
         )
-        PacketDistributor.sendToServer(RequestBinderPayload)
+        NetworkHandler.CHANNEL.sendToServer(RequestBinderPayload())
     }
 
     override fun addMouseOverText(list: TooltipList) {

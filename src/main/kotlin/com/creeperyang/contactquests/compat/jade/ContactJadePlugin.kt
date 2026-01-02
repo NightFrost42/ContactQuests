@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.compat.jade
 
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
 import com.flechazo.contact.common.block.MailboxBlock
+import com.flechazo.contact.common.tileentity.MailboxBlockEntity
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.chat.Component
@@ -13,7 +14,7 @@ import snownee.jade.api.config.IPluginConfig
 class ContactJadePlugin : IWailaPlugin {
 
     override fun register(registration: IWailaCommonRegistration) {
-        registration.registerBlockDataProvider(MailboxComponentProvider, MailboxBlock::class.java)
+        registration.registerBlockDataProvider(MailboxComponentProvider, MailboxBlockEntity::class.java)
     }
 
     override fun registerClient(registration: IWailaClientRegistration) {
@@ -23,7 +24,7 @@ class ContactJadePlugin : IWailaPlugin {
 
 object MailboxComponentProvider : IBlockComponentProvider, IServerDataProvider<BlockAccessor> {
 
-    private val UID = ResourceLocation.fromNamespaceAndPath("contactquests", "mailbox_team_info")
+    private val UID = ResourceLocation("contactquests", "mailbox_team_info")
     private const val NBT_KEY_TEAM_ID = "ContactQuestsTeamID"
 
     override fun appendServerData(data: CompoundTag, accessor: BlockAccessor) {

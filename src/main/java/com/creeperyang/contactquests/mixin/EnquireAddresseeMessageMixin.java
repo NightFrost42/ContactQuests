@@ -8,27 +8,24 @@ import com.flechazo.contact.common.item.PostcardItem;
 import com.flechazo.contact.common.item.RedPacketItem;
 import com.flechazo.contact.common.screenhandler.PostboxScreenHandler;
 import com.flechazo.contact.common.storage.IMailboxDataProvider;
-import com.flechazo.contact.network.ActionS2CMessage;
+import com.flechazo.contact.network.ActionMessage;
 import com.flechazo.contact.network.EnquireAddresseeMessage;
-import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.component.ItemContainerContents;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.*;
 
 @Mixin(EnquireAddresseeMessage.class)
 public class EnquireAddresseeMessageMixin {
 
-    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
     private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
         if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
             return;
@@ -60,8 +57,7 @@ public class EnquireAddresseeMessageMixin {
         }
         else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
             if (DataManager.parcelReceiver.containsKey(finalRecipientKey)) {
-                ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
-                DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey);
+                DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, finalRecipientKey);
                 taskMatched = true;
             }
         } else {
@@ -70,7 +66,7 @@ public class EnquireAddresseeMessageMixin {
 
         if (taskMatched) {
             container.parcel.setItem(0, ItemStack.EMPTY);
-            ActionS2CMessage.create(1).sendTo(player);
+            ActionMessage.create(1).sendTo(player);
             ci.cancel();
         }
     }
@@ -91,21 +87,22 @@ public class EnquireAddresseeMessageMixin {
         return null;
     }
 
-    @SuppressWarnings("UnresolvedLocalCapture")
+    @SuppressWarnings("InvalidInjectorMethodSignature")
     @Inject(
             method = "handleNormalEnquiry",
             at = @At(
                     value = "FIELD",
                     target = "Lcom/flechazo/contact/network/EnquireAddresseeMessage;shouldSend:Z",
-                    opcode = Opcodes.GETFIELD)
+                    opcode = Opcodes.GETFIELD),
+            locals = LocalCapture.CAPTURE_FAILHARD, remap = false
     )
     private void injectCustomTargetsNames(
             ServerPlayer player,
             IMailboxDataProvider data,
             String lowerIn,
             CallbackInfo ci,
-            @Local(ordinal = 0) @Coerce List<String> names,
-            @Local(ordinal = 1) @Coerce List<Integer> ticks
+            List<String> names,
+            List<Integer> ticks
     ) {
         Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         List<Map.Entry<String, Integer>> matches = new ArrayList<>();

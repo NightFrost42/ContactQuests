@@ -3,7 +3,7 @@ package com.creeperyang.contactquests.quest.task
 import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.data.PostcardDataManager
+import com.flechazo.contact.resourse.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
@@ -18,16 +18,15 @@ import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.TaskType
 import net.minecraft.ChatFormatting
-import net.minecraft.core.HolderLookup
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.registries.ForgeRegistries
 
 class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
@@ -36,34 +35,28 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
     override fun getType(): TaskType = TaskRegistry.POSTCARD
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         nbt.putString("postcard_style", postcardStyle)
         nbt.putString("postcard_text", postcardText)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         postcardStyle = nbt.getString("postcard_style")
         postcardText = nbt.getString("postcard_text")
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(postcardStyle)
         buffer.writeUtf(postcardText)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         postcardStyle = buffer.readUtf()
         postcardText = buffer.readUtf()
-    }
-
-    @Suppress("UNCHECKED_CAST")
-    private fun <T> getComponent(path: String): DataComponentType<T>? {
-        val id = ResourceLocation.fromNamespaceAndPath("contact", path)
-        return BuiltInRegistries.DATA_COMPONENT_TYPE[id] as? DataComponentType<T>
     }
 
     override fun test(stack: ItemStack): Boolean {
@@ -78,18 +71,35 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
     private fun checkStyleMatch(stack: ItemStack): Boolean {
         if (postcardStyle.isEmpty()) return true
+        val tag = stack.tag ?: return false
+        var itemStyleId = ""
 
-        val styleType = getComponent<ResourceLocation>("postcard_style_id") ?: return false
-        val itemStyle = stack[styleType]?.toString() ?: return false
+        if (tag.contains("CardID")) {
+            itemStyleId = tag.getString("CardID")
+        } else if (tag.contains("Info")) {
+            val infoTag = tag.getCompound("Info")
+            if (infoTag.contains("ID")) {
+                itemStyleId = "contact:" + infoTag.getString("ID")
+            }
+        }
 
-        return itemStyle.contains(postcardStyle) || postcardStyle.contains(itemStyle)
+        if (itemStyleId.isEmpty()) return false
+
+        val configRl = ResourceLocation.tryParse(postcardStyle)
+        val itemRl = ResourceLocation.tryParse(itemStyleId)
+
+        return if (configRl != null && itemRl != null) {
+            configRl == itemRl
+        } else {
+            itemStyleId == postcardStyle
+        }
     }
 
     private fun checkTextMatch(stack: ItemStack): Boolean {
         if (postcardText.isEmpty()) return true
+        val tag = stack.tag ?: return false
 
-        val textType = getComponent<String>("postcard_text") ?: return false
-        val itemText = stack[textType] ?: return false
+        val itemText = if (tag.contains("Text")) tag.getString("Text") else ""
 
         val normalizedConfig = postcardText.replace("\\n", "\n").trim()
         val normalizedItem = itemText.trim()
@@ -101,8 +111,8 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         val displayList = mutableListOf<ItemStack>()
         val validItemIds = listOf("postcard", "ender_postcard")
         for (itemIdStr in validItemIds) {
-            val itemId = ResourceLocation.fromNamespaceAndPath("contact", itemIdStr)
-            val item = BuiltInRegistries.ITEM[itemId]
+            val itemId = ResourceLocation("contact", itemIdStr)
+            val item = ForgeRegistries.ITEMS.getValue(itemId)
             displayList.add(ItemStack(item))
         }
         return displayList

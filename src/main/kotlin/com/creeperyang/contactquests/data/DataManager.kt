@@ -13,6 +13,7 @@ import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
+import net.minecraft.nbt.Tag
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import kotlin.math.min
@@ -92,11 +93,14 @@ object DataManager {
     fun completeRedPacketTask(task: RedPacketTask) = completeTaskHelper(task, task.targetAddressee, redPacketReceiver, redPacketTasks, redPacketItemTestFunc)
     fun completePostcardTask(task: PostcardTask) = completeTaskHelper(task, task.targetAddressee, postcardReceiver, postcardTasks, postcardItemTestFunc)
 
-    fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, parcel: ItemContainerContents, recipientName: String): Boolean {
+    fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, recipientName: String): Boolean {
         val teamData = getTeamData(player) ?: return false
         var anyConsumed = false
         val rejectedItems = ArrayList<ItemStack>()
-        parcel.stream().forEach { itemStack ->
+
+        val parcelItems = getParcelItems(parcelStack)
+
+        parcelItems.stream().forEach { itemStack ->
             val consumed = processSingleItem(player, teamData, itemStack, parcelStack, recipientName, parcelStrategy)
             if (consumed) {
                 anyConsumed = true
@@ -110,6 +114,18 @@ object DataManager {
         }
 
         return anyConsumed
+    }
+
+    private fun getParcelItems(stack: ItemStack): List<ItemStack> {
+        val items = mutableListOf<ItemStack>()
+        val tag = stack.tag
+        if (tag != null && tag.contains("Items", Tag.TAG_LIST.toInt())) {
+            val list = tag.getList("Items", Tag.TAG_COMPOUND.toInt())
+            for (i in 0 until list.size) {
+                items.add(ItemStack.of(list.getCompound(i)))
+            }
+        }
+        return items
     }
 
     fun matchRedPacketTaskItem(player: ServerPlayer, redPacket: ItemStack, recipientName: String): Boolean {

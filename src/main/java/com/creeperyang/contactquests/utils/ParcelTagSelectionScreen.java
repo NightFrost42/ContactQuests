@@ -11,6 +11,7 @@ import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen;
 import dev.ftb.mods.ftbquests.api.ItemFilterAdapter;
 import dev.ftb.mods.ftbquests.client.gui.quests.QuestScreen;
 import dev.ftb.mods.ftbquests.net.EditObjectMessage;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.tags.TagKey;
@@ -50,7 +51,8 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
                 .map(t -> getTheme().getStringWidth(t.location().toString()))
                 .max(Comparator.naturalOrder())
                 .orElse(100);
-        setSize(Math.max(titleW, w) + 20, getGui().getWindow().getGuiScaledHeight() * 3 / 4);
+        int screenHeight = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        setSize(Math.max(titleW, w) + 20, screenHeight * 3 / 4);
 
         return true;
     }
@@ -94,7 +96,7 @@ public class ParcelTagSelectionScreen extends AbstractButtonListScreen {
                 parcelTask.setRawTitle("Any #" + tag.location());
             }
 
-            EditObjectMessage.sendToServer(parcelTask);
+            new EditObjectMessage(parcelTask).sendToServer();
         }
     }
 }

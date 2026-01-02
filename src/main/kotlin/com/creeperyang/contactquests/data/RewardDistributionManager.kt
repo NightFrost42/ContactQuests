@@ -4,13 +4,13 @@ import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.flechazo.contact.common.item.ParcelItem
 import com.flechazo.contact.common.item.PostcardItem
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.SimpleContainer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
+import net.minecraftforge.registries.ForgeRegistries
 import java.util.*
 import kotlin.math.min
 
@@ -45,7 +45,7 @@ object RewardDistributionManager {
     private fun mergeItemIntoList(list: MutableList<ItemStack>, stack: ItemStack) {
         var remaining = stack.count
         for (existing in list) {
-            if (ItemStack.isSameItemSameComponents(existing, stack) && existing.count < existing.maxStackSize) {
+            if (ItemStack.isSameItemSameTags(existing, stack) && existing.count < existing.maxStackSize) {
                 val canAdd = min(remaining, existing.maxStackSize - existing.count)
                 existing.grow(canAdd)
                 remaining -= canAdd
@@ -67,8 +67,8 @@ object RewardDistributionManager {
     private fun processBuffer(level: ServerLevel) {
         if (buffer.isEmpty()) return
 
-        buffer.forEach { (playerId, keyMap) ->
-            keyMap.forEach { (keyStr, items) ->
+        buffer.forEach { (playerId, keyMap: Map<String, MutableList<ItemStack>>) ->
+            keyMap.forEach { (keyStr, items: List<ItemStack>) ->
                 val key = DeliveryKey.fromString(keyStr)
                 val parcels = packItems(items, key.isEnder, key.sender)
 
@@ -93,9 +93,9 @@ object RewardDistributionManager {
         val resultParcels = mutableListOf<ItemStack>()
 
         val containerItem = if (isEnder)
-            BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("contact", "ender_parcel"))
+            ForgeRegistries.ITEMS.getValue(ResourceLocation("contact", "ender_parcel"))
         else
-            BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("contact", "parcel"))
+            ForgeRegistries.ITEMS.getValue(ResourceLocation("contact", "parcel"))
 
         if (containerItem == Items.AIR) return items
         val slotsPerParcel = 4

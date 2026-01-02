@@ -2,16 +2,13 @@ package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.config.*
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.data.PostcardDataManager
-import net.minecraft.core.HolderLookup
-import net.minecraft.core.registries.BuiltInRegistries
+import com.flechazo.contact.resourse.PostcardDataManager
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.util.datafix.DataFixTypes
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.*
@@ -70,7 +67,7 @@ class CollectionSavedData : SavedData() {
         for (stack in stacks) {
             var merged = false
             for (existingStack in data.itemStacks) {
-                if (ItemStack.isSameItemSameComponents(existingStack, stack)) {
+                if (ItemStack.isSameItemSameTags(existingStack, stack)) {
                     existingStack.grow(stack.count)
                     merged = true
                     break
@@ -168,7 +165,7 @@ class CollectionSavedData : SavedData() {
         var postcard = if (style != null) {
             PostcardItem.getPostcard(style, isEnder)
         } else {
-            PostcardItem.getPostcard(ResourceLocation.fromNamespaceAndPath("contact", "default"), isEnder)
+            PostcardItem.getPostcard(ResourceLocation("contact", "default"), isEnder)
         }
 
         var message = messageData.text.replace("\\n", "\n")
@@ -179,15 +176,7 @@ class CollectionSavedData : SavedData() {
         }
 
         if (name.isNotEmpty()) {
-            val componentId = ResourceLocation.fromNamespaceAndPath("contact", "postcard_sender")
-            val rawComponentType = BuiltInRegistries.DATA_COMPONENT_TYPE[componentId]
-
-            @Suppress("UNCHECKED_CAST")
-            val senderComponentType = rawComponentType as? DataComponentType<String>
-
-            if (senderComponentType != null) {
-                postcard[senderComponentType] = name
-            }
+            postcard.getOrCreateTag().putString("Sender", name)
         }
 
         return postcard
@@ -225,7 +214,7 @@ class CollectionSavedData : SavedData() {
         }
     }
 
-    override fun save(tag: CompoundTag, provider: HolderLookup.Provider): CompoundTag {
+    override fun save(tag: CompoundTag): CompoundTag {
         val list = ListTag()
         synchronized(dataMap) {
             for (data in dataMap.values) {
@@ -235,7 +224,9 @@ class CollectionSavedData : SavedData() {
 
                 val itemsTag = ListTag()
                 for (stack in data.itemStacks) {
-                    itemsTag.add(stack.save(provider))
+                    val itemTag = CompoundTag()
+                    stack.save(itemTag)
+                    itemsTag.add(itemTag)
                 }
                 dataTag.put("itemStacks", itemsTag)
 
@@ -249,12 +240,13 @@ class CollectionSavedData : SavedData() {
     companion object {
         fun get(level: ServerLevel): CollectionSavedData {
             return level.dataStorage.computeIfAbsent(
-                Factory(::CollectionSavedData, ::load, DataFixTypes.LEVEL),
+                ::load,
+                ::CollectionSavedData,
                 "contactquests_collection_data"
             )
         }
 
-        private fun load(tag: CompoundTag, provider: HolderLookup.Provider): CollectionSavedData {
+        private fun load(tag: CompoundTag): CollectionSavedData {
             val data = CollectionSavedData()
             val list = tag.getList("collectionDataList", Tag.TAG_COMPOUND.toInt())
 
@@ -268,7 +260,7 @@ class CollectionSavedData : SavedData() {
 
                 for (j in 0 until itemsListTag.size) {
                     val stackTag = itemsListTag.getCompound(j)
-                    val stack = ItemStack.parseOptional(provider, stackTag)
+                    val stack = ItemStack.of(stackTag)
                     if (!stack.isEmpty) {
                         itemStacks.add(stack)
                     }

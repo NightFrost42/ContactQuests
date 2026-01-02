@@ -4,7 +4,7 @@
 # Note that there are a couple of TOML lists in this file.
 # Find more information on toml format here:  https://github.com/toml-lang/toml
 # The name of the mod loader type to load - for regular FML @Mod mods it should be javafml
-modLoader = "javafml" #mandatory
+modLoader = "kotlinforforge"
 # A version range to match for said mod loader - for regular FML @Mod it will be the the FML version. This is currently 47.
 loaderVersion = "${loader_version_range}" #mandatory
 # The license for you mod. This is mandatory metadata and allows for easier comprehension of your redistributive properties.
@@ -73,16 +73,16 @@ ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
-modId = "kotlin_for_forge"
+modId = "kotlinforforge"
 mandatory = true
-versionRange = "[4.5,)"
+versionRange = "[4.11,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
 modId="ftbquests"
 mandatory = true
-versionRange="[2101,)"
+versionRange = "[2001,)"
 ordering="AFTER"
 side="BOTH"
 
@@ -96,14 +96,14 @@ side="BOTH"
 [[dependencies."${mod_id}"]]
 modId="ftbfiltersystem"
 mandatory = true
-versionRange="[21.1.3,)"
+versionRange = "[20.0.1,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies."${mod_id}"]]
 modId = "ftblibrary"
 mandatory = true
-versionRange = "[2101.1.26,)"
+versionRange = "[2001.0.0,)"
 ordering = "AFTER"
 side = "BOTH"
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares
@@ -114,6 +114,6 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId = "jade"
 mandatory = false
-versionRange = "[15,)"
+versionRange = "[11.13.2,)"
 ordering = "AFTER"
 side = "CLIENT"

@@ -1,17 +1,16 @@
 package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.quest.task.ContactTask
 import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.RedPacketTask
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
-import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.util.datafix.DataFixTypes
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.*
 
@@ -90,7 +89,7 @@ class TaskDeliverySavedData : SavedData() {
             return true
         }
 
-        val countToSubmit = if (task is ParcelTask) task.count else if (task is RedPacketTask) task.count else 1L
+        val countToSubmit = if (task is ContactTask) task.count else 1L
 
         teamData.addProgress(task, countToSubmit)
 
@@ -111,7 +110,7 @@ class TaskDeliverySavedData : SavedData() {
         return true
     }
 
-    override fun save(tag: CompoundTag, provider: HolderLookup.Provider): CompoundTag {
+    override fun save(tag: CompoundTag): CompoundTag {
         val list = ListTag()
         synchronized(pendingParcels) {
             for (p in pendingParcels) {
@@ -131,12 +130,13 @@ class TaskDeliverySavedData : SavedData() {
         operator fun get(level: ServerLevel): TaskDeliverySavedData {
             val storage = level.dataStorage
             return storage.computeIfAbsent(
-                Factory(::TaskDeliverySavedData, ::load, DataFixTypes.LEVEL),
+                ::load,
+                ::TaskDeliverySavedData,
                 "contactquests_deliveries"
             )
         }
 
-        private fun load(tag: CompoundTag, provider: HolderLookup.Provider): TaskDeliverySavedData {
+        private fun load(tag: CompoundTag): TaskDeliverySavedData {
             val data = TaskDeliverySavedData()
             val list = tag.getList("PendingParcels", Tag.TAG_COMPOUND.toInt())
             for (i in 0 until list.size) {

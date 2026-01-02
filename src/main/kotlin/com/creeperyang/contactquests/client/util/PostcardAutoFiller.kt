@@ -10,6 +10,7 @@ import net.minecraft.client.gui.screens.Screen
 import net.minecraft.world.entity.player.Player
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 import java.lang.reflect.Field
 import java.lang.reflect.Method
@@ -47,7 +48,7 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
     }
 
     @SubscribeEvent
-    override fun onClientTick(event: ClientTickEvent.Post) {
+    override fun onClientTick(event: TickEvent.ClientTickEvent) {
         super.onClientTick(event)
     }
 

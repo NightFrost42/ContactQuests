@@ -9,15 +9,11 @@ import dev.ftb.mods.ftbquests.item.MissingItem
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.TaskType
-import net.minecraft.core.HolderLookup
-import net.minecraft.core.component.DataComponents
-import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
-import net.minecraft.resources.ResourceLocation
+import net.minecraft.nbt.Tag
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
-import net.minecraft.world.item.component.ItemContainerContents
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
 
@@ -28,7 +24,7 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
     override fun getType(): TaskType = TaskRegistry.RED_PACKET
 
     override fun getItemNbtKey() = "inner_item"
-    override fun getConfigNameKey() = "contactquest.task.red_packet.item"
+    override fun getConfigNameKey() = "contactquest.task.ftbquests.redpacket.valid_for"
 
     fun setStackAndCount(stack: ItemStack, count: Int): RedPacketTask {
         this.itemStack = stack.copy()
@@ -36,22 +32,22 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         return this
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         nbt.putString("blessing", blessing)
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         blessing = nbt.getString("blessing")
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         buffer.writeUtf(blessing)
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         blessing = buffer.readUtf()
     }
@@ -66,23 +62,40 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         if (stack.isEmpty || stack.item !is RedPacketItem) return false
 
         if (blessing.isNotEmpty()) {
-            val id = ResourceLocation.fromNamespaceAndPath("contact", "red_packet_blessing")
-            val compType = BuiltInRegistries.DATA_COMPONENT_TYPE[id]
+            val tag = stack.tag ?: return false
 
-            val stackBlessing: String? = if (compType != null) {
-                stack[compType] as? String
+            val stackBlessing = if (tag.contains("red_packet_blessing")) {
+                tag.getString("red_packet_blessing")
             } else {
-                null
+                tag.getString("blessing")
             }
+
             if (stackBlessing != blessing) return false
         }
 
         if (itemStack.isEmpty) return true
 
-        val contentStack = stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
-            .stream().findFirst().orElse(ItemStack.EMPTY)
+        val contentStack = getFirstItemFromRedPacket(stack)
 
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, contentStack, matchComponents)
+        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, contentStack, shouldMatchNBT(), weakNBTmatch)
+    }
+
+    private fun getFirstItemFromRedPacket(stack: ItemStack): ItemStack {
+        val tag = stack.tag ?: return ItemStack.EMPTY
+
+        val tagListType = Tag.TAG_LIST.toInt()
+        val tagCompoundType = Tag.TAG_COMPOUND.toInt()
+
+        if (tag.contains("Items", tagListType)) {
+            val items = tag.getList("Items", tagCompoundType)
+            if (items.isNotEmpty()) {
+                return ItemStack.of(items.getCompound(0))
+            }
+        } else if (tag.contains("Item", tagCompoundType)) {
+            return ItemStack.of(tag.getCompound("Item"))
+        }
+
+        return ItemStack.EMPTY
     }
 
     fun checkContent(stack: ItemStack): Boolean {

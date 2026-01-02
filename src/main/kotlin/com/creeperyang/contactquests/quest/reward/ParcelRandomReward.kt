@@ -16,13 +16,12 @@ import dev.ftb.mods.ftbquests.quest.reward.ItemReward
 import dev.ftb.mods.ftbquests.quest.reward.Reward
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
 import dev.ftb.mods.ftbquests.util.ConfigQuestObject
-import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.network.RegistryFriendlyByteBuf
+import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
-import net.neoforged.api.distmarker.Dist
-import net.neoforged.api.distmarker.OnlyIn
+import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.api.distmarker.OnlyIn
 import java.util.*
 
 open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
@@ -61,20 +60,20 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
         }
     }
 
-    override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.writeData(nbt, provider)
+    override fun writeData(nbt: CompoundTag) {
+        super.writeData(nbt)
         if (table != null) {
             nbt.putLong("table_id", table!!.id)
             if (table!!.id == -1L) {
                 val tag = SNBTCompoundTag()
-                table!!.writeData(tag, provider)
+                table!!.writeData(tag)
                 nbt.put("table_data", tag)
             }
         }
     }
 
-    override fun readData(nbt: CompoundTag, provider: HolderLookup.Provider) {
-        super.readData(nbt, provider)
+    override fun readData(nbt: CompoundTag) {
+        super.readData(nbt)
         var tempTable: RewardTable? = null
 
         val file: BaseQuestFile = questFile
@@ -86,13 +85,13 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
 
         if (tempTable == null && nbt.contains("table_data")) {
             tempTable = RewardTable(-1L, file)
-            tempTable.readData(nbt.getCompound("table_data"), provider)
+            tempTable.readData(nbt.getCompound("table_data"))
         }
 
         this.table = tempTable
     }
 
-    override fun writeNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun writeNetData(buffer: FriendlyByteBuf) {
         super.writeNetData(buffer)
         val t = table
         buffer.writeLong(t?.id ?: 0L)
@@ -101,7 +100,7 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
         }
     }
 
-    override fun readNetData(buffer: RegistryFriendlyByteBuf) {
+    override fun readNetData(buffer: FriendlyByteBuf) {
         super.readNetData(buffer)
         val tId = buffer.readLong()
         if (tId == -1L) {
