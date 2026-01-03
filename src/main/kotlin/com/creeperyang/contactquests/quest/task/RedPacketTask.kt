@@ -64,10 +64,11 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         if (blessing.isNotEmpty()) {
             val tag = stack.tag ?: return false
 
-            val stackBlessing = if (tag.contains("red_packet_blessing")) {
-                tag.getString("red_packet_blessing")
-            } else {
-                tag.getString("blessing")
+            val stackBlessing = when {
+                tag.contains("red_packet_blessing") -> tag.getString("red_packet_blessing")
+                tag.contains("blessing") -> tag.getString("blessing")
+                tag.contains("blessings") -> tag.getString("blessings")
+                else -> ""
             }
 
             if (stackBlessing != blessing) return false
@@ -82,6 +83,13 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
 
     private fun getFirstItemFromRedPacket(stack: ItemStack): ItemStack {
         val tag = stack.tag ?: return ItemStack.EMPTY
+
+        if (tag.contains("parcel", Tag.TAG_LIST.toInt())) {
+            val items = tag.getList("parcel", Tag.TAG_COMPOUND.toInt())
+            if (items.isNotEmpty()) {
+                return ItemStack.of(items.getCompound(0))
+            }
+        }
 
         val tagListType = Tag.TAG_LIST.toInt()
         val tagCompoundType = Tag.TAG_COMPOUND.toInt()

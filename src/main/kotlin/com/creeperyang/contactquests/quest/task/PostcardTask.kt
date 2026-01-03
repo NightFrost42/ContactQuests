@@ -113,7 +113,9 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         for (itemIdStr in validItemIds) {
             val itemId = ResourceLocation("contact", itemIdStr)
             val item = ForgeRegistries.ITEMS.getValue(itemId)
-            displayList.add(ItemStack(item))
+            if (item != null) {
+                displayList.add(ItemStack(item))
+            }
         }
         return displayList
     }

@@ -48,5 +48,9 @@
   "message.contactquests.binding.success": "Mailbox bound to team: %s",
   "message.contactquests.binding.uuid": "Team UUID: %s",
   "contactquests.command.set_count.success": "Set trigger count for NPC [%s] to %d.",
-  "contactquests.sidebar.get_binder": "Click to get Team Mailbox Binder"
+  "contactquests.sidebar.get_binder": "Click to get Team Mailbox Binder",
+  "ftbquests.task.contactquests.parcel_task.match_nbt": "match nbt",
+  "ftbquests.task.contactquests.parcel_task.weak_nbt_match": "weak match nbt",
+  "ftbquests.task.contactquests.red_packet_task.match_nbt": "match nbt",
+  "ftbquests.task.contactquests.red_packet_task.weak_nbt_match": "weak match nbt"
 }

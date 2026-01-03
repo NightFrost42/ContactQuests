@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.item
 
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
 import com.flechazo.contact.common.block.MailboxBlock
+import com.flechazo.contact.common.storage.IMailboxDataProvider
 import com.flechazo.contact.common.storage.MailboxDataManager
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
@@ -68,7 +69,7 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
     }
 
     private fun checkAndHandleExistingMailbox(
-        dataManager: com.flechazo.contact.common.storage.IMailboxDataProvider,
+        dataManager: IMailboxDataProvider,
         teamId: UUID,
         level: Level,
         currentPos: BlockPos,

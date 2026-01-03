@@ -146,7 +146,6 @@ dependencies {
     implementation fg.deobf("curse.maven:architectury-api-419699:${architectury_api_neoforge_21}")
     runtimeOnly fg.deobf("curse.maven:jupiter-1072905:${jupiter_neoforge_21}")
     runtimeOnly fg.deobf("curse.maven:oelib-1319210:${oelib_neoforge_21}")
-    runtimeOnly fg.deobf("curse.maven:ftb-xmod-compat-889915:${ftb_xmod_compat_neoforge_21}")
 }
 
 tasks.named('processResources', ProcessResources).configure {
@@ -160,7 +159,7 @@ tasks.named('processResources', ProcessResources).configure {
     inputs.properties replaceProperties
 
     filesMatching(['META-INF/mods.toml', 'pack.mcmeta']) {
-        expand replaceProperties + [project: project]
+        expand replaceProperties
     }
 }
 

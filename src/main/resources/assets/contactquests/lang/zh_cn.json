@@ -48,5 +48,9 @@
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
   "message.contactquests.binding.uuid": "队伍 UUID：%s",
   "contactquests.command.set_count.success": "已将 NPC [%s] 的触发计数设置为 %d。",
-  "contactquests.sidebar.get_binder": "点击以获得团队邮箱绑定器"
+  "contactquests.sidebar.get_binder": "点击以获得团队邮箱绑定器",
+  "ftbquests.task.contactquests.parcel_task.match_nbt": "匹配方式",
+  "ftbquests.task.contactquests.parcel_task.weak_nbt_match": "弱匹配",
+  "ftbquests.task.contactquests.red_packet_task.match_nbt": "匹配方式",
+  "ftbquests.task.contactquests.red_packet_task.weak_nbt_match": "弱匹配"
 }

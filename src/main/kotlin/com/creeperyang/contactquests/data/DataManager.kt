@@ -77,7 +77,7 @@ object DataManager {
         val available = mutableMapOf<String, Int>()
 
         fun checkAndAdd(task: Task, targetName: String) {
-            if (teamData.canStartTasks(task.quest) && !teamData.isCompleted(task)) {
+            if (teamData.canStartTasks(task.quest)) {
                 available[targetName] = if (enableDelay) NpcConfigManager.getDeliveryTime(targetName) else 0
             }
         }
@@ -118,8 +118,13 @@ object DataManager {
 
     private fun getParcelItems(stack: ItemStack): List<ItemStack> {
         val items = mutableListOf<ItemStack>()
-        val tag = stack.tag
-        if (tag != null && tag.contains("Items", Tag.TAG_LIST.toInt())) {
+        val tag = stack.tag ?: return items
+        if (tag.contains("parcel", Tag.TAG_LIST.toInt())) {
+            val list = tag.getList("parcel", Tag.TAG_COMPOUND.toInt())
+            for (i in 0 until list.size) {
+                items.add(ItemStack.of(list.getCompound(i)))
+            }
+        } else if (tag.contains("Items", Tag.TAG_LIST.toInt())) {
             val list = tag.getList("Items", Tag.TAG_COMPOUND.toInt())
             for (i in 0 until list.size) {
                 items.add(ItemStack.of(list.getCompound(i)))
