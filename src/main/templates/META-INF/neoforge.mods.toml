@@ -95,13 +95,6 @@ ordering="AFTER"
 side="BOTH"
 
 [[dependencies."${mod_id}"]]
-modId="ftbfiltersystem"
-type = "required"
-versionRange="[21.1.3,)"
-ordering="AFTER"
-side="BOTH"
-
-[[dependencies."${mod_id}"]]
 modId = "ftblibrary"
 type = "required"
 versionRange = "[2101.1.26,)"
