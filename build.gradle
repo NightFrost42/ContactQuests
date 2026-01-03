@@ -138,7 +138,6 @@ dependencies {
     implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}")
     implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}")
     implementation fg.deobf("curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}")
-    implementation fg.deobf("curse.maven:ftb-filter-system-943925:${filter_system_neoforge_21}")
     implementation fg.deobf("curse.maven:jade-324717:${jade_neoforge_21}")
 
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
