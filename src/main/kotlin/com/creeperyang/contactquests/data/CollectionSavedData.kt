@@ -173,7 +173,7 @@ class CollectionSavedData : SavedData() {
         }
 
         var message = messageData.text.replace("\\n", "\n")
-        message += "\n现在次数：" + getTriggerCountByName(name).toString()
+//        message += "\n现在次数：" + getTriggerCountByName(name).toString()
         if (messageData.text.isNotEmpty()) {
             val processedText = message
             postcard = PostcardItem.setText(postcard, processedText)
