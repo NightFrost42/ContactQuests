@@ -40,8 +40,8 @@ base {
     archivesName = mod_id
 }
 
-java.toolchain.languageVersion = JavaLanguageVersion.of(21)
-kotlin.jvmToolchain(21)
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+kotlin.jvmToolchain(17)
 
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"

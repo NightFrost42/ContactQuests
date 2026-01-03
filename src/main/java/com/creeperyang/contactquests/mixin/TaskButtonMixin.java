@@ -104,7 +104,7 @@ public abstract class TaskButtonMixin {
     @Unique
     private void handleTagConversion(ParcelTask parcelTask, ItemFilterAdapter adapter, List<TagKey<Item>> tags) {
         if (tags.size() == 1) {
-            contactQuestsSetTagFilterAndSave(parcelTask, adapter, tags.getFirst());
+            contactQuestsSetTagFilterAndSave(parcelTask, adapter, tags.get(0));
         } else {
             new ParcelTagSelectionScreen(tags, parcelTask, adapter, questScreen).openGui();
         }
