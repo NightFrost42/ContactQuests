@@ -55,13 +55,12 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         ConfigGroup group = config.getOrCreateSubgroup("contact_quests_tags");
         group.setNameKey("contactquests.config.group");
 
-        TagConfig tagConfig = new com.creeperyang.contactquests.config.TagConfig(getQuestFile());
+        TagConfig tagConfig = new TagConfig(getQuestFile(), contactQuests$requiredTags);
 
         group.addList("required_tags", contactQuests$requiredTags, tagConfig, v -> {
             contactQuests$requiredTags.clear();
             contactQuests$requiredTags.addAll(v);
         }, "").setNameKey("contactquests.config.required_tags");
-
         group.addEnum("mode", contactQuests$tagMode, v -> contactQuests$tagMode = v, DependencyMode.NAME_MAP)
                 .setNameKey("contactquests.config.tag_mode");
 

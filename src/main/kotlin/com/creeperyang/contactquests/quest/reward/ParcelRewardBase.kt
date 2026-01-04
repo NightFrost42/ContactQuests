@@ -139,7 +139,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
             .setNameKey("contactquest.reward.team_reward_multiplier")
             .setOrder(0)
 
-        val tagConfig = TagConfig(questFile)
+        val tagConfig = TagConfig(questFile, unlockTags)
 
         config.addList("unlock_tags", unlockTags, tagConfig, { v ->
             unlockTags.clear()

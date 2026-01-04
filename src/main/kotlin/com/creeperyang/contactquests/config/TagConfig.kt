@@ -10,21 +10,33 @@ import dev.ftb.mods.ftbquests.quest.BaseQuestFile
 import net.minecraft.ChatFormatting
 import net.minecraft.network.chat.Component
 
-class TagConfig
-    (private val file: BaseQuestFile?) : StringConfig(null) {
+class TagConfig(
+    private val file: BaseQuestFile?,
+    private val existingTags: Collection<String>
+) : StringConfig(null) {
+
+    companion object {
+        val sessionTags = HashSet<String>()
+    }
+
+    init {
+        if (file != null) {
+            sessionTags.clear()
+        }
+    }
+
     override fun onClicked(clicked: Widget?, button: MouseButton?, callback: ConfigCallback) {
-        TagSelectionScreen(this, callback).openGui()
+        TagSelectionScreen(this, callback, existingTags).openGui()
     }
 
     override fun addInfo(list: TooltipList) {
         super.addInfo(list)
-        if (getValue().isNotEmpty()) {
+        if (value.isNotEmpty()) {
             list.add(
                 Component.translatable(
                     "contactquests.gui.current_tag",
-                    Component.literal(getValue()).withStyle(ChatFormatting.YELLOW)
-                )
-                    .withStyle(ChatFormatting.GRAY)
+                    Component.literal(value).withStyle(ChatFormatting.YELLOW)
+                ).withStyle(ChatFormatting.GRAY)
             )
         }
     }
