@@ -17,6 +17,18 @@ object NetworkHandler {
             RequestBinderPayload.STREAM_CODEC,
             ::handleRequestBinder
         )
+
+        registrar.playBidirectional(
+            OpenQuestMessage.TYPE,
+            OpenQuestMessage.STREAM_CODEC,
+            OpenQuestMessage::handle
+        )
+
+        registrar.playToClient(
+            SyncTeamTagsMessage.TYPE,
+            SyncTeamTagsMessage.STREAM_CODEC,
+            SyncTeamTagsMessage::handle
+        )
     }
 
     private fun handleRequestBinder(payload: RequestBinderPayload, context: IPayloadContext) {
