@@ -52,5 +52,8 @@
   "message.contactquests.binding.exists": "绑定失败：该队伍已在 %2$s 的 %1$s 处绑定了邮箱！请先拆除旧邮箱。",
   "message.contactquests.binding.no_team": "绑定失败：你未加入任何 FTB 队伍！",
   "message.contactquests.binding.success": "邮箱已绑定到队伍：%s",
-  "message.contactquests.binding.uuid": "队伍 UUID：%s"
+  "message.contactquests.binding.uuid": "队伍 UUID：%s",
+  "contactquest.reward.is_team_reward": "根据队伍人数倍乘奖励",
+  "contactquest.reward.team_reward_multiplier": "队伍人数倍乘系数",
+  "ftbquests.reward.random_bonus": "随机额外奖励数量（上限）"
 }
