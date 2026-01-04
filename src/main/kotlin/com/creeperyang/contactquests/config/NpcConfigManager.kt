@@ -39,7 +39,8 @@ enum class StyleType {
 data class MessageData(
     var text: String = "Hello World!",
     var style: String = "default",
-    var isEnder: Boolean = false
+    var isEnder: Boolean = false,
+    var weight: Int = 1
 )
 
 data class ErrorSolveData(
@@ -135,9 +136,17 @@ object NpcConfigManager {
     }
 
     fun getMessage(data: ErrorSolveData): MessageData {
-        val messageCount = data.message.size
-        val randomNum = Random.nextInt(messageCount)
-        return data.message[randomNum]
+        if (data.message.isEmpty()) return MessageData()
+
+        val totalWeight = data.message.sumOf { it.weight }
+        if (totalWeight <= 0) return data.message.random()
+
+        var randomNum = Random.nextInt(totalWeight)
+        for (msg in data.message) {
+            randomNum -= msg.weight
+            if (randomNum < 0) return msg
+        }
+        return data.message.last()
     }
 
     private fun save() {
