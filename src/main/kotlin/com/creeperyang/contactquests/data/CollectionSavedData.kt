@@ -144,7 +144,8 @@ class CollectionSavedData : SavedData() {
 
             val itemsToSend = ArrayList(savedStacks)
 
-            val isEnder = npcData.isAllEnder
+            val message = NpcConfigManager.getMessage(npcData)
+            val isEnder: Boolean = npcData.isAllEnder || message.isEnder
 
             for (item in itemsToSend) {
                 RewardDistributionManager.distribute(player, item, name, isEnder)
