@@ -3,11 +3,16 @@ package com.creeperyang.contactquests.command
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.registry.ModItems
+import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
+import com.mojang.brigadier.suggestion.Suggestions
+import dev.ftb.mods.ftbquests.quest.ServerQuestFile
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
+import net.minecraft.ChatFormatting
 import net.minecraft.commands.CommandSourceStack
 import net.minecraft.commands.Commands
 import net.minecraft.commands.SharedSuggestionProvider
@@ -16,6 +21,12 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.network.PacketDistributor
+import java.lang.Long
+import java.util.concurrent.CompletableFuture
+import kotlin.Exception
+import kotlin.Int
+import kotlin.String
 
 object ModCommands {
 
@@ -35,6 +46,24 @@ object ModCommands {
                 .then(
                     Commands.literal("get_binder_internal")
                         .executes(this::giveSlefBinder)
+                )
+                .then(
+                    Commands.literal("open")
+                        .then(
+                            Commands.argument("id", StringArgumentType.greedyString())
+                                .executes { ctx ->
+                                    val idStr = StringArgumentType.getString(ctx, "id")
+                                    try {
+                                        val id = Long.parseUnsignedLong(idStr, 16)
+                                        val player = ctx.source.playerOrException
+
+                                        PacketDistributor.sendToPlayer(player, OpenQuestMessage(id))
+                                        1
+                                    } catch (e: Exception) {
+                                        0
+                                    }
+                                }
+                        )
                 )
                 .then(
                     Commands.literal("admin")
@@ -61,6 +90,137 @@ object ModCommands {
                                         .then(
                                             Commands.argument("count", IntegerArgumentType.integer(0))
                                                 .executes(this::setCount)
+                                        )
+                                )
+                        )
+                        .then(
+                            Commands.literal("tags")
+                                .requires { it.hasPermission(2) }
+                                .then(
+                                    Commands.literal("view")
+                                        .then(
+                                            Commands.argument("target", EntityArgument.player())
+                                                .executes { ctx ->
+                                                    val target = EntityArgument.getPlayer(ctx, "target")
+                                                    val team =
+                                                        FTBTeamsAPI.api().manager.getTeamForPlayer(
+                                                            target
+                                                        ).orElse(null)
+                                                    if (team == null) {
+                                                        ctx.source.sendFailure(Component.translatable("contactquests.command.error.no_team"))
+                                                        return@executes 0
+                                                    }
+                                                    val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id)
+                                                    if (teamData is ITeamDataExtension) {
+                                                        val tags: Collection<String?> =
+                                                            teamData.`contactQuests$getTags`()
+                                                        ctx.source.sendSuccess({
+                                                            Component.translatable(
+                                                                "contactquests.command.tags.view", target.name,
+                                                                Component.literal(tags.joinToString(", "))
+                                                                    .withStyle(ChatFormatting.GREEN)
+                                                            )
+                                                        }, false)
+                                                        1
+                                                    } else {
+                                                        0
+                                                    }
+                                                }
+                                        )
+                                )
+                                .then(
+                                    Commands.literal("add")
+                                        .then(
+                                            Commands.argument("target", EntityArgument.player())
+                                                .then(
+                                                    Commands.argument("tag", StringArgumentType.string())
+                                                        .executes { ctx ->
+                                                            val target = EntityArgument.getPlayer(ctx, "target")
+                                                            val tag = StringArgumentType.getString(ctx, "tag")
+                                                            val team =
+                                                                FTBTeamsAPI.api().manager.getTeamForPlayer(
+                                                                    target
+                                                                ).orElse(null)
+                                                            val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(
+                                                                team?.id ?: return@executes 0
+                                                            )
+
+                                                            if (teamData is ITeamDataExtension) {
+                                                                if (teamData.`contactQuests$unlockTag`(tag)) {
+                                                                    ctx.source.sendSuccess({
+                                                                        Component.translatable(
+                                                                            "contactquests.command.tags.added",
+                                                                            tag
+                                                                        ).withStyle(
+                                                                            ChatFormatting.GREEN
+                                                                        )
+                                                                    }, true)
+                                                                    1
+                                                                } else {
+                                                                    ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_exists"))
+                                                                    0
+                                                                }
+                                                            } else 0
+                                                        }
+                                                )
+                                        )
+                                )
+                                .then(
+                                    Commands.literal("remove")
+                                        .then(
+                                            Commands.argument("target", EntityArgument.player())
+                                                .then(
+                                                    Commands.argument("tag", StringArgumentType.string())
+                                                        .suggests { ctx, builder ->
+                                                            val target = try {
+                                                                EntityArgument.getPlayer(ctx, "target")
+                                                            } catch (e: Exception) {
+                                                                null
+                                                            }
+                                                            if (target != null) {
+                                                                val team =
+                                                                    FTBTeamsAPI.api().manager.getTeamForPlayer(
+                                                                        target
+                                                                    ).orElse(null)
+                                                                val teamData =
+                                                                    ServerQuestFile.INSTANCE.getNullableTeamData(
+                                                                        team?.id
+                                                                            ?: return@suggests builder.build() as CompletableFuture<Suggestions?>?
+                                                                    )
+                                                                if (teamData is ITeamDataExtension) {
+                                                                    teamData.`contactQuests$getTags`()
+                                                                        .forEach { builder.suggest(it) }
+                                                                }
+                                                            }
+                                                            builder.buildFuture()
+                                                        }
+                                                        .executes { ctx ->
+                                                            val target = EntityArgument.getPlayer(ctx, "target")
+                                                            val tag = StringArgumentType.getString(ctx, "tag")
+                                                            val team =
+                                                                FTBTeamsAPI.api().manager.getTeamForPlayer(
+                                                                    target
+                                                                ).orElse(null)
+                                                            val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(
+                                                                team?.id ?: return@executes 0
+                                                            )
+
+                                                            if (teamData is ITeamDataExtension) {
+                                                                if (teamData.`contactQuests$removeTag`(tag)) {
+                                                                    ctx.source.sendSuccess({
+                                                                        Component.translatable(
+                                                                            "contactquests.command.tags.removed",
+                                                                            tag
+                                                                        ).withStyle(ChatFormatting.YELLOW)
+                                                                    }, true)
+                                                                    1
+                                                                } else {
+                                                                    ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_not_found"))
+                                                                    0
+                                                                }
+                                                            } else 0
+                                                        }
+                                                )
                                         )
                                 )
                         )

@@ -9,11 +9,14 @@
     "ItemRewardAccessor",
     "MailboxBlockEntityMixin",
     "MailboxBlockMixin",
-    "OtherButtonsPanelTopMixin"
+    "OtherButtonsPanelTopMixin",
+    "QuestMixin",
+    "TeamDataMixin"
   ],
   "client": [
     "GuiProvidersMixin",
     "PostcardEditScreenAccessor",
+    "QuestScreenAccessor",
     "RedPacketEnvelopeScreenAccessor",
     "RewardButtonMixin",
     "TaskButtonMixin",

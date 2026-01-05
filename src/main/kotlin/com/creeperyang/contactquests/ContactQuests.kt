@@ -72,6 +72,7 @@ class ContactQuests {
         RewardRegistry.init()
         ModItems.register(MOD_BUS)
         EVENT_BUS.register(ModCommands)
+        EVENT_BUS.register(EventHandler)
 
         MOD_BUS.addListener(::onConfigLoad)
         MOD_BUS.addListener(::onConfigReload)

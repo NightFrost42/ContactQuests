@@ -7,8 +7,6 @@ import com.flechazo.contact.common.storage.IMailboxDataProvider;
 import com.flechazo.contact.common.storage.MailboxDataManager;
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI;
 import dev.ftb.mods.ftbteams.api.Team;
-import dev.ftb.mods.ftbteams.api.TeamManager;
-import dev.ftb.mods.ftbteams.api.TeamRank;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.world.entity.player.Player;
@@ -18,7 +16,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -39,40 +36,47 @@ public class MailboxBlockMixin {
             )
     )
     private boolean interceptOwnerCheck(Object ownerUuidObj, Object playerUuidObj, BlockState state, Level level, BlockPos pos, Player player) {
-        if (Objects.equals(ownerUuidObj, playerUuidObj) || level.isClientSide) {
+        if (Objects.equals(ownerUuidObj, playerUuidObj)) {
             return true;
         }
 
-        if (!(ownerUuidObj instanceof UUID mailboxOwnerUUID) || !(playerUuidObj instanceof UUID playerUUID)) {
+        if (!(playerUuidObj instanceof UUID playerUUID)) {
             return false;
         }
 
-        return checkTeamPermission(level, pos, mailboxOwnerUUID, playerUUID);
-    }
+        BlockPos topPos;
+        if (state.hasProperty(BlockStateProperties.DOUBLE_BLOCK_HALF) &&
+                state.getValue(BlockStateProperties.DOUBLE_BLOCK_HALF) == DoubleBlockHalf.LOWER) {
+            topPos = pos.above();
+        } else {
+            topPos = pos;
+        }
 
-    @Unique
-    private boolean checkTeamPermission(Level level, BlockPos pos, UUID mailboxOwnerUUID, UUID playerUUID) {
+        BlockEntity be = level.getBlockEntity(topPos);
+
+        UUID currentPlayerTeamID = null;
         try {
-            TeamManager manager = FTBTeamsAPI.api().getManager();
-            if (manager == null) return false;
-
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof IMailboxTeamAccessor accessor) {
-                UUID boundTeamId = accessor.contactquests$getTeamId();
-                if (boundTeamId != null) {
-                    Optional<Team> teamOptional = manager.getTeamByID(boundTeamId);
-                    if (teamOptional.isPresent() && teamOptional.get().getRankForPlayer(playerUUID).isAtLeast(TeamRank.MEMBER)) {
-                        return true;
-                    }
-                }
+            Optional<Team> teamOpt = FTBTeamsAPI.api().getManager().getTeamForPlayerID(playerUUID);
+            if (teamOpt.isPresent()) {
+                currentPlayerTeamID = teamOpt.get().getId();
             }
-
-            return manager.arePlayersInSameTeam(mailboxOwnerUUID, playerUUID);
-
-        } catch (Exception e) {
-            ContactQuests.error("Error checking team permissions for mailbox at " + pos, e);
-            return false;
+        } catch (Exception ignored) {
         }
+
+        if (currentPlayerTeamID == null) return false;
+
+        if (be instanceof IMailboxTeamAccessor accessor) {
+            UUID storedTeamId = accessor.contactquests$getTeamId();
+            if (storedTeamId != null && storedTeamId.equals(currentPlayerTeamID)) {
+                return true;
+            }
+        }
+
+        if (ownerUuidObj instanceof UUID mailboxOwnerUUID) {
+            return mailboxOwnerUUID.equals(currentPlayerTeamID);
+        }
+
+        return false;
     }
 
     @Inject(method = "playerWillDestroy", at = @At("HEAD"))
