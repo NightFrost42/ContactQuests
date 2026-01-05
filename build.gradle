@@ -201,3 +201,11 @@ tasks.withType(JavaCompile).configureEach {
     options.annotationProcessorPath = configurations.annotationProcessor
     options.encoding = 'UTF-8'
 }
+
+tasks.named('compileJava', JavaCompile).configure {
+    outputs.upToDateWhen { false }
+
+    options.compilerArgs += [
+            "-AoutRefMapFile=${project.layout.buildDirectory.get().asFile}/resources/main/${mod_id}.refmap.json"
+    ]
+}

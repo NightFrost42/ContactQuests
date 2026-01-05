@@ -79,6 +79,10 @@ public class TeamDataMixin implements ITeamDataExtension {
     private void injectAreDependenciesComplete(Quest quest, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
+            if (((IQuestExtension) questObj).contactQuests$isLockedByMutex((TeamData) (Object) this)) {
+                cir.setReturnValue(false);
+            }
+
             if (questObj instanceof IQuestExtension) {
                 if (((IQuestExtension) questObj).contactQuests$areTagsMet((TeamData) (Object) this)) {
                     cir.setReturnValue(false);
