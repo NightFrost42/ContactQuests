@@ -45,7 +45,7 @@ kotlin.jvmToolchain(17)
 
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
-    config "${mod_id}.mixins.json"
+//    config "${mod_id}.mixins.json"
 
     debug.verbose = true
     debug.export = true
@@ -132,7 +132,7 @@ dependencies {
 
     implementation 'thedarkcolour:kotlinforforge:4.11.0'
 
-    annotationProcessor "org.spongepowered:mixin:0.8.5:processor"
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     implementation fg.deobf("curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}")
     implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}")
@@ -195,4 +195,9 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.annotationProcessorPath = configurations.annotationProcessor
+    options.encoding = 'UTF-8'
 }

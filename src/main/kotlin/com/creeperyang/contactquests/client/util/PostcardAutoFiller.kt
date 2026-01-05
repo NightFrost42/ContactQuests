@@ -3,6 +3,8 @@ package com.creeperyang.contactquests.client.util
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.mixin.PostcardEditScreenAccessor
+import com.creeperyang.contactquests.mixin.TextBoxAccessor
+import com.creeperyang.contactquests.mixin.TextInputUtilAccessor
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.screen.PostcardEditScreen
 import net.minecraft.client.Minecraft
@@ -12,8 +14,6 @@ import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
 import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
-import java.lang.reflect.Field
-import java.lang.reflect.Method
 
 @OnlyIn(Dist.CLIENT)
 object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
@@ -22,12 +22,6 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
     private var typingTimer = 0
     private var typingSpeed = 0
     private var targetText = ""
-
-    private var cachedHelperField: Field? = null
-    private var cachedPageField: Field? = null
-    private var cachedSelectAllMethod: Method? = null
-    private var cachedInsertTextMethod: Method? = null
-    private var cachedRefreshMethod: Method? = null
 
     override val checkContainerId: Boolean = false
 
@@ -39,10 +33,7 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
         typingSpeed = ContactConfig.autoFillSpeed.get()
         currentIndex = 0
         typingTimer = 0
-        actionDelay = 10
-        clearReflectionCache()
     }
-
     override fun isValidScreen(screen: Screen?): Boolean {
         return screen is PostcardEditScreen
     }
@@ -55,30 +46,24 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
     override fun runLogic(mc: Minecraft, player: Player, screen: Screen) {
         val editScreen = screen as PostcardEditScreen
 
+        val textBox = (editScreen as? PostcardEditScreenAccessor)?.`contactQuests$getTextBox`() ?: return
+        val textBoxAcc = textBox as? TextBoxAccessor ?: return
+
+        val helper = textBoxAcc.textInputUtil as? TextInputUtilAccessor ?: return
+
         if (typingSpeed <= 0) {
-            if (fillContentInstant(editScreen)) {
-                finishTask("瞬间填充完成")
-            } else {
-                actionDelay++
-                if (actionDelay > 60) finishTask("瞬间填充超时失败")
-            }
+            fillContentInstant(textBoxAcc, helper)
+            finishTask("瞬间填充完成")
         } else {
-            processTyping(editScreen)
+            processTyping(textBoxAcc, helper)
         }
     }
 
-    private fun processTyping(screen: PostcardEditScreen) {
-        if (screen !is PostcardEditScreenAccessor) {
-            finishTask("Mixin 访问失败")
-            return
-        }
-
-        val textBox = screen.`contactQuests$getTextBox`() ?: return
-
+    private fun processTyping(textBoxAcc: TextBoxAccessor, helper: TextInputUtilAccessor) {
         try {
-            if (cachedHelperField == null) {
-                if (!initializeReflection(textBox)) return
-                clearTextBox(textBox)
+            if (currentIndex == 0) {
+                helper.invokeSelectAll()
+                helper.invokeInsertText("")
             }
 
             typingTimer++
@@ -91,14 +76,12 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
             }
 
             val charToType = targetText[currentIndex].toString()
-            val helperObj = cachedHelperField!![textBox]
-            if (helperObj != null) {
-                cachedInsertTextMethod?.invoke(helperObj, charToType)
-            }
+            helper.invokeInsertText(charToType)
 
-            val currentProgressText = targetText.substring(0, currentIndex + 1)
-            updatePageRender(textBox, currentProgressText)
-            triggerRefresh(textBox)
+            textBoxAcc.setPage(targetText.substring(0, currentIndex + 1))
+            textBoxAcc.setIsModified(true)
+            textBoxAcc.invokeShouldRefresh()
+
             currentIndex++
 
         } catch (e: Exception) {
@@ -107,98 +90,10 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
         }
     }
 
-    private fun fillContentInstant(screen: PostcardEditScreen): Boolean {
-        if (screen !is PostcardEditScreenAccessor) return false
-        val textBox = screen.`contactQuests$getTextBox`() ?: return false
-
-        try {
-            if (cachedHelperField == null && !initializeReflection(textBox)) return false
-
-            val helperObj = cachedHelperField!![textBox]
-            if (helperObj != null) {
-                cachedSelectAllMethod?.invoke(helperObj)
-                cachedInsertTextMethod?.invoke(helperObj, targetText)
-            }
-
-            updatePageRender(textBox, targetText)
-            triggerRefresh(textBox)
-            return true
-
-        } catch (e: Exception) {
-            ContactQuests.error("PostcardAutoFiller: 瞬间写入出错", e)
-        }
-        return false
-    }
-
-    private fun initializeReflection(textBox: Any): Boolean {
-        try {
-            var clazz: Class<*>? = textBox.javaClass
-            while (clazz != null) {
-                try {
-                    val f = clazz.getDeclaredField("textInputUtil")
-                    f.isAccessible = true
-                    cachedHelperField = f
-                    break
-                } catch (e: NoSuchFieldException) {
-                    clazz = clazz.superclass
-                }
-            }
-
-            if (cachedHelperField == null) return false
-
-            val helperObj = cachedHelperField!![textBox] ?: return false
-            val helperClass = helperObj.javaClass
-
-            cachedSelectAllMethod = helperClass.getMethod("selectAll")
-            cachedInsertTextMethod = helperClass.getMethod("insertText", String::class.java)
-
-            try {
-                val p = textBox.javaClass.getDeclaredField("page")
-                p.isAccessible = true
-                cachedPageField = p
-            } catch (e: NoSuchFieldException) { /* ignore */ }
-
-            try {
-                cachedRefreshMethod = textBox.javaClass.getMethod("shouldRefresh")
-            } catch (ignored: NoSuchMethodException) {}
-
-            return true
-        } catch (e: Exception) {
-            ContactQuests.error("反射初始化异常", e)
-            return false
-        }
-    }
-
-    private fun updatePageRender(textBox: Any, text: String) {
-        try { cachedPageField?.set(textBox, text) } catch (ignored: Exception) {}
-    }
-
-    private fun triggerRefresh(textBox: Any) {
-        try {
-            cachedRefreshMethod?.invoke(textBox) ?: run {
-                val modifiedField = textBox.javaClass.getDeclaredField("isModified")
-                modifiedField.isAccessible = true
-                modifiedField.setBoolean(textBox, true)
-            }
-        } catch (ignored: Exception) {}
-    }
-
-    private fun clearTextBox(textBox: Any) {
-        try {
-            val helperObj = cachedHelperField!![textBox]
-            if (helperObj != null) {
-                cachedSelectAllMethod?.invoke(helperObj)
-                cachedInsertTextMethod?.invoke(helperObj, "")
-                updatePageRender(textBox, "")
-            }
-        } catch (ignored: Exception) {}
-    }
-
-    private fun clearReflectionCache() {
-        cachedHelperField = null
-        cachedPageField = null
-        cachedSelectAllMethod = null
-        cachedInsertTextMethod = null
-        cachedRefreshMethod = null
+    private fun fillContentInstant(textBoxAcc: TextBoxAccessor, helper: TextInputUtilAccessor) {
+        helper.invokeSelectAll()
+        helper.invokeInsertText(targetText)
+        textBoxAcc.setPage(targetText)
+        textBoxAcc.invokeShouldRefresh()
     }
 }

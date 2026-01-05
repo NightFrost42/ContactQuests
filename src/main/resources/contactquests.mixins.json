@@ -16,7 +16,9 @@
     "PostcardEditScreenAccessor",
     "RedPacketEnvelopeScreenAccessor",
     "RewardButtonMixin",
-    "TaskButtonMixin"
+    "TaskButtonMixin",
+    "TextBoxAccessor",
+    "TextInputUtilAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
