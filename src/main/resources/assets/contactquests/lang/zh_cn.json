@@ -52,5 +52,8 @@
   "ftbquests.task.contactquests.parcel_task.match_nbt": "匹配方式",
   "ftbquests.task.contactquests.parcel_task.weak_nbt_match": "弱匹配",
   "ftbquests.task.contactquests.red_packet_task.match_nbt": "匹配方式",
-  "ftbquests.task.contactquests.red_packet_task.weak_nbt_match": "弱匹配"
+  "ftbquests.task.contactquests.red_packet_task.weak_nbt_match": "弱匹配",
+  "contactquest.reward.is_team_reward": "根据队伍人数倍乘奖励",
+  "contactquest.reward.team_reward_multiplier": "队伍人数倍乘系数",
+  "ftbquests.reward.random_bonus": "随机额外奖励数量（上限）"
 }

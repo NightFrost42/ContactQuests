@@ -52,7 +52,7 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
             val rBonus = (reward as ItemRewardAccessor).`contactquests$getRandomBonus`()
             val bonus = player.level().random.nextInt(rBonus + 1)
 
-            stack.count = reward.count + bonus
+            stack.count = calculateMultipliedCount(reward.count + bonus, player)
 
             distributeItem(player, stack)
         } else {

@@ -26,7 +26,9 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
     override fun getType(): RewardType = RewardRegistry.PARCEL
 
     override fun claim(player: ServerPlayer, notify: Boolean) {
-        val actualCount = count + player.level().random.nextInt(randomBonus + 1)
+        var actualCount = count + player.level().random.nextInt(randomBonus + 1)
+
+        actualCount = calculateMultipliedCount(actualCount, player)
 
         val stackToSend = item.copy()
         stackToSend.count = actualCount
