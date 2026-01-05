@@ -15,6 +15,7 @@ import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
@@ -27,6 +28,57 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     var postcardStyle: String = ""
     var postcardText: String = ""
+
+    fun interface PostcardTextReplacer {
+        fun replace(text: String, player: ServerPlayer): String
+    }
+
+    companion object {
+        private val replacers = mutableListOf<PostcardTextReplacer>()
+
+        fun registerReplacer(replacer: PostcardTextReplacer) {
+            replacers.add(replacer)
+        }
+
+        fun processText(text: String, player: ServerPlayer): String {
+            var currentText = text
+            for (replacer in replacers) {
+                currentText = replacer.replace(currentText, player)
+            }
+            return currentText
+        }
+
+        init {
+            registerReplacer { text, player ->
+                if (text.contains("<team_size>")) {
+                    val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+                    val size = team?.members?.size ?: 1
+                    text.replace("<team_size>", size.toString())
+                } else {
+                    text
+                }
+            }
+
+            registerReplacer { text, player ->
+                if (text.contains("<team_name>")) {
+                    val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+                    val name = team.name.string
+                    text.replace("<team_name>", name)
+                } else {
+                    text
+                }
+            }
+
+            registerReplacer { text, player ->
+                if (text.contains("<player_name>")) {
+                    text.replace("<player_name>", player.gameProfile.name)
+                } else {
+                    text
+                }
+            }
+        }
+    }
+
 
     override fun getType(): RewardType = RewardRegistry.POSTCARD
 
@@ -41,7 +93,8 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
         if (postcardText.isNotEmpty()) {
             val processedText = postcardText.replace("\\n", "\n")
-            postcardStack = PostcardItem.setText(postcardStack, processedText)
+            val processedMessage = processText(processedText, player)
+            postcardStack = PostcardItem.setText(postcardStack, processedMessage)
         }
 
         if (targetAddressee.isNotEmpty()) {

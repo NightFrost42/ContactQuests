@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.random.Random
 
 class CollectionSavedData : SavedData() {
@@ -83,29 +84,39 @@ class CollectionSavedData : SavedData() {
         player: ServerPlayer,
         name: String,
         npcData: ErrorSolveData,
-        itemsToSend: MutableList<ItemStack>
+        itemsToSend: MutableList<ItemStack>,
+        contextItems: List<ItemStack>
     ) {
-        val message = NpcConfigManager.getMessage(npcData)
-        val isEnder: Boolean = npcData.isAllEnder || message.isEnder
+        val (selectedMsgData, processedText) = selectValidMessage(player, name, npcData, contextItems)
+        val finalMessageData = selectedMsgData.copy(text = processedText)
 
-        itemsToSend.add(generatePostcard(name, npcData, message))
+        val isEnder: Boolean = npcData.isAllEnder || finalMessageData.isEnder
+
+        itemsToSend.add(generatePostcard(name, npcData, finalMessageData))
 
         for (item in itemsToSend) {
             RewardDistributionManager.distribute(player, item, name, isEnder)
         }
     }
 
+
     fun returnNow(player: ServerPlayer, name: String, stacks: MutableList<ItemStack>, countOverride: Int? = null) {
         val count = countOverride ?: getTriggerCountByName(name)
         val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
-        processAndDistribute(player, name, npcData, stacks)
+        processAndDistribute(player, name, npcData, stacks, stacks)
     }
 
-    fun returnDiscard(player: ServerPlayer, name: String, countOverride: Int? = null) {
+    fun returnDiscard(
+        player: ServerPlayer,
+        name: String,
+        countOverride: Int? = null,
+        contextItems: List<ItemStack> = emptyList()
+    ) {
         val count = countOverride ?: (getTriggerCountByName(name) + 1)
         val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
         val itemsToSend = mutableListOf<ItemStack>()
-        processAndDistribute(player, name, npcData, itemsToSend)
+        val finalContext = contextItems.ifEmpty { getStacksByName(name) }
+        processAndDistribute(player, name, npcData, itemsToSend, finalContext)
     }
 
     fun returnSave(player: ServerPlayer, name: String, countOverride: Int? = null) {
@@ -114,7 +125,7 @@ class CollectionSavedData : SavedData() {
 
         val itemsToSend = mutableListOf<ItemStack>()
 
-        processAndDistribute(player, name, npcData, itemsToSend)
+        processAndDistribute(player, name, npcData, itemsToSend, getStacksByName(name))
     }
 
     fun returnReward(player: ServerPlayer, name: String) {
@@ -237,7 +248,125 @@ class CollectionSavedData : SavedData() {
         return tag
     }
 
+    private fun selectValidMessage(
+        player: ServerPlayer,
+        name: String,
+        npcData: ErrorSolveData,
+        contextItems: List<ItemStack>
+    ): Pair<MessageData, String> {
+        val messages = ArrayList(npcData.message)
+        val triggerCount = getTriggerCountByName(name)
+        val context = ReplacerContext(player, name, triggerCount, contextItems)
+
+        while (messages.isNotEmpty()) {
+            val pickedMsg = pickWeightedMessage(messages)
+
+            val processedText = applyReplacements(pickedMsg.text, context)
+
+            if (processedText != null) {
+                return Pair(pickedMsg, processedText)
+            }
+
+            messages.remove(pickedMsg)
+        }
+
+        val defaultMsg = MessageData(text = "Error: No valid message", weight = 1)
+        return Pair(defaultMsg, defaultMsg.text)
+    }
+
+    private fun pickWeightedMessage(messages: List<MessageData>): MessageData {
+        if (messages.isEmpty()) return MessageData()
+
+        val totalWeight = messages.sumOf { it.weight }
+
+        if (totalWeight <= 0) return messages.random()
+
+        var randomVal = Random.nextInt(totalWeight)
+        for (msg in messages) {
+            randomVal -= msg.weight
+            if (randomVal < 0) return msg
+        }
+
+        return messages.first()
+    }
+
+    private fun applyReplacements(text: String, context: ReplacerContext): String? {
+        var currentText = text
+        for (replacer in replacers) {
+            val result = replacer.replace(currentText, context) ?: return null
+            currentText = result
+        }
+        return currentText
+    }
+
+    data class ReplacerContext(
+        val player: ServerPlayer,
+        val name: String,
+        val triggerCount: Int,
+        val itemStacks: List<ItemStack>
+    )
+
+    fun interface CollectionTextReplacer {
+        fun replace(text: String, context: ReplacerContext): String?
+    }
+
     companion object {
+        private val replacers = mutableListOf<CollectionTextReplacer>()
+        private val ITEM_NAME_PATTERN = Pattern.compile("<item_(\\d+)_name>")
+        private val ITEM_COUNT_PATTERN = Pattern.compile("<item_(\\d+)_count>")
+
+        fun registerReplacer(replacer: CollectionTextReplacer) {
+            replacers.add(replacer)
+        }
+
+        init {
+            registerReplacer { text, context ->
+                text.replace("<trigger_count>", context.triggerCount.toString())
+                    .replace("<triggerCount>", context.triggerCount.toString()) // 兼容两种写法
+            }
+
+            registerReplacer { text, context ->
+                val matcher = ITEM_NAME_PATTERN.matcher(text)
+                val sb = StringBuilder()
+                while (matcher.find()) {
+                    val index = matcher.group(1).toIntOrNull() ?: return@registerReplacer null
+                    val listIndex = index - 1
+                    if (listIndex < 0 || listIndex >= context.itemStacks.size) {
+                        return@registerReplacer null
+                    }
+                    matcher.appendReplacement(sb, context.itemStacks[listIndex].hoverName.string)
+                }
+                matcher.appendTail(sb)
+                sb.toString()
+            }
+
+            registerReplacer { text, context ->
+                val matcher = ITEM_COUNT_PATTERN.matcher(text)
+                val sb = StringBuilder()
+                while (matcher.find()) {
+                    val index = matcher.group(1).toIntOrNull() ?: return@registerReplacer null
+                    val listIndex = index - 1
+                    if (listIndex < 0 || listIndex >= context.itemStacks.size) {
+                        return@registerReplacer null
+                    }
+                    matcher.appendReplacement(sb, context.itemStacks[listIndex].count.toString())
+                }
+                matcher.appendTail(sb)
+                sb.toString()
+            }
+
+            registerReplacer { text, context ->
+                val total = context.itemStacks.sumOf { it.count }
+                text.replace("<total_amount>", total.toString())
+                    .replace("<total_count>", total.toString())
+            }
+
+            registerReplacer { text, context ->
+                val types = context.itemStacks.size
+                text.replace("<total_types>", types.toString())
+            }
+        }
+
         fun get(level: ServerLevel): CollectionSavedData {
             return level.dataStorage.computeIfAbsent(
                 ::load,

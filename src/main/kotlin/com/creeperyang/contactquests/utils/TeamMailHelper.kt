@@ -1,4 +1,4 @@
-package com.creeperyang.contactquests.util
+package com.creeperyang.contactquests.utils
 
 import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.common.storage.MailboxDataManager
