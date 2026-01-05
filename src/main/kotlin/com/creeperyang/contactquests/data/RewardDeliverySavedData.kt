@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.config.ContactConfig
-import com.creeperyang.contactquests.util.TeamMailHelper
+import com.creeperyang.contactquests.utils.TeamMailHelper
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag

@@ -1,7 +1,6 @@
-package com.creeperyang.contactquests.util
+package com.creeperyang.contactquests.utils
 
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase
-import com.creeperyang.contactquests.utils.IQuestExtension
 import dev.ftb.mods.ftbquests.quest.BaseQuestFile
 
 object TagUtils {

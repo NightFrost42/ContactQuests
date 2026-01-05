@@ -83,6 +83,10 @@ public class TeamDataMixin implements ITeamDataExtension {
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
             if (questObj instanceof IQuestExtension) {
+                if (((IQuestExtension) questObj).contactQuests$isLockedByMutex((TeamData) (Object) this)) {
+                    cir.setReturnValue(false);
+                }
+
                 if (((IQuestExtension) questObj).contactQuests$areTagsMet((TeamData) (Object) this)) {
                     cir.setReturnValue(false);
                 }
@@ -94,6 +98,13 @@ public class TeamDataMixin implements ITeamDataExtension {
     private void injectGetCannotStartReason(Quest quest, CallbackInfoReturnable<Component> cir) {
         Object questObj = quest;
         if (questObj instanceof IQuestExtension ext) {
+            if (ext.contactQuests$isLockedByMutex((TeamData) (Object) this)) {
+                List<String> mutexTasks = ext.contactQuests$getMutexTasks();
+                String tagsStr = String.join(", ", mutexTasks);
+                cir.setReturnValue(Component.translatable("contactquests.quest.locked.mutex_tasks", tagsStr)
+                        .withStyle(ChatFormatting.RED));
+            }
+
             if (ext.contactQuests$areTagsMet((TeamData) (Object) this)) {
                 List<String> missingTags = ext.contactQuests$getRequiredTags();
                 String tagsStr = String.join(", ", missingTags);

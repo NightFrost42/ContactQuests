@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.config.TagConfig
-import com.creeperyang.contactquests.util.TagUtils
+import com.creeperyang.contactquests.utils.TagUtils
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.StringConfig
 import dev.ftb.mods.ftblibrary.icon.Icons

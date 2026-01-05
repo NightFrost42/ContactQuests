@@ -67,6 +67,7 @@
   "contactquests.message.new_quest_found": ">>> New Quest Discovered: %s",
   "contactquests.message.click_to_open": "[%s]",
   "contactquests.quest.locked.missing_tags": "Requires Clues: %s",
+  "contactquests.quest.locked.mutex_tasks": "Conflicts with the following tasks: %s",
   "contactquests.command.error.no_team": "The player's team cannot be found",
   "contactquests.command.tags.view": "Tags for player %s: %s",
   "contactquests.command.tags.added": "Tag: %s has been added",
@@ -75,5 +76,13 @@
   "contactquests.command.error.tag_not_found": "The player does not have the tag",
   "contactquests.gui.select_tag": "Select Tag",
   "contactquests.gui.create_tag": "Create New Tag...",
-  "contactquests.gui.current_tag": "Current: %s"
+  "contactquests.gui.current_tag": "Current: %s",
+  "contactquests.config.mutex_group": "Mutual Exclusion/Branching",
+  "contactquests.config.mutex_refs": "Mutex Object IDs (Quest/Task)",
+  "contactquests.config.mutex_mode": "Lock Condition Mode",
+  "contactquests.config.mutex_count": "Count to Lock",
+  "contactquests.config.hide_if_locked": "Hide if Locked",
+  "contactquests.utils.mutexmode.all": "Complete ALL",
+  "contactquests.utils.mutexmode.any": "Complete ANY",
+  "contactquests.utils.mutexmode.number": "Complete Specific Number"
 }
