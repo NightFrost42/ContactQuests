@@ -75,5 +75,14 @@
   "contactquests.command.error.tag_not_found": "玩家没有该 Tag",
   "contactquests.gui.select_tag": "选择 Tag",
   "contactquests.gui.create_tag": "创建新 Tag...",
-  "contactquests.gui.current_tag": "当前: %s"
+  "contactquests.gui.current_tag": "当前: %s",
+  "contactquests.config.mutex_group": "互斥/分支任务设置",
+  "contactquests.config.mutex_refs": "互斥对象 ID (任务/章节)",
+  "contactquests.config.mutex_mode": "锁定条件模式",
+  "contactquests.config.mutex_count": "触发锁定的完成数量",
+  "contactquests.config.hide_if_locked": "锁定时隐藏此任务",
+  "contactquests.utils.mutexmode.all": "完成所有",
+  "contactquests.utils.mutexmode.any": "完成任一",
+  "contactquests.utils.mutexmode.number": "完成特定数量",
+  "contactquests.quest.locked.mutex_tasks": "与这些任务冲突: %s"
 }
