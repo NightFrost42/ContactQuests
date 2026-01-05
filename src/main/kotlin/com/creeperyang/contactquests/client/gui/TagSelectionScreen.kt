@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.client.gui
 
+import com.creeperyang.contactquests.config.TagConfig
 import com.creeperyang.contactquests.utils.TagUtils
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.StringConfig
@@ -10,7 +11,11 @@ import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.network.chat.Component
 
-class TagSelectionScreen(val config: StringConfig, val callback: ConfigCallback) : AbstractButtonListScreen() {
+class TagSelectionScreen(
+    val config: StringConfig,
+    val callback: ConfigCallback,
+    private val existingTags: Collection<String>
+) : AbstractButtonListScreen() {
 
     private var isCreating = false
     private var newTagValue = ""
@@ -44,8 +49,15 @@ class TagSelectionScreen(val config: StringConfig, val callback: ConfigCallback)
 
         panel.add(VerticalSpaceWidget(panel, 2))
 
-        val allTags = TagUtils.getAllExistingTags(ClientQuestFile.INSTANCE)
-        for (tag in allTags) {
+        val allTags = HashSet<String>()
+
+        allTags.addAll(TagUtils.getAllExistingTags(ClientQuestFile.INSTANCE))
+
+        allTags.addAll(TagConfig.sessionTags)
+
+        allTags.removeAll(existingTags.toSet())
+
+        for (tag in allTags.sorted()) {
             panel.add(object : SimpleTextButton(panel, Component.literal(tag), Icons.RIGHT) {
                 override fun onClicked(btn: MouseButton) {
                     playClickSound()
@@ -76,6 +88,8 @@ class TagSelectionScreen(val config: StringConfig, val callback: ConfigCallback)
     }
 
     private fun selectTag(tag: String) {
+        TagConfig.sessionTags.add(tag)
+
         config.setCurrentValue(tag)
         callback.save(true)
     }

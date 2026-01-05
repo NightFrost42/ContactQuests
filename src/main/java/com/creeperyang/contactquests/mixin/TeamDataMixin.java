@@ -1,19 +1,17 @@
 package com.creeperyang.contactquests.mixin;
 
+import com.creeperyang.contactquests.network.NetworkHandler;
 import com.creeperyang.contactquests.network.SyncTeamTagsMessage;
 import com.creeperyang.contactquests.utils.IQuestExtension;
 import com.creeperyang.contactquests.utils.ITeamDataExtension;
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftbquests.quest.Quest;
 import dev.ftb.mods.ftbquests.quest.TeamData;
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.PacketDistributor;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,7 +20,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Mixin(TeamData.class)
@@ -50,7 +47,7 @@ public class TeamDataMixin implements ITeamDataExtension {
             SyncTeamTagsMessage msg = new SyncTeamTagsMessage(self.getTeamId(), contactQuests$unlockedTags);
 
             for (ServerPlayer player : self.getOnlineMembers()) {
-                PacketDistributor.sendToPlayer(player, msg);
+                NetworkHandler.sendToPlayer(msg, player);
             }
         }
 
@@ -78,7 +75,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         return java.util.Collections.unmodifiableSet(contactQuests$unlockedTags);
     }
 
-    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectAreDependenciesComplete(Quest quest, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
@@ -90,20 +87,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "getCannotStartReason", at = @At("HEAD"), cancellable = true)
-    private void injectGetCannotStartReason(Quest quest, CallbackInfoReturnable<Component> cir) {
-        Object questObj = quest;
-        if (questObj instanceof IQuestExtension ext) {
-            if (ext.contactQuests$areTagsMet((TeamData) (Object) this)) {
-                List<String> missingTags = ext.contactQuests$getRequiredTags();
-                String tagsStr = String.join(", ", missingTags);
-                cir.setReturnValue(Component.translatable("contactquests.quest.locked.missing_tags", tagsStr)
-                        .withStyle(ChatFormatting.RED));
-            }
-        }
-    }
-
-    @Inject(method = "serializeNBT", at = @At("RETURN"))
+    @Inject(method = "serializeNBT", at = @At("RETURN"), remap = false)
     private void injectSerializeNBT(CallbackInfoReturnable<SNBTCompoundTag> cir) {
         if (!contactQuests$unlockedTags.isEmpty()) {
             ListTag list = new ListTag();
@@ -112,7 +96,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "deserializeNBT", at = @At("TAIL"))
+    @Inject(method = "deserializeNBT", at = @At("TAIL"), remap = false)
     private void injectDeserializeNBT(SNBTCompoundTag nbt, CallbackInfo ci) {
         contactQuests$unlockedTags.clear();
         if (nbt.contains("ContactQuestsUnlockedTags")) {
@@ -121,14 +105,14 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "write", at = @At("TAIL"))
-    private void injectWrite(FriendlyByteBuf buffer, CallbackInfo ci) {
+    @Inject(method = "write", at = @At("TAIL"), remap = false)
+    private void injectWrite(FriendlyByteBuf buffer, boolean self, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$unlockedTags.size());
         contactQuests$unlockedTags.forEach(buffer::writeUtf);
     }
 
-    @Inject(method = "readNetData", at = @At("TAIL"))
-    private void injectReadNetData(FriendlyByteBuf buffer, CallbackInfo ci) {
+    @Inject(method = "read", at = @At("TAIL"), remap = false)
+    private void injectReadNetData(FriendlyByteBuf buffer, boolean self, CallbackInfo ci) {
         int size = buffer.readVarInt();
         contactQuests$unlockedTags.clear();
         for (int i = 0; i < size; i++) {

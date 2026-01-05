@@ -2,36 +2,30 @@ package com.creeperyang.contactquests.network
 
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
-import net.minecraft.core.UUIDUtil
 import net.minecraft.network.FriendlyByteBuf
-import net.minecraft.network.codec.ByteBufCodecs
-import net.minecraft.network.codec.StreamCodec
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload
-import net.minecraft.resources.ResourceLocation
-import net.neoforged.neoforge.network.handling.IPayloadContext
+import net.minecraftforge.network.NetworkEvent
 import java.util.*
+import java.util.function.Supplier
 
-class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) : CustomPacketPayload {
+class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) {
+
+    fun encode(buf: FriendlyByteBuf) {
+        buf.writeUUID(teamId)
+        buf.writeCollection(tags) { b, tag -> b.writeUtf(tag) }
+    }
 
     companion object {
-        val ID: ResourceLocation = ResourceLocation("contactquests", "sync_team_tags")
-        val TYPE = CustomPacketPayload.Type<SyncTeamTagsMessage>(ID)
-
-        val STREAM_CODEC: StreamCodec<FriendlyByteBuf, SyncTeamTagsMessage> = StreamCodec.composite(
-            UUIDUtil.STREAM_CODEC,
-            SyncTeamTagsMessage::teamId,
-            ByteBufCodecs.collection(::HashSet, ByteBufCodecs.STRING_UTF8),
-            SyncTeamTagsMessage::tags,
-            ::SyncTeamTagsMessage
-        )
+        @JvmStatic
+        fun decode(buf: FriendlyByteBuf): SyncTeamTagsMessage {
+            val teamId = buf.readUUID()
+            val tags = buf.readCollection({ HashSet() }) { b -> b.readUtf() }
+            return SyncTeamTagsMessage(teamId, tags)
+        }
     }
 
-    override fun type(): CustomPacketPayload.Type<SyncTeamTagsMessage> {
-        return TYPE
-    }
-
-    fun handle(context: IPayloadContext) {
-        context.enqueueWork {
+    fun handle(ctxSupplier: Supplier<NetworkEvent.Context>) {
+        val ctx = ctxSupplier.get()
+        ctx.enqueueWork {
             val file = ClientQuestFile.INSTANCE
 
             if (file.selfTeamData.teamId == teamId) {
@@ -49,5 +43,6 @@ class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) : CustomPacke
                 }
             }
         }
+        ctx.packetHandled = true
     }
 }

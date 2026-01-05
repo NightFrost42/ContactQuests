@@ -9,6 +9,6 @@ import java.util.List;
 
 @Mixin(QuestScreen.class)
 public interface QuestScreenAccessor {
-    @Accessor("selectedObjects")
+    @Accessor(value = "selectedObjects", remap = false)
     List<Movable> getSelectedObjects();
 }

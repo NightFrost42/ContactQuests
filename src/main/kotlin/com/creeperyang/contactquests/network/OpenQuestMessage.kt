@@ -2,31 +2,27 @@ package com.creeperyang.contactquests.network
 
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.network.FriendlyByteBuf
-import net.minecraft.network.codec.StreamCodec
-import net.minecraft.network.protocol.common.custom.CustomPacketPayload
-import net.minecraft.resources.ResourceLocation
-import net.neoforged.neoforge.network.handling.IPayloadContext
+import net.minecraftforge.network.NetworkEvent
+import java.util.function.Supplier
 
-class OpenQuestMessage(val id: Long) : CustomPacketPayload {
+class OpenQuestMessage(val id: Long) {
+
+    fun encode(buf: FriendlyByteBuf) {
+        buf.writeLong(id)
+    }
 
     companion object {
-        val ID: ResourceLocation = ResourceLocation("contactquests", "open_quest")
-        val TYPE = CustomPacketPayload.Type<OpenQuestMessage>(ID)
-
-        val STREAM_CODEC: StreamCodec<FriendlyByteBuf, OpenQuestMessage> = StreamCodec.composite(
-            StreamCodec.of({ buf, value -> buf.writeLong(value) }, { buf -> buf.readLong() }),
-            OpenQuestMessage::id,
-            ::OpenQuestMessage
-        )
+        @JvmStatic
+        fun decode(buf: FriendlyByteBuf): OpenQuestMessage {
+            return OpenQuestMessage(buf.readLong())
+        }
     }
 
-    override fun type(): CustomPacketPayload.Type<OpenQuestMessage> {
-        return TYPE
-    }
-
-    fun handle(context: IPayloadContext) {
-        context.enqueueWork {
+    fun handle(ctxSupplier: Supplier<NetworkEvent.Context>) {
+        val ctx = ctxSupplier.get()
+        ctx.enqueueWork {
             ClientQuestFile.openBookToQuestObject(id)
         }
+        ctx.packetHandled = true
     }
 }

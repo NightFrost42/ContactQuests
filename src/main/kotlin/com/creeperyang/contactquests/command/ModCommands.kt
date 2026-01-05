@@ -2,6 +2,8 @@ package com.creeperyang.contactquests.command
 
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.data.CollectionSavedData
+import com.creeperyang.contactquests.network.NetworkHandler
+import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.registry.ModItems
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.mojang.brigadier.Command
@@ -21,7 +23,6 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
-import net.minecraftforge.network.PacketDistributor
 import java.lang.Long
 import java.util.concurrent.CompletableFuture
 import kotlin.Exception
@@ -57,7 +58,7 @@ object ModCommands {
                                         val id = Long.parseUnsignedLong(idStr, 16)
                                         val player = ctx.source.playerOrException
 
-                                        PacketDistributor.sendToPlayer(player, OpenQuestMessage(id))
+                                        NetworkHandler.sendToPlayer(OpenQuestMessage(id), player)
                                         1
                                     } catch (e: Exception) {
                                         0

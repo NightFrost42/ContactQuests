@@ -29,16 +29,10 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         if (stack.isEmpty) return
 
         if (unlockTags.isNotEmpty()) {
-            val componentType = net.minecraft.core.component.DataComponents.CUSTOM_DATA
-
-            val customData =
-                stack.getOrDefault(componentType, net.minecraft.world.item.component.CustomData.EMPTY).copyTag()
-
+            val tag = stack.orCreateTag
             val tagList = ListTag()
             unlockTags.forEach { t -> tagList.add(StringTag.valueOf(t)) }
-            customData.put("ContactQuestsUnlockTags", tagList)
-
-            stack[componentType] = net.minecraft.world.item.component.CustomData.of(customData)
+            tag.put("ContactQuestsUnlockTags", tagList)
         }
 
         RewardDistributionManager.distribute(player, stack, targetAddressee, isEnder)
@@ -138,7 +132,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
             .setNameKey("contactquest.reward.team_reward_multiplier")
             .setOrder(0)
 
-        val tagConfig = TagConfig(questFile)
+        val tagConfig = TagConfig(questFile, unlockTags)
 
         config.addList("unlock_tags", unlockTags, tagConfig, { v ->
             unlockTags.clear()

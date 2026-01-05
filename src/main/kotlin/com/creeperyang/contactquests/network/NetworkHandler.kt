@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack
 import net.minecraftforge.network.NetworkDirection
 import net.minecraftforge.network.NetworkEvent
 import net.minecraftforge.network.NetworkRegistry
+import net.minecraftforge.network.PacketDistributor
 import net.minecraftforge.network.simple.SimpleChannel
 import java.util.function.BiConsumer
 import java.util.function.Supplier
@@ -28,6 +29,18 @@ object NetworkHandler {
             .decoder { buf -> RequestBinderPayload.decode(buf) }
             .consumerNetworkThread(BiConsumer { msg, ctx -> handleRequestBinder(msg, ctx) })
             .add()
+
+        CHANNEL.messageBuilder(SyncTeamTagsMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> SyncTeamTagsMessage.decode(buf) }
+            .consumerMainThread { msg, ctxSupplier -> msg.handle(ctxSupplier) }
+            .add()
+
+        CHANNEL.messageBuilder(OpenQuestMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> OpenQuestMessage.decode(buf) }
+            .consumerMainThread { msg, ctxSupplier -> msg.handle(ctxSupplier) }
+            .add()
     }
 
     internal fun handleRequestBinder(msg: RequestBinderPayload, ctxSupplier: Supplier<NetworkEvent.Context>) {
@@ -43,5 +56,10 @@ object NetworkHandler {
             }
         }
         ctx.packetHandled = true
+    }
+
+    @JvmStatic
+    fun sendToPlayer(message: Any, player: ServerPlayer) {
+        CHANNEL.send(PacketDistributor.PLAYER.with { player }, message)
     }
 }

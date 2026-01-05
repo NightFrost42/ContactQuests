@@ -10,8 +10,9 @@ object TagUtils {
 
         file.allChapters.forEach { chapter ->
             chapter.quests.forEach { quest ->
-                if (quest is IQuestExtension) {
-                    tags.addAll((quest as IQuestExtension).`contactQuests$getRequiredTags`())
+                val questExt = quest as Any as? IQuestExtension
+                if (questExt != null) {
+                    tags.addAll(questExt.`contactQuests$getRequiredTags`())
                 }
 
                 quest.rewards.forEach { reward ->

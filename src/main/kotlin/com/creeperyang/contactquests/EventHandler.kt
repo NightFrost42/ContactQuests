@@ -7,7 +7,6 @@ import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
-import net.minecraft.core.component.DataComponents
 import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
@@ -23,10 +22,10 @@ object EventHandler {
         val player = event.entity as? ServerPlayer ?: return
         val stack = event.itemStack
 
-        val customData = stack[DataComponents.CUSTOM_DATA] ?: return
-        if (!customData.contains("ContactQuestsUnlockTags")) return
+        val tag = stack.tag ?: return
+        if (!tag.contains("ContactQuestsUnlockTags", 9)) return
 
-        val tagsNbt = customData.copyTag().getList("ContactQuestsUnlockTags", 8) // 8 = String
+        val tagsNbt = tag.getList("ContactQuestsUnlockTags", 8)
         if (tagsNbt.isEmpty()) return
 
         val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null) ?: return
@@ -35,9 +34,10 @@ object EventHandler {
         val newUnlockedTags = mutableListOf<String>()
 
         if (teamData is ITeamDataExtension) {
-            tagsNbt.forEach {
-                val tagStr = it.asString
-                if ((teamData as ITeamDataExtension).`contactQuests$unlockTag`(tagStr)) {
+            val ext = teamData as ITeamDataExtension
+            for (i in 0 until tagsNbt.size) {
+                val tagStr = tagsNbt.getString(i)
+                if (ext.`contactQuests$unlockTag`(tagStr)) {
                     newUnlockedTags.add(tagStr)
                 }
             }

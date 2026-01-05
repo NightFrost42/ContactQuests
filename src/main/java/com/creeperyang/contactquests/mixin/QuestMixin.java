@@ -49,12 +49,12 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         return contactQuests$checkTags(data);
     }
 
-    @Inject(method = "fillConfigGroup", at = @At("TAIL"))
+    @Inject(method = "fillConfigGroup", at = @At("TAIL"), remap = false)
     private void injectConfig(ConfigGroup config, CallbackInfo ci) {
         ConfigGroup group = config.getOrCreateSubgroup("contact_quests_tags");
         group.setNameKey("contactquests.config.group");
 
-        TagConfig tagConfig = new com.creeperyang.contactquests.config.TagConfig(getQuestFile());
+        TagConfig tagConfig = new TagConfig(getQuestFile(), contactQuests$requiredTags);
 
         group.addList("required_tags", contactQuests$requiredTags, tagConfig, v -> {
             contactQuests$requiredTags.clear();
@@ -68,14 +68,14 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
                 .setNameKey("contactquests.config.hide_without_tags");
     }
 
-    @Inject(method = "isVisible", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "isVisible", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectIsVisible(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (cir.getReturnValue() && contactQuests$hideWithoutTags && contactQuests$checkTags(data)) {
             cir.setReturnValue(false);
         }
     }
 
-    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectDependenciesCheck(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.TRUE.equals(cir.getReturnValue()) && contactQuests$checkTags(data)) {
             cir.setReturnValue(false);
@@ -96,7 +96,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
-    @Inject(method = "writeData", at = @At("TAIL"))
+    @Inject(method = "writeData", at = @At("TAIL"), remap = false)
     private void writeTagsNBT(CompoundTag nbt, CallbackInfo ci) {
         if (!contactQuests$requiredTags.isEmpty()) {
             ListTag list = new ListTag();
@@ -109,7 +109,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
-    @Inject(method = "readData", at = @At("TAIL"))
+    @Inject(method = "readData", at = @At("TAIL"), remap = false)
     private void readTagsNBT(CompoundTag nbt, CallbackInfo ci) {
         contactQuests$requiredTags.clear();
         if (nbt.contains("cq_req_tags")) {
@@ -126,7 +126,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         contactQuests$hideWithoutTags = nbt.getBoolean("cq_hide_no_tags");
     }
 
-    @Inject(method = "writeNetData", at = @At("TAIL"))
+    @Inject(method = "writeNetData", at = @At("TAIL"), remap = false)
     private void writeTagsNet(FriendlyByteBuf buffer, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$requiredTags.size());
         contactQuests$requiredTags.forEach(buffer::writeUtf);
@@ -134,7 +134,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         buffer.writeBoolean(contactQuests$hideWithoutTags);
     }
 
-    @Inject(method = "readNetData", at = @At("TAIL"))
+    @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
     private void readTagsNet(FriendlyByteBuf buffer, CallbackInfo ci) {
         int size = buffer.readVarInt();
         contactQuests$requiredTags.clear();
