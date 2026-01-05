@@ -28,7 +28,7 @@ import java.util.*;
 @Mixin(EnquireAddresseeMessage.class)
 public class EnquireAddresseeMessageMixin {
 
-    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
     private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
         if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
             return;
@@ -97,7 +97,8 @@ public class EnquireAddresseeMessageMixin {
             at = @At(
                     value = "FIELD",
                     target = "Lcom/flechazo/contact/network/EnquireAddresseeMessage;shouldSend:Z",
-                    opcode = Opcodes.GETFIELD)
+                    opcode = Opcodes.GETFIELD),
+            remap = false
     )
     private void injectCustomTargetsNames(
             ServerPlayer player,

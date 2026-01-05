@@ -6,6 +6,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ItemReward.class)
 public interface ItemRewardAccessor {
-    @Accessor("randomBonus")
+    @Accessor(value = "randomBonus", remap = false)
     int contactquests$getRandomBonus();
 }

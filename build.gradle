@@ -107,6 +107,8 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 dependencies {
     implementation 'thedarkcolour:kotlinforforge-neoforge:5.3.0'
+    annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
+
     implementation "curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}"
     implementation "curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}"
     implementation "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
@@ -182,4 +184,14 @@ idea {
         downloadSources = true
         downloadJavadoc = true
     }
+}
+
+compileJava {
+    options.compilerArgs += [
+            "-AoutRefMapFile=${project.file('src/generated/resources/contactquests.refmap.json').absolutePath}"
+    ]
+}
+
+tasks.named('processResources') {
+    dependsOn 'compileJava'
 }

@@ -66,14 +66,14 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
         }
     }
 
-    @Inject(method = "saveAdditional", at = @At("TAIL"))
+    @Inject(method = "saveAdditional", at = @At("TAIL"), remap = false)
     private void onSaveAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries, CallbackInfo ci) {
         if (contactQuestsTeamId != null) {
             tag.putUUID(TEAM_ID_NBT_KEY, contactQuestsTeamId);
         }
     }
 
-    @Inject(method = "loadAdditional", at = @At("TAIL"))
+    @Inject(method = "loadAdditional", at = @At("TAIL"), remap = false)
     private void onLoadAdditional(@NotNull CompoundTag tag, @NotNull HolderLookup.Provider registries, CallbackInfo ci) {
         if (tag.hasUUID(TEAM_ID_NBT_KEY)) {
             contactQuestsTeamId = tag.getUUID(TEAM_ID_NBT_KEY);
@@ -82,7 +82,7 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
         }
     }
 
-    @Inject(method = "getUpdateTag", at = @At("RETURN"))
+    @Inject(method = "getUpdateTag", at = @At("RETURN"), remap = false)
     private void onGetUpdateTag(@NotNull HolderLookup.Provider registries, CallbackInfoReturnable<CompoundTag> cir) {
         CompoundTag tag = cir.getReturnValue();
         if (tag != null && contactQuestsTeamId != null) {

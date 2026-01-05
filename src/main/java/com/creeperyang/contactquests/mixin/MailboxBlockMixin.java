@@ -27,7 +27,8 @@ public class MailboxBlockMixin {
             at = @At(
                     value = "INVOKE",
                     target = "Ljava/util/Objects;equals(Ljava/lang/Object;Ljava/lang/Object;)Z"
-            )
+            ),
+            remap = false
     )
     private boolean interceptOwnerCheck(Object ownerUuidObj, Object playerUuidObj,
                                         @Local(argsOnly = true) Level level,

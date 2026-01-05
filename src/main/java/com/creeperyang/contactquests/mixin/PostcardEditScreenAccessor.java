@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(PostcardEditScreen.class)
 public interface PostcardEditScreenAccessor {
-    @Accessor("textBox")
+    @Accessor(value = "textBox", remap = false)
     EditableTextBox contactQuests$getTextBox();
 }

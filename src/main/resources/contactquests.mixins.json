@@ -2,6 +2,7 @@
   "required": true,
   "minVersion": "0.8",
   "package": "com.creeperyang.contactquests.mixin",
+  "refmap": "contactquests.refmap.json",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "EnquireAddresseeMessageMixin",

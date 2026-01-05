@@ -23,7 +23,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(GuiProviders.class)
 public abstract class GuiProvidersMixin {
-    @Inject(method = "setTaskGuiProviders", at = @At("TAIL"))
+    @Inject(method = "setTaskGuiProviders", at = @At("TAIL"), remap = false)
     private static void setMyTaskGuiProviders(CallbackInfo ci) {
         TaskRegistry.PARCEL.setGuiProvider((gui, quest, callback) -> {
             ItemStackConfig c = new ItemStackConfig(false, false);
@@ -49,7 +49,7 @@ public abstract class GuiProvidersMixin {
         });
     }
 
-    @Inject(method = "setRewardGuiProviders", at = @At("TAIL"))
+    @Inject(method = "setRewardGuiProviders", at = @At("TAIL"), remap = false)
     private static void setMyRewardGuiProviders(CallbackInfo ci) {
         RewardRegistry.INSTANCE.getPARCEL().setGuiProvider((gui, quest, callback) -> {
             ItemStackConfig c = new ItemStackConfig(false, false);

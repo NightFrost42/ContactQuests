@@ -35,14 +35,14 @@ import java.util.List;
 @Mixin(TaskButton.class)
 public abstract class TaskButtonMixin {
 
-    @Shadow
+    @Shadow(remap = false)
     Task task;
 
     @Shadow(remap = false)
     @Final
     private QuestScreen questScreen;
 
-    @Inject(method = "draw", at = @At("TAIL"))
+    @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void drawOverlay(GuiGraphics graphics, Theme theme,
     int x, int y, int w, int h,
     CallbackInfo ci) {
@@ -74,7 +74,7 @@ public abstract class TaskButtonMixin {
         pose.popPose();
     }
 
-    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"))
+    @Inject(method = "onClicked", at = @At(value = "INVOKE", target = "Ldev/ftb/mods/ftbquests/client/gui/ContextMenuBuilder;openContextMenu(Ldev/ftb/mods/ftblibrary/ui/BaseScreen;)V"), remap = false)
     private void adaptFilter(MouseButton button, CallbackInfo ci, @Local(name = "builder") ContextMenuBuilder builder) {
         if (!(task instanceof ParcelTask parcelTask) || parcelTask.getItemStack().isEmpty()) {
             return;

@@ -23,10 +23,10 @@ public abstract class RewardButtonMixin {
     private static final Icon OVERLAY_PARCEL = Icon.getIcon("contact:item/parcel");
     @Unique
     private static final Icon OVERLAY_ENDER_PARCEL = Icon.getIcon("contact:item/ender_parcel");
-    @Shadow
+    @Shadow(remap = false)
     Reward reward;
 
-    @Inject(method = "draw", at = @At("TAIL"))
+    @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void contactQuests_drawOverlay(GuiGraphics graphics, Theme theme, int x, int y, int w, int h, CallbackInfo ci) {
         if (!(reward instanceof ParcelRewardBase parcelReward) || reward instanceof PostcardReward) {
             return;

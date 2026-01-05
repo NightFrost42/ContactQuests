@@ -35,7 +35,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Unique
     private final List<String> contactQuests$mutexGuids = new ArrayList<>();
-    @Shadow
+    @Shadow(remap = false)
     @Final
     private List<Task> tasks;
     @Unique
@@ -44,7 +44,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private DependencyMode contactQuests$tagMode = DependencyMode.ALL;
     @Unique
     private boolean contactQuests$hideWithoutTags = false;
-    @Shadow
+    @Shadow(remap = false)
     private Chapter chapter;
     @Unique
     private MutexMode contactQuests$mutexMode = MutexMode.ANY;
@@ -135,7 +135,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         };
     }
 
-    @Inject(method = "fillConfigGroup", at = @At("TAIL"))
+    @Inject(method = "fillConfigGroup", at = @At("TAIL"), remap = false)
     private void injectConfig(ConfigGroup config, CallbackInfo ci) {
         ConfigGroup group = config.getOrCreateSubgroup("contact_quests_tags");
         group.setNameKey("contactquests.config.group");
@@ -189,7 +189,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
                 .setNameKey("contactquests.config.hide_if_locked");
     }
 
-    @Inject(method = "isVisible", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "isVisible", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectIsVisible(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.FALSE.equals(cir.getReturnValue())) return;
 
@@ -203,7 +203,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
-    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectDependenciesCheck(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (!Boolean.TRUE.equals(cir.getReturnValue())) return;
 
@@ -217,7 +217,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
-    @Inject(method = "writeData", at = @At("TAIL"))
+    @Inject(method = "writeData", at = @At("TAIL"), remap = false)
     private void writeTagsNBT(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
         if (!contactQuests$requiredTags.isEmpty()) {
             ListTag list = new ListTag();
@@ -237,7 +237,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         if (contactQuests$hideIfLocked) nbt.putBoolean("cq_hide_locked", true);
     }
 
-    @Inject(method = "readData", at = @At("TAIL"))
+    @Inject(method = "readData", at = @At("TAIL"), remap = false)
     private void readTagsNBT(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
         contactQuests$requiredTags.clear();
         if (nbt.contains("cq_req_tags")) {
@@ -269,7 +269,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         contactQuests$hideIfLocked = nbt.getBoolean("cq_hide_locked");
     }
 
-    @Inject(method = "writeNetData", at = @At("TAIL"))
+    @Inject(method = "writeNetData", at = @At("TAIL"), remap = false)
     private void writeTagsNet(RegistryFriendlyByteBuf buffer, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$requiredTags.size());
         contactQuests$requiredTags.forEach(buffer::writeUtf);
@@ -283,7 +283,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         buffer.writeBoolean(contactQuests$hideIfLocked);
     }
 
-    @Inject(method = "readNetData", at = @At("TAIL"))
+    @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
     private void readTagsNet(RegistryFriendlyByteBuf buffer, CallbackInfo ci) {
         int size = buffer.readVarInt();
         contactQuests$requiredTags.clear();

@@ -78,7 +78,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         return java.util.Collections.unmodifiableSet(contactQuests$unlockedTags);
     }
 
-    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true)
+    @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectAreDependenciesComplete(Quest quest, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
@@ -94,7 +94,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "getCannotStartReason", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getCannotStartReason", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetCannotStartReason(Quest quest, CallbackInfoReturnable<Component> cir) {
         Object questObj = quest;
         if (questObj instanceof IQuestExtension ext) {
@@ -114,7 +114,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "serializeNBT", at = @At("RETURN"))
+    @Inject(method = "serializeNBT", at = @At("RETURN"), remap = false)
     private void injectSerializeNBT(CallbackInfoReturnable<SNBTCompoundTag> cir) {
         if (!contactQuests$unlockedTags.isEmpty()) {
             ListTag list = new ListTag();
@@ -123,7 +123,7 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "deserializeNBT", at = @At("TAIL"))
+    @Inject(method = "deserializeNBT", at = @At("TAIL"), remap = false)
     private void injectDeserializeNBT(SNBTCompoundTag nbt, CallbackInfo ci) {
         contactQuests$unlockedTags.clear();
         if (nbt.contains("ContactQuestsUnlockedTags")) {
@@ -132,13 +132,13 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
-    @Inject(method = "write", at = @At("TAIL"))
+    @Inject(method = "writeNetData", at = @At("TAIL"), remap = false)
     private void injectWrite(FriendlyByteBuf buffer, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$unlockedTags.size());
         contactQuests$unlockedTags.forEach(buffer::writeUtf);
     }
 
-    @Inject(method = "readNetData", at = @At("TAIL"))
+    @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
     private void injectReadNetData(FriendlyByteBuf buffer, CallbackInfo ci) {
         int size = buffer.readVarInt();
         contactQuests$unlockedTags.clear();

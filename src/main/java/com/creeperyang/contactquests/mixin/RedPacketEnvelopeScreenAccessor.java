@@ -7,6 +7,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(RedPacketEnvelopeScreen.class)
 public interface RedPacketEnvelopeScreenAccessor {
-    @Accessor("blessings")
+    @Accessor(value = "blessings", remap = false)
     EditBox contactQuests$getBlessingsBox();
 }
