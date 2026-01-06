@@ -320,7 +320,9 @@ class CollectionSavedData : SavedData() {
     }
 
     companion object {
+        private val defaultReplacers = mutableListOf<CollectionTextReplacer>()
         private val replacers = mutableListOf<CollectionTextReplacer>()
+
         private val ITEM_NAME_PATTERN = Pattern.compile("<item_(\\d+)_name>")
         private val ITEM_COUNT_PATTERN = Pattern.compile("<item_(\\d+)_count>")
 
@@ -328,20 +330,29 @@ class CollectionSavedData : SavedData() {
             replacers.add(replacer)
         }
 
+        private fun registerDefault(replacer: CollectionTextReplacer) {
+            defaultReplacers.add(replacer)
+        }
+
+        fun reset() {
+            replacers.clear()
+            replacers.addAll(defaultReplacers)
+        }
+
         init {
-            registerReplacer { text, context ->
+            registerDefault { text, context ->
                 text.replace("<trigger_count>", context.triggerCount.toString())
-                    .replace("<triggerCount>", context.triggerCount.toString()) // 兼容两种写法
+                    .replace("<triggerCount>", context.triggerCount.toString())
             }
 
-            registerReplacer { text, context ->
+            registerDefault { text, context ->
                 val matcher = ITEM_NAME_PATTERN.matcher(text)
                 val sb = StringBuilder()
                 while (matcher.find()) {
-                    val index = matcher.group(1).toIntOrNull() ?: return@registerReplacer null
+                    val index = matcher.group(1).toIntOrNull() ?: return@registerDefault null
                     val listIndex = index - 1
                     if (listIndex < 0 || listIndex >= context.itemStacks.size) {
-                        return@registerReplacer null
+                        return@registerDefault null
                     }
                     matcher.appendReplacement(sb, context.itemStacks[listIndex].hoverName.string)
                 }
@@ -349,14 +360,14 @@ class CollectionSavedData : SavedData() {
                 sb.toString()
             }
 
-            registerReplacer { text, context ->
+            registerDefault { text, context ->
                 val matcher = ITEM_COUNT_PATTERN.matcher(text)
                 val sb = StringBuilder()
                 while (matcher.find()) {
-                    val index = matcher.group(1).toIntOrNull() ?: return@registerReplacer null
+                    val index = matcher.group(1).toIntOrNull() ?: return@registerDefault null
                     val listIndex = index - 1
                     if (listIndex < 0 || listIndex >= context.itemStacks.size) {
-                        return@registerReplacer null
+                        return@registerDefault null
                     }
                     matcher.appendReplacement(sb, context.itemStacks[listIndex].count.toString())
                 }
@@ -364,16 +375,18 @@ class CollectionSavedData : SavedData() {
                 sb.toString()
             }
 
-            registerReplacer { text, context ->
+            registerDefault { text, context ->
                 val total = context.itemStacks.sumOf { it.count }
                 text.replace("<total_amount>", total.toString())
                     .replace("<total_count>", total.toString())
             }
 
-            registerReplacer { text, context ->
+            registerDefault { text, context ->
                 val types = context.itemStacks.size
                 text.replace("<total_types>", types.toString())
             }
+
+            reset()
         }
 
         fun get(level: ServerLevel): CollectionSavedData {

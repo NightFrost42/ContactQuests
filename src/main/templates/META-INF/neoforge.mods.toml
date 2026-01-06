@@ -83,7 +83,7 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId="ftbquests"
 type = "required"
-versionRange="[2101,)"
+versionRange = "[2101.1.19,)"
 ordering="AFTER"
 side="BOTH"
 
@@ -111,3 +111,10 @@ type = "optional"
 versionRange = "[15,)"
 ordering = "AFTER"
 side = "CLIENT"
+
+[[dependencies."${mod_id}"]]
+modId = "kubejs"
+type = "optional"
+versionRange = "[0,)"
+ordering = "AFTER"
+side = "BOTH"

@@ -5,16 +5,20 @@ import com.creeperyang.contactquests.client.gui.ContactConfigScreen
 import com.creeperyang.contactquests.command.ModCommands
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
+import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.data.TaskDeliverySavedData
 import com.creeperyang.contactquests.network.NetworkHandler
+import com.creeperyang.contactquests.quest.reward.PostcardReward
 import com.creeperyang.contactquests.quest.reward.RewardRegistry
+import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.creeperyang.contactquests.quest.task.TaskRegistry
 import com.creeperyang.contactquests.registry.ModItems
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.ModList
 import net.neoforged.fml.ModLoadingContext
 import net.neoforged.fml.common.Mod
 import net.neoforged.fml.config.ModConfig
@@ -91,6 +95,22 @@ object ContactQuests {
             }
         }
 
+        if (ModList.get().isLoaded("kubejs")) {
+            try {
+                val clazz = Class.forName("com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin")
+
+                val instanceField = clazz.getField("INSTANCE")
+                val instance = instanceField.get(null)
+
+                val initMethod = clazz.getMethod("init")
+
+                initMethod.invoke(instance)
+
+            } catch (e: Exception) {
+                LOGGER.error("Failed to load ContactQuests KubeJS integration", e)
+            }
+        }
+
         runForDist(
             clientTarget = {
                 ContactQuestsClient.init()
@@ -143,6 +163,22 @@ object ContactQuests {
                 DataManager.init()
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+
+        if (event.updateCause == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
+            PostcardTask.PostcardPlaceholderSupport.reset()
+            PostcardReward.reset()
+            CollectionSavedData.reset()
+
+            if (ModList.get().isLoaded("kubejs")) {
+                try {
+                    val clazz = Class.forName("com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin")
+                    val method = clazz.getMethod("reload")
+                    method.invoke(null)
+                } catch (e: Exception) {
+                    LOGGER.error("Failed to reload ContactQuests KubeJS integration", e)
+                }
             }
         }
     }

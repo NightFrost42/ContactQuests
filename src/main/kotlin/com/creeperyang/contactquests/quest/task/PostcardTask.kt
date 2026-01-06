@@ -262,12 +262,13 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
     }
 
     object PostcardPlaceholderSupport {
+        private val defaultReplacers = mutableMapOf<String, (Player, TeamData) -> String>()
         val replacers = mutableMapOf<String, (Player, TeamData) -> String>()
 
         init {
-            register("<player_name>") { p, _ -> p.name.string }
-            register("<team_name>") { _, t -> t.name }
-            register("<team_size>") { p, t ->
+            registerDefault("<player_name>") { p, _ -> p.name.string }
+            registerDefault("<team_name>") { _, t -> t.name }
+            registerDefault("<team_size>") { p, t ->
                 val teamId = t.teamId
                 if (p.level().isClientSide) {
                     val team = FTBTeamsAPI.api().clientManager.getTeamByID(teamId).orElse(null)
@@ -277,10 +278,20 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
                     team?.members?.size?.toString() ?: "1"
                 }
             }
+            reset()
+        }
+
+        private fun registerDefault(key: String, func: (Player, TeamData) -> String) {
+            defaultReplacers[key] = func
         }
 
         fun register(key: String, func: (Player, TeamData) -> String) {
             replacers[key] = func
+        }
+
+        fun reset() {
+            replacers.clear()
+            replacers.putAll(defaultReplacers)
         }
 
         fun replace(text: String, player: Player, team: TeamData): String {

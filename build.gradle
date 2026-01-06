@@ -19,6 +19,21 @@ repositories {
     maven { url = "https://cursemaven.com" }
     maven { url = "https://api.modrinth.com/maven" }
     maven { url = "https://maven.blamejared.com/"        }
+
+    maven {
+        url "https://maven.latvian.dev/releases"
+        content {
+            includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
+        }
+    }
+
+    maven {
+        url 'https://jitpack.io'
+        content {
+            includeGroup "com.github.rtyley"
+        }
+    }
 }
 
 base {
@@ -114,6 +129,7 @@ dependencies {
     implementation "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
     implementation "curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}"
     implementation "curse.maven:jade-324717:${jade_neoforge_21}"
+    implementation "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
     // Example mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"

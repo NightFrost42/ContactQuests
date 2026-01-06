@@ -1,0 +1,1 @@
+com.creeperyang.contactquests.compat.kubejs.ContactPlugin
