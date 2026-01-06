@@ -14,10 +14,13 @@ import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftblibrary.util.TooltipList
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.TaskType
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
+import net.minecraft.client.Minecraft
 import net.minecraft.core.HolderLookup
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
@@ -26,6 +29,7 @@ import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
@@ -34,6 +38,9 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
     var postcardStyle: String = ""
     var postcardText: String = ""
+
+    @Transient
+    private var tempContext: Pair<Player, TeamData>? = null
 
     override fun getType(): TaskType = TaskRegistry.POSTCARD
 
@@ -92,7 +99,12 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         val textType = getComponent<String>("postcard_text") ?: return false
         val itemText = stack[textType] ?: return false
 
-        val normalizedConfig = postcardText.replace("\\n", "\n").trim()
+        var configText = postcardText
+        if (tempContext != null) {
+            configText = PostcardPlaceholderSupport.replace(configText, tempContext!!.first, tempContext!!.second)
+        }
+        val normalizedConfig = configText.replace("\\n", "\n").trim()
+
         val normalizedItem = itemText.trim()
 
         return normalizedItem.contains(normalizedConfig)
@@ -209,8 +221,20 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
             }
         }
         if (postcardText.isNotEmpty()) {
+
+            val player = Minecraft.getInstance().player
+            val teamData = ClientQuestFile.INSTANCE.selfTeamData
+            var rawText = postcardText
+
+            if (player != null && teamData != null) {
+                rawText = PostcardPlaceholderSupport.replace(rawText, player, teamData)
+            }
+
+            val textToDraw = rawText.replace("\\n", "\n")
+
             list.add(Component.translatable("contactquest.task.postcard.req_text")
-                .append(Component.literal(postcardText).withStyle(ChatFormatting.GOLD)))
+                .append(Component.literal(textToDraw).withStyle(ChatFormatting.GOLD))
+            )
         }
 
         super.addMouseOverText(list, teamData)
@@ -221,6 +245,52 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
             DataManager.completePostcardTask(this)
             return submitItemStack
         }
-        return insert(teamData, submitItemStack, false)
+        tempContext = player to teamData
+        try {
+            return insert(teamData, submitItemStack, false)
+        } finally {
+            tempContext = null
+        }
+    }
+
+    fun setContext(player: Player, teamData: TeamData) {
+        tempContext = player to teamData
+    }
+
+    fun clearContext() {
+        tempContext = null
+    }
+
+    object PostcardPlaceholderSupport {
+        val replacers = mutableMapOf<String, (Player, TeamData) -> String>()
+
+        init {
+            register("<player_name>") { p, _ -> p.name.string }
+            register("<team_name>") { _, t -> t.name }
+            register("<team_size>") { p, t ->
+                val teamId = t.teamId
+                if (p.level().isClientSide) {
+                    val team = FTBTeamsAPI.api().clientManager.getTeamByID(teamId).orElse(null)
+                    team?.members?.size?.toString() ?: "1"
+                } else {
+                    val team = FTBTeamsAPI.api().manager.getTeamByID(teamId).orElse(null)
+                    team?.members?.size?.toString() ?: "1"
+                }
+            }
+        }
+
+        fun register(key: String, func: (Player, TeamData) -> String) {
+            replacers[key] = func
+        }
+
+        fun replace(text: String, player: Player, team: TeamData): String {
+            var result = text
+            replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
     }
 }

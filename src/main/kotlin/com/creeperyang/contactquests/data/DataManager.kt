@@ -196,7 +196,19 @@ object DataManager {
             val task = strategy.taskMap[taskId] ?: continue
             val testFunc = strategy.testMap[taskId] ?: continue
 
-            if (!testFunc(initialStack) || !teamData.canStartTasks(task.quest) || teamData.isCompleted(task)) {
+            if (task is PostcardTask) {
+                task.setContext(player, teamData)
+            }
+
+            val isMatch = try {
+                testFunc(initialStack)
+            } finally {
+                if (task is PostcardTask) {
+                    task.clearContext()
+                }
+            }
+
+            if (!isMatch || !teamData.canStartTasks(task.quest) || teamData.isCompleted(task)) {
                 continue
             }
 

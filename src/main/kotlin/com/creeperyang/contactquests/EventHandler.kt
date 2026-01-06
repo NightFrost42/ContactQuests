@@ -12,6 +12,7 @@ import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent
 
@@ -20,6 +21,9 @@ object EventHandler {
     @SubscribeEvent
     fun onItemRightClick(event: PlayerInteractEvent.RightClickItem) {
         if (event.level.isClientSide) return
+
+        if (event.hand != InteractionHand.MAIN_HAND) return
+
         val player = event.entity as? ServerPlayer ?: return
         val stack = event.itemStack
 
