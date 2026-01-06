@@ -19,7 +19,8 @@ class ContactPlugin : KubeJSPlugin {
     }
 
     override fun registerBindings(bindings: BindingRegistry) {
-//        bindings.add("ContactEvents", ContactKubeJSPlugin.GROUP)
-        LOGGER.info("Manually bound 'ContactEvents' to script scope")
+        bindings.add("ContactQuests", ContactKubeJSPlugin)
+
+        LOGGER.info("Manually bound 'ContactQuests' to script scope")
     }
 }
