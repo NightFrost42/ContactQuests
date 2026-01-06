@@ -7,20 +7,20 @@ import org.apache.logging.log4j.LogManager
 
 class ContactPlugin : KubeJSPlugin {
 
-    private val LOGGER = LogManager.getLogger("contactquests-kubejs-plugin")
+    private val logger = LogManager.getLogger("contactquests-kubejs-plugin")
 
     override fun init() {
-        LOGGER.info("ContactQuests KubeJS Plugin Initialized via kubejs.plugins.txt!")
+        logger.info("ContactQuests KubeJS Plugin Initialized via kubejs.plugins.txt!")
     }
 
     override fun registerEvents(registry: EventGroupRegistry) {
         registry.register(ContactKubeJSPlugin.GROUP)
-        LOGGER.info("Registered EventGroup: ${ContactKubeJSPlugin.GROUP.name}")
+        logger.info("Registered EventGroup: ${ContactKubeJSPlugin.GROUP.name}")
     }
 
     override fun registerBindings(bindings: BindingRegistry) {
         bindings.add("ContactQuests", ContactKubeJSPlugin)
 
-        LOGGER.info("Manually bound 'ContactQuests' to script scope")
+        logger.info("Manually bound 'ContactQuests' to script scope")
     }
 }
