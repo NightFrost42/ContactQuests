@@ -18,7 +18,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '6.0.24'
     id 'org.parchmentmc.librarian.forgegradle' version '1.2.0'
     id 'org.spongepowered.mixin' version '0.7.38'
-    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.9.24'
 }
 
 version = mod_version
@@ -208,4 +208,10 @@ tasks.named('compileJava', JavaCompile).configure {
     options.compilerArgs += [
             "-AoutRefMapFile=${project.layout.buildDirectory.get().asFile}/resources/main/${mod_id}.refmap.json"
     ]
+}
+
+tasks.withType(JavaExec).configureEach { task ->
+    if (task.name == 'runServer') {
+        task.standardInput = System.in
+    }
 }

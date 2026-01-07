@@ -2,7 +2,6 @@ package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
-
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
@@ -64,7 +63,15 @@ object EventHandler {
             val reqTags = ext.`contactQuests$getRequiredTags`()
 
             if (reqTags.isNotEmpty() && reqTags.any { newTags.contains(it) }) {
-                val openComponent = Component.translatable("contactquests.message.click_to_open", quest.title)
+                val rawTitle = quest.rawTitle
+
+                val safeTitle: Component = if (rawTitle.isNotBlank()) {
+                    Component.literal(rawTitle)
+                } else {
+                    Component.literal("Quest #${quest.codeString}")
+                }
+
+                val openComponent = Component.translatable("contactquests.message.click_to_open", safeTitle)
                     .withStyle { style ->
                         style.withColor(ChatFormatting.GOLD)
                             .withUnderlined(true)
