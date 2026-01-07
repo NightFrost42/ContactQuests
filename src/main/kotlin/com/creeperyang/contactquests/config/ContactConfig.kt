@@ -19,7 +19,7 @@ object ContactConfig {
         enableDeliveryTime = BUILDER
             .comment("是否启用物流延迟功能 (Enable parcel delivery delay)")
             .comment("如果设置为 false，所有包裹将立即送达。")
-            .define("enable_delivery_time", false)
+            .define("enable_delivery_time", true)
 
         autoFillSpeed = BUILDER
             .comment("自动填充明信片的打字速度 (Auto-fill typing speed)")

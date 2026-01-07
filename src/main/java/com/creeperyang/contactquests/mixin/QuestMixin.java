@@ -207,6 +207,17 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectDependenciesCheck(TeamData data, CallbackInfoReturnable<Boolean> cir) {
+        if (data instanceof ITeamDataExtension ext) {
+            if (ext.contactQuests$isQuestForced(this.id)) {
+                cir.setReturnValue(true);
+                return;
+            }
+            if (ext.contactQuests$isQuestBlocked(this.id)) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
+
         if (!Boolean.TRUE.equals(cir.getReturnValue())) return;
 
         if (contactQuests$internal$checkMutexLocked(data)) {

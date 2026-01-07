@@ -80,7 +80,11 @@ object ModCommands {
                                 .then(
                                     Commands.argument("npc", StringArgumentType.string())
                                         .suggests(NPC_NAME_SUGGESTION_PROVIDER)
-                                        .executes(this::removeData)
+                                        .executes(this::removeDataAll)
+                                        .then(
+                                            Commands.argument("target", EntityArgument.player())
+                                                .executes(this::removeDataTarget)
+                                        )
                                 )
                         )
                         .then(
@@ -90,7 +94,11 @@ object ModCommands {
                                         .suggests(NPC_NAME_SUGGESTION_PROVIDER)
                                         .then(
                                             Commands.argument("count", IntegerArgumentType.integer(0))
-                                                .executes(this::setCount)
+                                                .executes(this::setCountSelf)
+                                                .then(
+                                                    Commands.argument("target", EntityArgument.player())
+                                                        .executes(this::setCountTarget)
+                                                )
                                         )
                                 )
                         )
@@ -267,22 +275,19 @@ object ModCommands {
         }
     }
 
-    private fun removeData(context: CommandContext<CommandSourceStack>): Int {
+    private fun removeDataAll(context: CommandContext<CommandSourceStack>): Int {
         try {
             val level = context.source.level
             val npcName = StringArgumentType.getString(context, "npc")
             val data = CollectionSavedData.get(level)
 
-            if (data.getStoredNpcNames().contains(npcName)) {
-                data.removeData(npcName)
-                context.source.sendSuccess(
-                    { Component.translatable("contactquests.command.remove_data.success", npcName) },
-                    true
+            data.removeDataAll(npcName)
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.remove_data.success_all",
+                    npcName
                 )
-            } else {
-                context.source.sendFailure(Component.translatable("contactquests.command.remove_data.failure", npcName))
-            }
-
+            }, true)
             return Command.SINGLE_SUCCESS
         } catch (e: Exception) {
             ContactQuests.LOGGER.error("Error executing removedata command", e)
@@ -290,23 +295,73 @@ object ModCommands {
         }
     }
 
-    private fun setCount(context: CommandContext<CommandSourceStack>): Int {
+    private fun removeDataTarget(context: CommandContext<CommandSourceStack>): Int {
         try {
+            val level = context.source.level
+            val npcName = StringArgumentType.getString(context, "npc")
+            val target = EntityArgument.getPlayer(context, "target")
+            val data = CollectionSavedData.get(level)
+
+            data.removeData(target.uuid, npcName)
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.remove_data.success_target",
+                    npcName,
+                    target.displayName
+                )
+            }, true)
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing removedata target command", e)
+            return 0
+        }
+    }
+
+    private fun setCountSelf(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val player = context.source.playerOrException
             val level = context.source.level
             val npcName = StringArgumentType.getString(context, "npc")
             val count = IntegerArgumentType.getInteger(context, "count")
 
             val data = CollectionSavedData.get(level)
+            data.setTriggerCount(player.uuid, npcName, count)
 
-            data.setTriggerCount(npcName, count)
-
-            context.source.sendSuccess(
-                { Component.translatable("contactquests.command.set_count.success", npcName, count) },
-                true
-            )
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.set_count.success",
+                    npcName,
+                    count
+                )
+            }, true)
             return Command.SINGLE_SUCCESS
         } catch (e: Exception) {
             ContactQuests.LOGGER.error("Error executing setcount command", e)
+            return 0
+        }
+    }
+
+    private fun setCountTarget(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val level = context.source.level
+            val target = EntityArgument.getPlayer(context, "target")
+            val npcName = StringArgumentType.getString(context, "npc")
+            val count = IntegerArgumentType.getInteger(context, "count")
+
+            val data = CollectionSavedData.get(level)
+            data.setTriggerCount(target.uuid, npcName, count)
+
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.set_count.success_target",
+                    npcName,
+                    count,
+                    target.displayName
+                )
+            }, true)
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing setcount target command", e)
             return 0
         }
     }

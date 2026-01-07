@@ -1,9 +1,11 @@
 package com.creeperyang.contactquests.data
 
+import com.creeperyang.contactquests.compat.kubejs.KubeJSMailQueueSavedData
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.flechazo.contact.common.item.ParcelItem
 import com.flechazo.contact.common.item.PostcardItem
+import com.flechazo.contact.common.item.RedPacketItem
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -62,6 +64,7 @@ object RewardDistributionManager {
     fun onServerTick(level: ServerLevel) {
         processBuffer(level)
         RewardDeliverySavedData.get(level).tick(level)
+        KubeJSMailQueueSavedData.get(level).tick(level)
     }
 
     private fun processBuffer(level: ServerLevel) {
@@ -73,9 +76,8 @@ object RewardDistributionManager {
                 val parcels = packItems(items, key.isEnder, key.sender)
 
                 val delayTicks =
-                    if (key.isEnder || !ContactConfig.enableDeliveryTime.get()) 0 else NpcConfigManager.getDeliveryTime(
-                        key.sender
-                    )
+                    if (key.isEnder || !ContactConfig.enableDeliveryTime.get()) 0
+                    else NpcConfigManager.getDeliveryTime(key.sender, level)
 
                 parcels.forEach { parcelStack ->
                     RewardDeliverySavedData.get(level).addPendingReward(playerId, parcelStack, delayTicks, key.sender)
@@ -103,7 +105,7 @@ object RewardDistributionManager {
         var slotIndex = 0
 
         for (item in items) {
-            if (item.item is PostcardItem) {
+            if (item.item is PostcardItem || item.item is RedPacketItem) {
                 resultParcels.add(item)
                 continue
             }
