@@ -25,9 +25,9 @@ object NetworkHandler {
         )
 
         registrar.playToClient(
-            SyncTeamTagsMessage.TYPE,
-            SyncTeamTagsMessage.STREAM_CODEC,
-            SyncTeamTagsMessage::handle
+            SyncTeamExtensionMessage.TYPE,
+            SyncTeamExtensionMessage.STREAM_CODEC,
+            SyncTeamExtensionMessage::handle
         )
     }
 
