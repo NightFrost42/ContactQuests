@@ -211,3 +211,7 @@ compileJava {
 tasks.named('processResources') {
     dependsOn 'compileJava'
 }
+
+tasks.named('runServer') {
+    standardInput = System.in
+}

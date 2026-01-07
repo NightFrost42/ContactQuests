@@ -1,7 +1,6 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.client.ContactQuestsClient
-import com.creeperyang.contactquests.client.gui.ContactConfigScreen
 import com.creeperyang.contactquests.command.ModCommands
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
@@ -26,7 +25,6 @@ import net.neoforged.fml.event.config.ModConfigEvent
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent
 import net.neoforged.fml.event.lifecycle.FMLDedicatedServerSetupEvent
-import net.neoforged.neoforge.client.gui.IConfigScreenFactory
 import net.neoforged.neoforge.common.NeoForge.EVENT_BUS
 import net.neoforged.neoforge.event.TagsUpdatedEvent
 import net.neoforged.neoforge.event.server.ServerStartedEvent
@@ -86,14 +84,6 @@ object ContactQuests {
         MOD_BUS.addListener(::onConfigReload)
         MOD_BUS.addListener(::onCommonSetup)
         MOD_BUS.addListener(NetworkHandler::register)
-
-        ModLoadingContext.get().registerExtensionPoint(
-            IConfigScreenFactory::class.java
-        ) {
-            IConfigScreenFactory { _, parent ->
-                ContactConfigScreen(parent)
-            }
-        }
 
         if (ModList.get().isLoaded("kubejs")) {
             try {

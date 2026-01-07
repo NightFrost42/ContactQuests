@@ -16,6 +16,8 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.RegistryFriendlyByteBuf;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -136,6 +138,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     }
 
     @Inject(method = "fillConfigGroup", at = @At("TAIL"), remap = false)
+    @OnlyIn(Dist.CLIENT)
     private void injectConfig(ConfigGroup config, CallbackInfo ci) {
         ConfigGroup group = config.getOrCreateSubgroup("contact_quests_tags");
         group.setNameKey("contactquests.config.group");
@@ -152,7 +155,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         group.addBool("hide_without_tags", contactQuests$hideWithoutTags, v -> contactQuests$hideWithoutTags = v, false)
                 .setNameKey("contactquests.config.hide_without_tags");
 
-        // Mutex
         ConfigGroup mutexGroup = config.getOrCreateSubgroup("contact_quests_mutex");
         mutexGroup.setNameKey("contactquests.config.mutex_group");
 
