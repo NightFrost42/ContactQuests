@@ -214,7 +214,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
             return;
         }
 
-        if (!contactQuests$internal$checkTagsMet(data)) {
+        if (contactQuests$internal$checkTagsMet(data)) {
             cir.setReturnValue(false);
         }
     }
