@@ -1,19 +1,17 @@
 package com.creeperyang.contactquests.compat.kubejs
 
 import com.creeperyang.contactquests.data.CollectionSavedData
+import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.quest.reward.ParcelReward
 import com.creeperyang.contactquests.quest.reward.PostcardReward
-import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
-import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.reward.Reward
-import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import dev.latvian.mods.kubejs.event.EventGroup
 import dev.latvian.mods.kubejs.event.KubeEvent
@@ -40,22 +38,40 @@ object ContactKubeJSPlugin {
 
     private val LOGGER = LogManager.getLogger("contactquests-kubejs")
 
-    private fun getTask(id: Any): Task? {
-        val longId = if (id is Number) id.toLong() else try {
-            java.lang.Long.parseUnsignedLong(id.toString(), 16)
-        } catch (e: Exception) {
-            return null
+    private fun asItemStack(item: Any?): ItemStack? {
+        if (item == null) return null
+        if (item is ItemStack) return item
+        try {
+            return item as ItemStack
+        } catch (e: ClassCastException) {
+            LOGGER.warn("ContactQuests: Could not cast ${item.javaClass.name} to ItemStack.")
         }
-        return ServerQuestFile.INSTANCE.getTask(longId)
+        return null
     }
 
     private fun getReward(id: Any): Reward? {
-        val longId = if (id is Number) id.toLong() else try {
-            java.lang.Long.parseUnsignedLong(id.toString(), 16)
-        } catch (e: Exception) {
-            return null
+        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return null
+        val file = ServerQuestFile.INSTANCE
+
+        val reward = file.getReward(longId)
+        if (reward != null) return reward
+
+        LOGGER.warn("ContactQuests: Reward $longId not found in index. Searching ${file.allChapters.size} chapters...")
+        var questCount = 0
+        var rewardCount = 0
+
+        for (chapter in file.allChapters) {
+            for (quest in chapter.quests) {
+                questCount++
+                for (r in quest.rewards) {
+                    rewardCount++
+                    if (r.id == longId) return r
+                }
+            }
         }
-        return ServerQuestFile.INSTANCE.getReward(longId)
+
+        LOGGER.warn("ContactQuests: Deep search finished. Scanned $questCount quests and $rewardCount rewards. Reward $longId not found.")
+        return null
     }
 
     @JvmStatic
@@ -257,66 +273,140 @@ object ContactKubeJSPlugin {
     }
 
     @JvmStatic
-    fun editParcelTask(id: Any, item: ItemStack?, count: Number?): Boolean {
-        val task = getTask(id) as? ParcelTask ?: return false
-        if (item != null) task.itemStack = item
-        if (count != null) task.count = count.toLong()
-        task.clearCachedData()
+    fun editParcelTask(id: Any, item: Any?, count: Number?): Boolean {
+        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
+        LOGGER.info("ContactQuests: editParcelTask called. ID=$longId. DataManager knows ${DataManager.parcelTasks.size} parcel tasks.")
+
+        val task = DataManager.parcelTasks[longId]
+        if (task == null) {
+            LOGGER.warn("ContactQuests: ParcelTask $longId not found in DataManager!")
+            return false
+        }
+
+        var changed = false
+        if (item != null) {
+            val stack = asItemStack(item); if (stack != null) {
+                task.itemStack = stack; changed = true
+            }
+        }
+        if (count != null) {
+            task.count = count.toLong(); changed = true
+        }
+        if (changed) {
+            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited ParcelTask '$longId'")
+        }
+        return true
+    }
+
+    @JvmStatic
+    fun editRedPacketTask(id: Any, item: Any?, count: Number?, blessing: String?): Boolean {
+        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
+        LOGGER.info("ContactQuests: editRedPacketTask called. ID=$longId. DataManager knows ${DataManager.redPacketTasks.size} red packet tasks.")
+
+        val task = DataManager.redPacketTasks[longId]
+        if (task == null) {
+            LOGGER.warn("ContactQuests: RedPacketTask $longId not found in DataManager!")
+            return false
+        }
+
+        var changed = false
+        if (item != null) {
+            val stack = asItemStack(item); if (stack != null) {
+                task.itemStack = stack; changed = true
+            }
+        }
+        if (count != null) {
+            task.count = count.toLong(); changed = true
+        }
+        if (blessing != null) {
+            task.blessing = blessing; changed = true
+        }
+        if (changed) {
+            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited RedPacketTask '$longId'")
+        }
         return true
     }
 
     @JvmStatic
     fun editPostcardTask(id: Any, style: String?, text: String?): Boolean {
-        val task = getTask(id) as? PostcardTask ?: return false
-        if (style != null) task.postcardStyle = style
-        if (text != null) task.postcardText = text
-        task.clearCachedData()
+        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
+        LOGGER.info("ContactQuests: editPostcardTask called. ID=$longId. DataManager knows ${DataManager.postcardTasks.size} postcard tasks.")
+
+        val task = DataManager.postcardTasks[longId]
+        if (task == null) {
+            LOGGER.warn("ContactQuests: PostcardTask $longId not found in DataManager!")
+            return false
+        }
+
+        var changed = false
+        if (style != null) {
+            task.postcardStyle = style; changed = true
+        }
+        if (text != null) {
+            task.postcardText = text; changed = true
+        }
+        if (changed) {
+            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited PostcardTask '$longId'")
+        }
         return true
     }
 
     @JvmStatic
     fun editParcelReward(id: Any, item: ItemStack?, count: Number?, randomBonus: Number?): Boolean {
-        val reward = getReward(id) as? ParcelReward ?: return false
-        if (item != null) reward.item = item
-        if (count != null) reward.count = count.toInt()
-        if (randomBonus != null) reward.randomBonus = randomBonus.toInt()
-        reward.clearCachedData()
+        val reward = getReward(id)
+        if (reward !is ParcelReward) {
+            LOGGER.warn("ContactQuests: Failed to edit ParcelReward '$id'. Reward not found or wrong type.")
+            return false
+        }
+
+        var changed = false
+        if (item != null) {
+            reward.item = item; changed = true
+        }
+        if (count != null) {
+            reward.count = count.toInt(); changed = true
+        }
+        if (randomBonus != null) {
+            reward.randomBonus = randomBonus.toInt(); changed = true
+        }
+
+        if (changed) {
+            reward.clearCachedData()
+            LOGGER.info("ContactQuests: Successfully edited ParcelReward '$id'")
+        }
         return true
     }
 
     @JvmStatic
     fun editPostcardReward(id: Any, style: String?, text: String?, sender: String?): Boolean {
-        val reward = getReward(id) as? PostcardReward ?: return false
-        if (style != null) reward.postcardStyle = style
-        if (text != null) reward.postcardText = text
-        if (sender != null) reward.targetAddressee = sender
-        reward.clearCachedData()
-        return true
-    }
-
-    @JvmStatic
-    fun editRedPacketTask(id: Any, item: ItemStack?, count: Number?, blessing: String?): Boolean {
-        val task = getTask(id) as? RedPacketTask ?: return false
-
-        if (item != null) {
-            task.itemStack = item
+        val reward = getReward(id)
+        if (reward !is PostcardReward) {
+            LOGGER.warn("ContactQuests: Failed to edit PostcardReward '$id'. Reward not found or wrong type.")
+            return false
         }
 
-        if (count != null) {
-            task.count = count.toLong()
+        var changed = false
+        if (style != null) {
+            reward.postcardStyle = style; changed = true
+        }
+        if (text != null) {
+            reward.postcardText = text; changed = true
+        }
+        if (sender != null) {
+            reward.targetAddressee = sender; changed = true
         }
 
-        if (blessing != null) {
-            task.blessing = blessing
+        if (changed) {
+            reward.clearCachedData()
+            LOGGER.info("ContactQuests: Successfully edited PostcardReward '$id'")
         }
-
-        task.clearCachedData()
         return true
     }
 
     @JvmStatic
     fun refreshQuests() {
         ServerQuestFile.INSTANCE.refreshGui()
+        LOGGER.info("ContactQuests: Refreshed Quest GUI for all players.")
     }
 
     class RegisterReplacersEvent : KubeEvent {

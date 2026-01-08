@@ -19,6 +19,7 @@
   "contactquest.task.ftbquests.redpacket.valid_for": "the content of the red envelope required",
   "contactquest.task.no_valid_items": "No valid items!",
   "contactquest.task.parcel.recipient": "mail recipients: %s",
+  "contactquest.task.parcel.recipient_setting": "mail recipients",
   "contactquest.task.postcard.req_style": "postcard style in demand",
   "contactquest.task.postcard.req_text": "postcard content in demand",
   "contactquest.task.postcard.style": "postcard style",
@@ -84,5 +85,9 @@
   "contactquests.config.hide_if_locked": "Hide if Locked",
   "contactquests.utils.mutexmode.all": "Complete ALL",
   "contactquests.utils.mutexmode.any": "Complete ANY",
-  "contactquests.utils.mutexmode.number": "Complete Specific Number"
+  "contactquests.utils.mutexmode.number": "Complete Specific Number",
+  "contactquest.task.red_packet.item": "item",
+  "contactquest.task.parcel.item": "item",
+  "ftbquests.task.contactquests.parcel_task.match_components": "Match Data Components",
+  "ftbquests.task.contactquests.red_packet_task.match_components": "数据匹配模式"
 }

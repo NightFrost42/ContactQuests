@@ -19,6 +19,7 @@
   "contactquest.task.ftbquests.redpacket.valid_for": "需要的红包内容",
   "contactquest.task.no_valid_items": "无合法的物品",
   "contactquest.task.parcel.recipient": "邮寄收件人: %s",
+  "contactquest.task.parcel.recipient_setting": "邮寄收件人",
   "contactquest.task.postcard.req_style": "需求的明信片样式",
   "contactquest.task.postcard.req_text": "需求的明信片内容",
   "contactquest.task.postcard.style": "明信片样式",
@@ -84,5 +85,9 @@
   "contactquests.utils.mutexmode.all": "完成所有",
   "contactquests.utils.mutexmode.any": "完成任一",
   "contactquests.utils.mutexmode.number": "完成特定数量",
-  "contactquests.quest.locked.mutex_tasks": "与这些任务冲突: %s"
+  "contactquests.quest.locked.mutex_tasks": "与这些任务冲突: %s",
+  "contactquest.task.red_packet.item": "物品",
+  "contactquest.task.parcel.item": "物品",
+  "ftbquests.task.contactquests.parcel_task.match_components": "数据匹配模式",
+  "ftbquests.task.contactquests.red_packet_task.match_components": "数据匹配模式"
 }
