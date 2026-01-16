@@ -1,9 +1,6 @@
 package com.creeperyang.contactquests.mixin;
 
-import com.creeperyang.contactquests.quest.reward.ParcelAllTableReward;
-import com.creeperyang.contactquests.quest.reward.ParcelRandomReward;
-import com.creeperyang.contactquests.quest.reward.ParcelReward;
-import com.creeperyang.contactquests.quest.reward.RewardRegistry;
+import com.creeperyang.contactquests.quest.reward.*;
 import com.creeperyang.contactquests.quest.task.ParcelTask;
 import com.creeperyang.contactquests.quest.task.RedPacketTask;
 import com.creeperyang.contactquests.quest.task.TaskRegistry;
@@ -96,6 +93,21 @@ public abstract class GuiProvidersMixin {
             s.setTitle(Component.translatable("ftbquests.gui.select_reward_table"));
             s.setHasSearchBox(true);
             s.openGui();
+        });
+
+        RewardRegistry.INSTANCE.getRED_PACKET().setGuiProvider((gui, quest, callback) -> {
+            ItemStackConfig c = new ItemStackConfig(false, false);
+            new SelectItemStackScreen(c, accepted -> {
+                if (accepted) {
+                    ItemStack copy = c.getValue().copy();
+                    copy.setCount(1);
+                    RedPacketReward reward = new RedPacketReward(0L, quest);
+                    reward.setItem(copy);
+                    reward.setCount(c.getValue().getCount());
+                    callback.accept(reward);
+                }
+                gui.run();
+            }).openGui();
         });
     }
 }

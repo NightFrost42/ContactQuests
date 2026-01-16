@@ -6,12 +6,18 @@ import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.quest.reward.ParcelReward
 import com.creeperyang.contactquests.quest.reward.PostcardReward
+import com.creeperyang.contactquests.quest.task.ContactTask
+import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
+import com.flechazo.contact.common.item.RedPacketItem
+import dev.ftb.mods.ftbquests.quest.QuestObjectBase
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.reward.Reward
+import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import dev.latvian.mods.kubejs.event.EventGroup
 import dev.latvian.mods.kubejs.event.KubeEvent
@@ -22,6 +28,7 @@ import net.minecraft.nbt.StringTag
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.SimpleContainer
 import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.component.CustomData
@@ -37,6 +44,55 @@ object ContactKubeJSPlugin {
     val MAIL_RECEIVED = GROUP.server("mailReceived") { MailReceivedEventJS::class.java }
 
     private val LOGGER = LogManager.getLogger("contactquests-kubejs")
+
+    private fun syncObject(obj: QuestObjectBase) {
+        obj.clearCachedData()
+        var synced = false
+
+        try {
+            val method = QuestObjectBase::class.java.getMethod("editedFromGUI")
+            method.invoke(obj)
+            synced = true
+            LOGGER.info("ContactQuests: Synced object ${obj.id} using editedFromGUI().")
+        } catch (e: Exception) {/* ignore */
+        }
+
+        if (!synced) {
+            try {
+                val classNames = listOf(
+                    "dev.ftb.mods.ftbquests.net.EditObjectMessage",
+                    "dev.ftb.mods.ftbquests.network.EditObjectMessage",
+                    "dev.ftb.mods.ftbquests.net.MessageEditObject"
+                )
+
+                for (className in classNames) {
+                    try {
+                        val msgClass = Class.forName(className)
+                        val ctor = msgClass.getConstructor(QuestObjectBase::class.java)
+                        val msg = ctor.newInstance(obj)
+
+                        val sendMethod = msgClass.getMethod("sendToAll")
+                        sendMethod.invoke(msg)
+                        synced = true
+                        LOGGER.info("ContactQuests: Synced object ${obj.id} using $className.")
+                        break
+                    } catch (ignore: ClassNotFoundException) {
+                        continue
+                    } catch (e: Exception) {
+                        LOGGER.debug("ContactQuests: Reflection sync attempt failed for $className: ${e.message}")
+                    }
+                }
+            } catch (e: Exception) {
+                LOGGER.warn("ContactQuests: Reflection sync failed: ${e.message}")
+            }
+        }
+
+        if (!synced) {
+            LOGGER.info("ContactQuests: Could not find efficient sync method for ${obj.id}. Falling back to full GUI refresh.")
+            ServerQuestFile.INSTANCE.saveNow()
+            ServerQuestFile.INSTANCE.refreshGui()
+        }
+    }
 
     private fun asItemStack(item: Any?): ItemStack? {
         if (item == null) return null
@@ -139,6 +195,26 @@ object ContactKubeJSPlugin {
     }
 
     @JvmStatic
+    fun getNpcStash(player: ServerPlayer, npcName: String): List<ItemStack> {
+        return CollectionSavedData.get(player.serverLevel()).getStacks(player.uuid, npcName)
+    }
+
+    @JvmStatic
+    fun setNpcStash(player: ServerPlayer, npcName: String, items: List<ItemStack>) {
+        CollectionSavedData.get(player.serverLevel()).setStacks(player.uuid, npcName, items)
+    }
+
+    @JvmStatic
+    fun addToNpcStash(player: ServerPlayer, npcName: String, items: List<ItemStack>) {
+        CollectionSavedData.get(player.serverLevel()).addItemsSilent(player, npcName, items)
+    }
+
+    @JvmStatic
+    fun clearNpcStash(player: ServerPlayer, npcName: String) {
+        CollectionSavedData.get(player.serverLevel()).setStacks(player.uuid, npcName, emptyList())
+    }
+
+    @JvmStatic
     fun updateNpcDeliveryTime(level: ServerLevel, name: String, deliveryTime: Int) {
         KubeJSNpcSavedData.get(level).setNpcData(name, deliveryTime, null)
     }
@@ -160,6 +236,13 @@ object ContactKubeJSPlugin {
     @JvmStatic
     fun sendMail(player: ServerPlayer, senderName: String, item: ItemStack, isEnder: Boolean) {
         RewardDistributionManager.distribute(player, item, senderName, isEnder)
+    }
+
+    @JvmStatic
+    fun createRedPacket(sender: String, blessing: String, item: ItemStack): ItemStack {
+        val container = SimpleContainer(1)
+        container.setItem(0, item.copy())
+        return RedPacketItem.getRedPacket(container, blessing, sender)
     }
 
     @JvmStatic
@@ -216,7 +299,6 @@ object ContactKubeJSPlugin {
     @JvmStatic
     fun openQuest(player: ServerPlayer, questIdStr: String) {
         try {
-            // 支持传入十六进制字符串 (如 "1A2B3C") 或十进制字符串
             val id = try {
                 java.lang.Long.parseUnsignedLong(questIdStr, 16)
             } catch (e: NumberFormatException) {
@@ -272,109 +354,167 @@ object ContactKubeJSPlugin {
         }
     }
 
-    @JvmStatic
-    fun editParcelTask(id: Any, item: Any?, count: Number?): Boolean {
-        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
-        LOGGER.info("ContactQuests: editParcelTask called. ID=$longId. DataManager knows ${DataManager.parcelTasks.size} parcel tasks.")
+    private fun updateTaskTarget(task: Task, newTarget: String) {
+        if (task !is ContactTask) return
 
-        val task = DataManager.parcelTasks[longId]
-        if (task == null) {
-            LOGGER.warn("ContactQuests: ParcelTask $longId not found in DataManager!")
-            return false
+        val oldTarget = task.targetAddressee
+        if (oldTarget == newTarget) return
+
+        val map = when (task) {
+            is ParcelTask -> DataManager.parcelReceiver
+            is RedPacketTask -> DataManager.redPacketReceiver
+            is PostcardTask -> DataManager.postcardReceiver
+            else -> null
         }
 
-        var changed = false
-        if (item != null) {
-            val stack = asItemStack(item); if (stack != null) {
-                task.itemStack = stack; changed = true
-            }
+        if (map != null) {
+            map[oldTarget]?.remove(task.id)
+            if (map[oldTarget]?.isEmpty() == true) map.remove(oldTarget)
+            map.computeIfAbsent(newTarget) { mutableSetOf() }.add(task.id)
         }
-        if (count != null) {
-            task.count = count.toLong(); changed = true
-        }
-        if (changed) {
-            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited ParcelTask '$longId'")
-        }
-        return true
+
+        task.targetAddressee = newTarget
+        LOGGER.info("ContactQuests: Updated task ${task.id} target from '$oldTarget' to '$newTarget'")
     }
 
     @JvmStatic
-    fun editRedPacketTask(id: Any, item: Any?, count: Number?, blessing: String?): Boolean {
+    fun editParcelTask(id: Any, item: ItemStack? = null, count: Number? = null, target: String? = null): Boolean {
         val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
-        LOGGER.info("ContactQuests: editRedPacketTask called. ID=$longId. DataManager knows ${DataManager.redPacketTasks.size} red packet tasks.")
-
-        val task = DataManager.redPacketTasks[longId]
-        if (task == null) {
-            LOGGER.warn("ContactQuests: RedPacketTask $longId not found in DataManager!")
-            return false
-        }
+        val task = DataManager.parcelTasks[longId] ?: return false
 
         var changed = false
-        if (item != null) {
-            val stack = asItemStack(item); if (stack != null) {
-                task.itemStack = stack; changed = true
-            }
+        if (item != null && !ItemStack.matches(task.itemStack, item)) {
+            task.itemStack = item; changed = true
         }
-        if (count != null) {
+        if (count != null && task.count != count.toLong()) {
             task.count = count.toLong(); changed = true
         }
-        if (blessing != null) {
+        if (target != null && task.targetAddressee != target) {
+            updateTaskTarget(task, target); changed = true
+        }
+
+        if (changed) {
+            syncObject(task); LOGGER.info("ContactQuests: Edited ParcelTask '$longId'")
+        }
+        return changed
+    }
+
+    @JvmStatic
+    fun editRedPacketTask(
+        id: Any,
+        item: ItemStack? = null,
+        count: Number? = null,
+        blessing: String? = null,
+        target: String? = null
+    ): Boolean {
+        val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
+        val task = DataManager.redPacketTasks[longId] ?: return false
+
+        var changed = false
+        if (item != null && !ItemStack.matches(task.itemStack, item)) {
+            task.itemStack = item; changed = true
+        }
+        if (count != null && task.count != count.toLong()) {
+            task.count = count.toLong(); changed = true
+        }
+        if (blessing != null && task.blessing != blessing) {
             task.blessing = blessing; changed = true
         }
-        if (changed) {
-            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited RedPacketTask '$longId'")
+        if (target != null && task.targetAddressee != target) {
+            updateTaskTarget(task, target); changed = true
         }
-        return true
+
+        if (changed) {
+            syncObject(task); LOGGER.info("ContactQuests: Edited RedPacketTask '$longId'")
+        }
+        return changed
     }
 
     @JvmStatic
-    fun editPostcardTask(id: Any, style: String?, text: String?): Boolean {
+    fun editPostcardTask(id: Any, style: String? = null, text: String? = null, target: String? = null): Boolean {
         val longId = if (id is Number) id.toLong() else parseId(id.toString()) ?: return false
-        LOGGER.info("ContactQuests: editPostcardTask called. ID=$longId. DataManager knows ${DataManager.postcardTasks.size} postcard tasks.")
-
-        val task = DataManager.postcardTasks[longId]
-        if (task == null) {
-            LOGGER.warn("ContactQuests: PostcardTask $longId not found in DataManager!")
-            return false
-        }
+        val task = DataManager.postcardTasks[longId] ?: return false
 
         var changed = false
-        if (style != null) {
+        if (style != null && task.postcardStyle != style) {
             task.postcardStyle = style; changed = true
         }
-        if (text != null) {
+        if (text != null && task.postcardText != text) {
             task.postcardText = text; changed = true
         }
-        if (changed) {
-            task.clearCachedData(); LOGGER.info("ContactQuests: Successfully edited PostcardTask '$longId'")
+        if (target != null && task.targetAddressee != target) {
+            updateTaskTarget(task, target); changed = true
         }
-        return true
+
+        if (changed) {
+            syncObject(task); LOGGER.info("ContactQuests: Edited PostcardTask '$longId'")
+        }
+        return changed
+    }
+
+
+    @JvmStatic
+    fun editParcelReward(
+        id: Any,
+        item: ItemStack? = null,
+        count: Number? = null,
+        randomBonus: Number? = null,
+        target: String? = null
+    ): Boolean {
+        val reward = getReward(id) as? ParcelReward ?: return false
+        var changed = false
+
+        if (item != null && !ItemStack.matches(reward.item, item)) {
+            reward.item = item; changed = true
+        }
+        if (count != null && reward.count != count.toInt()) {
+            reward.count = count.toInt(); changed = true
+        }
+        if (randomBonus != null && reward.randomBonus != randomBonus.toInt()) {
+            reward.randomBonus = randomBonus.toInt(); changed = true
+        }
+        if (target != null && reward.targetAddressee != target) {
+            reward.targetAddressee = target; changed = true
+        }
+
+        if (changed) {
+            syncObject(reward); LOGGER.info("ContactQuests: Edited ParcelReward '$id'")
+        }
+        return changed
     }
 
     @JvmStatic
-    fun editParcelReward(id: Any, item: ItemStack?, count: Number?, randomBonus: Number?): Boolean {
-        val reward = getReward(id)
-        if (reward !is ParcelReward) {
-            LOGGER.warn("ContactQuests: Failed to edit ParcelReward '$id'. Reward not found or wrong type.")
-            return false
-        }
-
+    fun editRedPacketReward(
+        id: Any,
+        item: ItemStack? = null,
+        count: Number? = null,
+        blessing: String? = null,
+        randomBonus: Number? = null,
+        target: String? = null
+    ): Boolean {
+        val reward = getReward(id) as? com.creeperyang.contactquests.quest.reward.RedPacketReward ?: return false
         var changed = false
-        if (item != null) {
+
+        if (item != null && !ItemStack.matches(reward.item, item)) {
             reward.item = item; changed = true
         }
-        if (count != null) {
+        if (count != null && reward.count != count.toInt()) {
             reward.count = count.toInt(); changed = true
         }
-        if (randomBonus != null) {
+        if (blessing != null && reward.blessing != blessing) {
+            reward.blessing = blessing; changed = true
+        }
+        if (randomBonus != null && reward.randomBonus != randomBonus.toInt()) {
             reward.randomBonus = randomBonus.toInt(); changed = true
+        }
+        if (target != null && reward.targetAddressee != target) {
+            reward.targetAddressee = target; changed = true
         }
 
         if (changed) {
-            reward.clearCachedData()
-            LOGGER.info("ContactQuests: Successfully edited ParcelReward '$id'")
+            syncObject(reward); LOGGER.info("ContactQuests: Edited RedPacketReward '$id'")
         }
-        return true
+        return changed
     }
 
     @JvmStatic
@@ -400,13 +540,53 @@ object ContactKubeJSPlugin {
             reward.clearCachedData()
             LOGGER.info("ContactQuests: Successfully edited PostcardReward '$id'")
         }
-        return true
+        return changed
     }
 
     @JvmStatic
     fun refreshQuests() {
+        val server = ServerQuestFile.INSTANCE.server
+        if (server != null) {
+            val count = updateAllTeamsPostcardCache(server)
+            LOGGER.info("ContactQuests: Calculated postcard texts for $count teams.")
+        }
+
         ServerQuestFile.INSTANCE.refreshGui()
         LOGGER.info("ContactQuests: Refreshed Quest GUI for all players.")
+    }
+
+    fun updatePlayerPostcardCache(player: ServerPlayer) {
+        try {
+            val team = FTBTeamsAPI.api().manager.getTeamForPlayerID(player.uuid).orElse(null) ?: return
+            val teamData = ServerQuestFile.INSTANCE.getOrCreateTeamData(team)
+            val ext = teamData as ITeamDataExtension
+            var changed = false
+
+            val postcardTasks = DataManager.postcardTasks.values
+
+            for (task in postcardTasks) {
+                val originalText = task.postcardText
+                val resolvedText = PostcardTask.PostcardPlaceholderSupport.replace(originalText, player, teamData)
+
+                val cached = ext.`contactQuests$getPostcardText`(task.id)
+                if (cached != resolvedText) {
+                    ext.`contactQuests$setPostcardText`(task.id, resolvedText)
+                    LOGGER.debug("ContactQuests: Updated postcard cache for ${player.name.string} (Task ${task.id}) on login.")
+                    changed = true
+                }
+            }
+        } catch (e: Exception) {
+            LOGGER.error("Failed to update postcard cache for player ${player.name.string}", e)
+        }
+    }
+
+    private fun updateAllTeamsPostcardCache(server: net.minecraft.server.MinecraftServer): Int {
+        var count = 0
+        server.playerList.players.forEach { player ->
+            updatePlayerPostcardCache(player)
+            count++
+        }
+        return count
     }
 
     class RegisterReplacersEvent : KubeEvent {

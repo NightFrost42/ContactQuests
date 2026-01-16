@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.quest.task
 
 import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
+import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
@@ -99,15 +100,48 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         val textType = getComponent<String>("postcard_text") ?: return false
         val itemText = stack[textType] ?: return false
 
-        var configText = postcardText
         if (tempContext != null) {
-            configText = PostcardPlaceholderSupport.replace(configText, tempContext!!.first, tempContext!!.second)
+            val (player, teamData) = tempContext!!
+            val normalizedItem = itemText.trim()
+
+            val resolvedText = getResolvedText(teamData, player)
+
+            val normalizedConfig = resolvedText.replace("\\n", "\n").trim()
+
+            val result = normalizedItem.contains(normalizedConfig)
+
+//            if (!result && !player.level().isClientSide) {
+//                ContactQuests.info("--- Postcard Task Validation Failed ---")
+//                ContactQuests.info("Task ID: $id")
+//                ContactQuests.info("Config Raw: '$postcardText'")
+//                ContactQuests.info("Config Resolved: '$resolvedText'")
+//                ContactQuests.info("Config Normalized (Expected): '$normalizedConfig'")
+//                ContactQuests.info("Item Text (Actual): '$normalizedItem'")
+//                ContactQuests.info("Match Result: false")
+//                ContactQuests.info("---------------------------------------")
+//            }
+
+            return result
         }
-        val normalizedConfig = configText.replace("\\n", "\n").trim()
+        return false
+    }
 
-        val normalizedItem = itemText.trim()
+    fun getResolvedText(teamData: TeamData?, player: Player?): String {
+        if (teamData != null) {
+            val cached = (teamData as ITeamDataExtension).`contactQuests$getPostcardText`(this.id)
+            if (!cached.isNullOrEmpty()) {
+//                ContactQuests.info("[Debug Client] Task $id found cached text: $cached")
+                return cached
+            } else {
+//                ContactQuests.info("[Debug Client] Task $id has NO cached text.")
+            }
+        }
 
-        return normalizedItem.contains(normalizedConfig)
+        if (player != null && teamData != null) {
+            return PostcardPlaceholderSupport.replace(postcardText, player, teamData)
+        }
+
+        return postcardText
     }
 
     override fun getValidDisplayItems(): MutableList<ItemStack> {
@@ -223,16 +257,12 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         if (postcardText.isNotEmpty()) {
 
             val player = Minecraft.getInstance().player
-            val teamData = ClientQuestFile.INSTANCE.selfTeamData
-            var rawText = postcardText
 
-            if (player != null && teamData != null) {
-                rawText = PostcardPlaceholderSupport.replace(rawText, player, teamData)
-            }
+            val resolvedText = getResolvedText(ClientQuestFile.INSTANCE.selfTeamData, player)
+            val textToDraw = resolvedText.replace("\\n", "\n")
 
-            val textToDraw = rawText.replace("\\n", "\n")
-
-            list.add(Component.translatable("contactquest.task.postcard.req_text")
+            list.add(
+                Component.translatable("contactquest.task.postcard.req_text").withStyle(ChatFormatting.GRAY)
                 .append(Component.literal(textToDraw).withStyle(ChatFormatting.GOLD))
             )
         }

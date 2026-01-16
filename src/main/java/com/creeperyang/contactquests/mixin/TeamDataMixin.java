@@ -8,10 +8,7 @@ import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftbquests.quest.Quest;
 import dev.ftb.mods.ftbquests.quest.TeamData;
 import net.minecraft.ChatFormatting;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.LongTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -36,6 +33,9 @@ public class TeamDataMixin implements ITeamDataExtension {
 
     @Unique
     private final Set<Long> contactQuests$blockedQuests = new HashSet<>();
+
+    @Unique
+    private final Map<Long, String> contactQuests$postcardCache = new HashMap<>();
 
     @Override
     @Unique
@@ -154,6 +154,34 @@ public class TeamDataMixin implements ITeamDataExtension {
         contactQuests$blockedQuests.addAll(ids);
     }
 
+    @Override
+    @Unique
+    public String contactQuests$getPostcardText(long taskId) {
+        return contactQuests$postcardCache.get(taskId);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setPostcardText(long taskId, String text) {
+        if (!Objects.equals(contactQuests$postcardCache.get(taskId), text)) {
+            contactQuests$postcardCache.put(taskId, text);
+            contactQuests$operationSync();
+        }
+    }
+
+    @Override
+    @Unique
+    public Map<Long, String> contactQuests$getAllPostcardTexts() {
+        return Collections.unmodifiableMap(contactQuests$postcardCache);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setAllPostcardTexts(Map<Long, String> texts) {
+        contactQuests$postcardCache.clear();
+        contactQuests$postcardCache.putAll(texts);
+    }
+
     @Unique
     private boolean contactQuests$operationSync() {
         TeamData self = (TeamData) (Object) this;
@@ -165,7 +193,8 @@ public class TeamDataMixin implements ITeamDataExtension {
                     self.getTeamId(),
                     contactQuests$unlockedTags,
                     contactQuests$forcedQuests,
-                    contactQuests$blockedQuests
+                    contactQuests$blockedQuests,
+                    contactQuests$postcardCache
             );
 
             for (ServerPlayer player : self.getOnlineMembers()) {
@@ -245,6 +274,11 @@ public class TeamDataMixin implements ITeamDataExtension {
             contactQuests$blockedQuests.forEach(id -> list.add(LongTag.valueOf(id)));
             tag.put("ContactQuestsBlockedQuests", list);
         }
+        if (!contactQuests$postcardCache.isEmpty()) {
+            CompoundTag pcTag = new CompoundTag();
+            contactQuests$postcardCache.forEach((k, v) -> pcTag.putString(String.valueOf(k), v));
+            tag.put("ContactQuestsPostcardCache", pcTag);
+        }
     }
 
     @Inject(method = "deserializeNBT", at = @At("TAIL"), remap = false)
@@ -266,6 +300,18 @@ public class TeamDataMixin implements ITeamDataExtension {
             ListTag list = nbt.getList("ContactQuestsBlockedQuests", Tag.TAG_LONG);
             list.forEach(t -> contactQuests$blockedQuests.add(((LongTag) t).getAsLong()));
         }
+
+        contactQuests$postcardCache.clear();
+        if (nbt.contains("ContactQuestsPostcardCache")) {
+            CompoundTag pcTag = nbt.getCompound("ContactQuestsPostcardCache");
+            for (String key : pcTag.getAllKeys()) {
+                try {
+                    long id = Long.parseLong(key);
+                    contactQuests$postcardCache.put(id, pcTag.getString(key));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
     }
 
     @Inject(method = "writeNetData", at = @At("TAIL"), remap = false)
@@ -278,6 +324,12 @@ public class TeamDataMixin implements ITeamDataExtension {
 
         buffer.writeVarInt(contactQuests$blockedQuests.size());
         contactQuests$blockedQuests.forEach(buffer::writeLong);
+
+        buffer.writeVarInt(contactQuests$postcardCache.size());
+        contactQuests$postcardCache.forEach((k, v) -> {
+            buffer.writeLong(k);
+            buffer.writeUtf(v);
+        });
     }
 
     @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
@@ -298,6 +350,12 @@ public class TeamDataMixin implements ITeamDataExtension {
         contactQuests$blockedQuests.clear();
         for (int i = 0; i < blockedSize; i++) {
             contactQuests$blockedQuests.add(buffer.readLong());
+        }
+
+        int pcSize = buffer.readVarInt();
+        contactQuests$postcardCache.clear();
+        for (int i = 0; i < pcSize; i++) {
+            contactQuests$postcardCache.put(buffer.readLong(), buffer.readUtf());
         }
     }
 }

@@ -1,8 +1,8 @@
 package com.creeperyang.contactquests
 
+import com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin
 import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
-
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
@@ -14,6 +14,7 @@ import net.minecraft.network.chat.HoverEvent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent
 
 object EventHandler {
@@ -55,6 +56,14 @@ object EventHandler {
             )
 
             checkAndNotifyQuests(player, newUnlockedTags)
+        }
+    }
+
+    @SubscribeEvent
+    fun onPlayerLoggedIn(event: PlayerEvent.PlayerLoggedInEvent) {
+        val player = event.entity
+        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
+            ContactKubeJSPlugin.updatePlayerPostcardCache(player)
         }
     }
 

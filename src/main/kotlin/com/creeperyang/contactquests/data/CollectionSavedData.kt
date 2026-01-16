@@ -329,6 +329,32 @@ class CollectionSavedData : SavedData() {
         return lData?.itemStacks?.map { it.copy() }?.toMutableList() ?: MutableList(1) { ItemStack.EMPTY }
     }
 
+    fun setStacks(uuid: UUID, name: String, stacks: List<ItemStack>) {
+        synchronized(dataMap) {
+            val data = getOrCreateData(uuid, name)
+            data.itemStacks.clear()
+            val validStacks = stacks.filter { !it.isEmpty }
+            for (stack in validStacks) {
+                data.itemStacks.add(stack.copy())
+            }
+            setDirty()
+        }
+    }
+
+    fun addItemsSilent(player: ServerPlayer, name: String, stacks: List<ItemStack>) {
+        if (stacks.isEmpty()) return
+        val validStacks = stacks.filter { !it.isEmpty }
+        if (validStacks.isEmpty()) return
+
+        val uuid = player.uuid
+        synchronized(dataMap) {
+            val data = getOrCreateData(uuid, name)
+
+            mergeItemsIntoData(data, validStacks)
+            setDirty()
+        }
+    }
+
     fun getTriggerCount(uuid: UUID, name: String): Int {
         val pData = dataMap[uuid]?.get(name)
         if (pData != null) return pData.triggerCount

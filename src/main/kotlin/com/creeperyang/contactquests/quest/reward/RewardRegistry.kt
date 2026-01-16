@@ -31,6 +31,12 @@ object RewardRegistry {
         { Icon.getIcon("contact:item/postcard") }
     ).setExcludeFromListRewards(true)
 
+    val RED_PACKET: RewardType = RewardTypes.register(
+        ResourceLocation.fromNamespaceAndPath("contactquests", "red_packet"),
+        { id, quest -> RedPacketReward(id, quest) },
+        { Icon.getIcon("contact:item/red_packet") }
+    ).setExcludeFromListRewards(true)
+
     fun init() {
         // Class loading trigger
     }

@@ -112,6 +112,10 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         list.add(
             Component.translatable("contactquest.task.parcel.recipient", targetAddressee).withStyle(ChatFormatting.GRAY)
         )
+        list.add(
+            Component.translatable("contactquest.task.redpacket.req_text").withStyle(ChatFormatting.GRAY)
+                .append(Component.literal(blessing).withStyle(ChatFormatting.GOLD))
+        )
 
         super.addMouseOverText(list, teamData)
     }

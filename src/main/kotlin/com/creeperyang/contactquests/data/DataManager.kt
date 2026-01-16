@@ -7,6 +7,7 @@ import com.creeperyang.contactquests.compat.kubejs.KubeJSNpcSavedData
 import com.creeperyang.contactquests.compat.kubejs.MailReceivedEventJS
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
+import com.creeperyang.contactquests.config.NpcData
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase
 import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
@@ -210,7 +211,8 @@ object DataManager {
         } else {
             0
         }
-        val isKubeJSNpc = KubeJSNpcSavedData.get(level).getNpcData(recipientName) != null
+        val isKubeJSNpc = KubeJSNpcSavedData.get(level)
+            .getNpcData(recipientName) != null && NpcConfigManager.getNpcData(recipientName) == NpcData()
 
         val item = postcard.item
         if (item is PostcardItem && item.isEnderType) {

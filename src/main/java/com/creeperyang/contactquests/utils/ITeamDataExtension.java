@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.utils;
 
 import java.util.Collection;
+import java.util.Map;
 
 public interface ITeamDataExtension {
     boolean contactQuests$unlockTag(String tag);
@@ -30,4 +31,12 @@ public interface ITeamDataExtension {
     void contactQuests$setForcedQuests(Collection<Long> ids);
 
     void contactQuests$setBlockedQuests(Collection<Long> ids);
+
+    String contactQuests$getPostcardText(long taskId);
+
+    void contactQuests$setPostcardText(long taskId, String text);
+
+    Map<Long, String> contactQuests$getAllPostcardTexts();
+
+    void contactQuests$setAllPostcardTexts(Map<Long, String> texts);
 }

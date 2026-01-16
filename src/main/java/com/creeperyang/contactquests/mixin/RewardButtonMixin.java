@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase;
 import com.creeperyang.contactquests.quest.reward.PostcardReward;
+import com.creeperyang.contactquests.quest.reward.RedPacketReward;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import dev.ftb.mods.ftblibrary.icon.Icon;
@@ -22,6 +23,8 @@ public abstract class RewardButtonMixin {
     @Unique
     private static final Icon OVERLAY_PARCEL = Icon.getIcon("contact:item/parcel");
     @Unique
+    private static final Icon OVERLAY_REDPACKET = Icon.getIcon("contact:item/red_packet");
+    @Unique
     private static final Icon OVERLAY_ENDER_PARCEL = Icon.getIcon("contact:item/ender_parcel");
     @Shadow(remap = false)
     Reward reward;
@@ -32,7 +35,12 @@ public abstract class RewardButtonMixin {
             return;
         }
 
-        Icon overlayIcon = getOverlayIcon(parcelReward);
+        Icon overlayIcon;
+        if (reward instanceof RedPacketReward) {
+            overlayIcon = OVERLAY_REDPACKET;
+        } else {
+            overlayIcon = getOverlayIcon(parcelReward);
+        }
         if (overlayIcon == null) return;
 
         PoseStack pose = graphics.pose();

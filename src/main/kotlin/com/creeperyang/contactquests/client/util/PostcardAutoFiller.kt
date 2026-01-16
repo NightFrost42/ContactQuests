@@ -39,13 +39,7 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
 
         val player = Minecraft.getInstance().player
         val teamData = ClientQuestFile.INSTANCE.selfTeamData
-        var rawText = task.postcardText
-
-        if (player != null && teamData != null) {
-            rawText = PostcardTask.PostcardPlaceholderSupport.replace(rawText, player, teamData)
-        }
-
-        targetText = rawText.replace("\\n", "\n")
+        targetText = task.getResolvedText(teamData, player)
         typingSpeed = ContactConfig.autoFillSpeed.get()
         currentIndex = 0
         typingTimer = 0
