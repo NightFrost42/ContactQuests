@@ -17,7 +17,8 @@ class SyncTeamExtensionMessage(
     val tags: Set<String>,
     val forcedQuests: Set<Long>,
     val blockedQuests: Set<Long>,
-    val postcardData: Map<Long, String>
+    val postcardData: Map<Long, String>,
+    val redPacketData: Map<Long, String>
 ) : CustomPacketPayload {
 
     companion object {
@@ -32,7 +33,7 @@ class SyncTeamExtensionMessage(
             StreamCodec.of({ buf, value -> buf.writeLong(value) }, { buf -> buf.readLong() })
         )
 
-        val POSTCARD_MAP_CODEC: StreamCodec<RegistryFriendlyByteBuf, Map<Long, String>> = ByteBufCodecs.map(
+        val MAP_CODEC: StreamCodec<RegistryFriendlyByteBuf, Map<Long, String>> = ByteBufCodecs.map(
             { HashMap() },
             LONG_CODEC,
             ByteBufCodecs.STRING_UTF8
@@ -47,8 +48,10 @@ class SyncTeamExtensionMessage(
             SyncTeamExtensionMessage::forcedQuests,
             LONG_SET_CODEC,
             SyncTeamExtensionMessage::blockedQuests,
-            POSTCARD_MAP_CODEC,
+            MAP_CODEC,
             SyncTeamExtensionMessage::postcardData,
+            MAP_CODEC,
+            SyncTeamExtensionMessage::redPacketData,
             ::SyncTeamExtensionMessage
         )
     }
@@ -75,6 +78,7 @@ class SyncTeamExtensionMessage(
                     ext.`contactQuests$setBlockedQuests`(blockedQuests)
 
                     ext.`contactQuests$setAllPostcardTexts`(postcardData)
+                    ext.`contactQuests$setAllRedPacketBlessings`(redPacketData)
 
                     if (postcardData.isNotEmpty()) {
                         ContactQuests.info("[Debug] Applied postcard texts: $postcardData")

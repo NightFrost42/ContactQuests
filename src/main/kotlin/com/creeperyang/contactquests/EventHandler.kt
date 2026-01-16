@@ -63,7 +63,8 @@ object EventHandler {
     fun onPlayerLoggedIn(event: PlayerEvent.PlayerLoggedInEvent) {
         val player = event.entity
         if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
-            ContactKubeJSPlugin.updatePlayerPostcardCache(player)
+            ContactKubeJSPlugin.updatePlayerTaskCache(player)
+
         }
     }
 

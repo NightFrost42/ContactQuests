@@ -51,8 +51,8 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         val menu = envScreen.menu
 
         when (currentState) {
-            State.IDLE -> handleIdleState(menu)
-            State.FILL_TEXT -> handleFillTextState(envScreen, menu)
+            State.IDLE -> handleIdleState(menu, player)
+            State.FILL_TEXT -> handleFillTextState(envScreen, menu, player)
             State.WAIT_TEXT -> handleWaitTextState()
             State.PICKUP_SOURCE -> handlePickupSource(mc, menu, player)
             State.DEPOSIT -> handleDeposit(mc, menu, player)
@@ -60,9 +60,9 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         }
     }
 
-    private fun handleIdleState(menu: RedPacketEnvelopeScreenHandler) {
+    private fun handleIdleState(menu: RedPacketEnvelopeScreenHandler, player: Player) {
         val teamData = ClientQuestFile.INSTANCE.selfTeamData
-        val req = getCurrentTaskRequirement(teamData)
+        val req = getCurrentTaskRequirement(teamData, player)
         if (req == null) {
             finishTask("任务无效或已完成")
             return
@@ -94,9 +94,13 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         }
     }
 
-    private fun handleFillTextState(screen: RedPacketEnvelopeScreen, menu: RedPacketEnvelopeScreenHandler) {
+    private fun handleFillTextState(
+        screen: RedPacketEnvelopeScreen,
+        menu: RedPacketEnvelopeScreenHandler,
+        player: Player
+    ) {
         val teamData = ClientQuestFile.INSTANCE.selfTeamData
-        val req = getCurrentTaskRequirement(teamData) ?: return
+        val req = getCurrentTaskRequirement(teamData, player) ?: return
 
         if (screen is RedPacketEnvelopeScreenAccessor) {
             val editBox = screen.`contactQuests$getBlessingsBox`()
@@ -158,9 +162,11 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         actionDelay = 1
     }
 
-    private fun getCurrentTaskRequirement(teamData: TeamData): RedPacketRequirement? {
+    private fun getCurrentTaskRequirement(teamData: TeamData, player: Player): RedPacketRequirement? {
         val task = taskData ?: return null
         if (teamData.isCompleted(task)) return null
-        return RedPacketRequirement(task.itemStack, task.blessing)
+
+        val resolvedBlessing = task.getResolvedText(teamData, player)
+        return RedPacketRequirement(task.itemStack, resolvedBlessing)
     }
 }

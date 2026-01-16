@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.compat.kubejs
 
+import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
@@ -547,7 +548,7 @@ object ContactKubeJSPlugin {
     fun refreshQuests() {
         val server = ServerQuestFile.INSTANCE.server
         if (server != null) {
-            val count = updateAllTeamsPostcardCache(server)
+            val count = updateAllTeamsTaskCache(server)
             LOGGER.info("ContactQuests: Calculated postcard texts for $count teams.")
         }
 
@@ -555,15 +556,13 @@ object ContactKubeJSPlugin {
         LOGGER.info("ContactQuests: Refreshed Quest GUI for all players.")
     }
 
-    fun updatePlayerPostcardCache(player: ServerPlayer) {
+    fun updatePlayerTaskCache(player: ServerPlayer) {
         try {
             val team = FTBTeamsAPI.api().manager.getTeamForPlayerID(player.uuid).orElse(null) ?: return
             val teamData = ServerQuestFile.INSTANCE.getOrCreateTeamData(team)
             val ext = teamData as ITeamDataExtension
-            var changed = false
 
             val postcardTasks = DataManager.postcardTasks.values
-
             for (task in postcardTasks) {
                 val originalText = task.postcardText
                 val resolvedText = PostcardTask.PostcardPlaceholderSupport.replace(originalText, player, teamData)
@@ -571,19 +570,31 @@ object ContactKubeJSPlugin {
                 val cached = ext.`contactQuests$getPostcardText`(task.id)
                 if (cached != resolvedText) {
                     ext.`contactQuests$setPostcardText`(task.id, resolvedText)
-                    LOGGER.debug("ContactQuests: Updated postcard cache for ${player.name.string} (Task ${task.id}) on login.")
-                    changed = true
+                    ContactQuests.LOGGER.debug("ContactQuests: Updated postcard cache for ${player.name.string} (Task ${task.id})")
                 }
             }
+
+            val redPacketTasks = DataManager.redPacketTasks.values
+            for (task in redPacketTasks) {
+                val originalText = task.blessing
+                val resolvedText = RedPacketTask.RedPacketPlaceholderSupport.replace(originalText, player, teamData)
+
+                val cached = ext.`contactQuests$getRedPacketBlessing`(task.id)
+                if (cached != resolvedText) {
+                    ext.`contactQuests$setRedPacketBlessing`(task.id, resolvedText)
+                    ContactQuests.LOGGER.debug("ContactQuests: Updated red packet cache for ${player.name.string} (Task ${task.id})")
+                }
+            }
+
         } catch (e: Exception) {
-            LOGGER.error("Failed to update postcard cache for player ${player.name.string}", e)
+            ContactQuests.LOGGER.error("Failed to update task cache for player ${player.name.string}", e)
         }
     }
 
-    private fun updateAllTeamsPostcardCache(server: net.minecraft.server.MinecraftServer): Int {
+    private fun updateAllTeamsTaskCache(server: net.minecraft.server.MinecraftServer): Int {
         var count = 0
         server.playerList.players.forEach { player ->
-            updatePlayerPostcardCache(player)
+            updatePlayerTaskCache(player)
             count++
         }
         return count
@@ -600,6 +611,10 @@ object ContactKubeJSPlugin {
 
         fun registerNpcReply(callback: BiFunction<String, CollectionSavedData.ReplacerContext, String?>) {
             CollectionSavedData.registerReplacer { text, ctx -> callback.apply(text, ctx) }
+        }
+
+        fun registerRedPacketTask(key: String, callback: BiFunction<Player, TeamData, String>) {
+            RedPacketTask.RedPacketPlaceholderSupport.register(key) { p, t -> callback.apply(p, t) }
         }
     }
 }

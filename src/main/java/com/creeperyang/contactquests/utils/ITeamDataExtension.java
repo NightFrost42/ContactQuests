@@ -39,4 +39,12 @@ public interface ITeamDataExtension {
     Map<Long, String> contactQuests$getAllPostcardTexts();
 
     void contactQuests$setAllPostcardTexts(Map<Long, String> texts);
+
+    String contactQuests$getRedPacketBlessing(long taskId);
+
+    void contactQuests$setRedPacketBlessing(long taskId, String text);
+
+    Map<Long, String> contactQuests$getAllRedPacketBlessings();
+
+    void contactQuests$setAllRedPacketBlessings(Map<Long, String> texts);
 }

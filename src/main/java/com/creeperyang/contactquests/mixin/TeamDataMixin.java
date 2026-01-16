@@ -37,6 +37,9 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Unique
     private final Map<Long, String> contactQuests$postcardCache = new HashMap<>();
 
+    @Unique
+    private final Map<Long, String> contactQuests$redPacketCache = new HashMap<>();
+
     @Override
     @Unique
     public boolean contactQuests$unlockTag(String tag) {
@@ -182,6 +185,34 @@ public class TeamDataMixin implements ITeamDataExtension {
         contactQuests$postcardCache.putAll(texts);
     }
 
+    @Override
+    @Unique
+    public String contactQuests$getRedPacketBlessing(long taskId) {
+        return contactQuests$redPacketCache.get(taskId);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setRedPacketBlessing(long taskId, String text) {
+        if (!Objects.equals(contactQuests$redPacketCache.get(taskId), text)) {
+            contactQuests$redPacketCache.put(taskId, text);
+            contactQuests$operationSync();
+        }
+    }
+
+    @Override
+    @Unique
+    public Map<Long, String> contactQuests$getAllRedPacketBlessings() {
+        return Collections.unmodifiableMap(contactQuests$redPacketCache);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setAllRedPacketBlessings(Map<Long, String> texts) {
+        contactQuests$redPacketCache.clear();
+        contactQuests$redPacketCache.putAll(texts);
+    }
+
     @Unique
     private boolean contactQuests$operationSync() {
         TeamData self = (TeamData) (Object) this;
@@ -194,7 +225,8 @@ public class TeamDataMixin implements ITeamDataExtension {
                     contactQuests$unlockedTags,
                     contactQuests$forcedQuests,
                     contactQuests$blockedQuests,
-                    contactQuests$postcardCache
+                    contactQuests$postcardCache,
+                    contactQuests$redPacketCache
             );
 
             for (ServerPlayer player : self.getOnlineMembers()) {
@@ -279,6 +311,11 @@ public class TeamDataMixin implements ITeamDataExtension {
             contactQuests$postcardCache.forEach((k, v) -> pcTag.putString(String.valueOf(k), v));
             tag.put("ContactQuestsPostcardCache", pcTag);
         }
+        if (!contactQuests$redPacketCache.isEmpty()) {
+            CompoundTag rpTag = new CompoundTag();
+            contactQuests$redPacketCache.forEach((k, v) -> rpTag.putString(String.valueOf(k), v));
+            tag.put("ContactQuestsRedPacketCache", rpTag);
+        }
     }
 
     @Inject(method = "deserializeNBT", at = @At("TAIL"), remap = false)
@@ -312,6 +349,18 @@ public class TeamDataMixin implements ITeamDataExtension {
                 }
             }
         }
+
+        contactQuests$redPacketCache.clear();
+        if (nbt.contains("ContactQuestsRedPacketCache")) {
+            CompoundTag rpTag = nbt.getCompound("ContactQuestsRedPacketCache");
+            for (String key : rpTag.getAllKeys()) {
+                try {
+                    long id = Long.parseLong(key);
+                    contactQuests$redPacketCache.put(id, rpTag.getString(key));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
     }
 
     @Inject(method = "writeNetData", at = @At("TAIL"), remap = false)
@@ -327,6 +376,12 @@ public class TeamDataMixin implements ITeamDataExtension {
 
         buffer.writeVarInt(contactQuests$postcardCache.size());
         contactQuests$postcardCache.forEach((k, v) -> {
+            buffer.writeLong(k);
+            buffer.writeUtf(v);
+        });
+
+        buffer.writeVarInt(contactQuests$redPacketCache.size());
+        contactQuests$redPacketCache.forEach((k, v) -> {
             buffer.writeLong(k);
             buffer.writeUtf(v);
         });
@@ -356,6 +411,12 @@ public class TeamDataMixin implements ITeamDataExtension {
         contactQuests$postcardCache.clear();
         for (int i = 0; i < pcSize; i++) {
             contactQuests$postcardCache.put(buffer.readLong(), buffer.readUtf());
+        }
+
+        int rpSize = buffer.readVarInt();
+        contactQuests$redPacketCache.clear();
+        for (int i = 0; i < rpSize; i++) {
+            contactQuests$redPacketCache.put(buffer.readLong(), buffer.readUtf());
         }
     }
 }

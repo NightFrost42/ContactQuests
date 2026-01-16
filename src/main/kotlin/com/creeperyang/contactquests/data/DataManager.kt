@@ -184,7 +184,8 @@ object DataManager {
         } else {
             0
         }
-        val isKubeJSNpc = KubeJSNpcSavedData.get(level).getNpcData(recipientName) != null
+        val isKubeJSNpc = KubeJSNpcSavedData.get(level)
+            .getNpcData(recipientName) != null && NpcConfigManager.getNpcData(recipientName) == NpcData()
 
         if (isKubeJSNpc && deliveryTime > 0) {
             KubeJSMailQueueSavedData.get(level)
@@ -319,12 +320,16 @@ object DataManager {
 
             if (task is PostcardTask) {
                 task.setContext(player, teamData)
+            } else if (task is RedPacketTask) {
+                task.setContext(player, teamData)
             }
 
             val isMatch = try {
                 testFunc(initialStack)
             } finally {
                 if (task is PostcardTask) {
+                    task.clearContext()
+                } else if (task is RedPacketTask) {
                     task.clearContext()
                 }
             }
