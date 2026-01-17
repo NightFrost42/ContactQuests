@@ -29,6 +29,7 @@ import net.neoforged.neoforge.common.NeoForge.EVENT_BUS
 import net.neoforged.neoforge.event.TagsUpdatedEvent
 import net.neoforged.neoforge.event.server.ServerStartedEvent
 import net.neoforged.neoforge.event.tick.ServerTickEvent
+import net.neoforged.neoforge.server.ServerLifecycleHooks
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
@@ -140,6 +141,15 @@ object ContactQuests {
     fun onServerStarted(event: ServerStartedEvent) {
         try {
             DataManager.init()
+            if (ModList.get().isLoaded("kubejs")) {
+                try {
+                    val clazz = Class.forName("com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin")
+                    val method = clazz.getMethod("loadPersistentData", net.minecraft.server.MinecraftServer::class.java)
+                    method.invoke(null, event.server)
+                } catch (e: Exception) {
+                    LOGGER.error("Failed to load ContactQuests KubeJS persistent data", e)
+                }
+            }
         } catch (e: Exception) {
             LOGGER.error("DataManager init failed", e)
         }
@@ -166,6 +176,13 @@ object ContactQuests {
                     val clazz = Class.forName("com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin")
                     val method = clazz.getMethod("reload")
                     method.invoke(null)
+
+                    val server = ServerLifecycleHooks.getCurrentServer()
+                    if (server != null) {
+                        val loadMethod =
+                            clazz.getMethod("loadPersistentData", net.minecraft.server.MinecraftServer::class.java)
+                        loadMethod.invoke(null, server)
+                    }
                 } catch (e: Exception) {
                     LOGGER.error("Failed to reload ContactQuests KubeJS integration", e)
                 }
