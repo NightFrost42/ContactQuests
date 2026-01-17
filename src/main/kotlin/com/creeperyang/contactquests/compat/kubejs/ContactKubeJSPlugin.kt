@@ -5,7 +5,7 @@ import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.network.OpenQuestMessage
-import com.creeperyang.contactquests.network.SyncQuestDescriptionMessage
+import com.creeperyang.contactquests.network.SyncQuestTextMessage
 import com.creeperyang.contactquests.quest.reward.ParcelReward
 import com.creeperyang.contactquests.quest.reward.PostcardReward
 import com.creeperyang.contactquests.quest.task.ContactTask
@@ -66,10 +66,26 @@ object ContactKubeJSPlugin {
             return
         }
 
-        if (sendViaNetworkHelper(server, message)) return
-        if (sendViaArchitectury(server, message)) return
+        var sent = false
+        if (sendViaNetworkHelper(server, message)) sent = true
+        else if (sendViaArchitectury(server, message)) sent = true
 
-        fallbackRefresh("Packet sync failed completely")
+        if (!sent) {
+            fallbackRefresh("Packet sync failed completely")
+        }
+
+        resendAllOverrides()
+    }
+
+    private fun resendAllOverrides() {
+        val server = ServerQuestFile.INSTANCE.server ?: return
+
+        server.tell(net.minecraft.server.TickTask(server.tickCount + 1) {
+            server.playerList.players.forEach { player ->
+                syncAllOverridesToPlayer(player)
+            }
+            LOGGER.info("ContactQuests: Resent all overrides to ${server.playerList.playerCount} players (delayed 1 tick).")
+        })
     }
 
     private fun handleConfigState(saveToConfig: Boolean) {
@@ -252,19 +268,31 @@ object ContactKubeJSPlugin {
     }
 
     private fun applyQuestOverride(quest: Quest, tag: CompoundTag, provider: HolderLookup.Provider) {
+        val ext = quest as? IQuestExtension ?: return
+
         if (tag.contains("description", Tag.TAG_COMPOUND.toInt())) {
-            val descMap = tag.getCompound("description")
-
-            descMap.allKeys.forEach { locale ->
-                val listTag = descMap.getList(locale, Tag.TAG_STRING.toInt())
-                val lines = listTag.map { it.asString }
-
-                if (quest is IQuestExtension) {
-                    (quest as IQuestExtension).`contactQuests$setDescriptionOverride`(locale, ArrayList(lines))
-                }
+            val map = tag.getCompound("description")
+            map.allKeys.forEach { locale ->
+                val list = map.getList(locale, Tag.TAG_STRING.toInt()).map { it.asString }
+                ext.`contactQuests$setDescriptionOverride`(locale, ArrayList(list))
             }
-            quest.clearCachedData()
         }
+
+        if (tag.contains("title", Tag.TAG_COMPOUND.toInt())) {
+            val map = tag.getCompound("title")
+            map.allKeys.forEach { locale ->
+                ext.`contactQuests$setTitleOverride`(locale, map.getString(locale))
+            }
+        }
+
+        if (tag.contains("subtitle", Tag.TAG_COMPOUND.toInt())) {
+            val map = tag.getCompound("subtitle")
+            map.allKeys.forEach { locale ->
+                ext.`contactQuests$setSubtitleOverride`(locale, map.getString(locale))
+            }
+        }
+
+        quest.clearCachedData()
     }
 
     private fun applyTaskOverride(task: ContactTask, tag: CompoundTag, provider: HolderLookup.Provider) {
@@ -656,7 +684,7 @@ object ContactKubeJSPlugin {
                         key,
                         value.toLong(),
                         registry
-                    ) // 注意：这里统一转 Long，具体视 API 而定
+                    )
                     is String -> savedData.setOverride(longId, key, value, registry)
                 }
             }
@@ -882,108 +910,215 @@ object ContactKubeJSPlugin {
             tracker.update(reward.targetAddressee, sender) { reward.targetAddressee = it }
         }
 
-    @JvmStatic
-    @JvmOverloads
-    fun editQuestDescription(id: Any, description: List<String>?, locale: String = "zh_cn") =
-        editQuestDescriptionInternal(id, description, locale, true)
+    private fun editQuestTextInternal(id: Any, content: Any?, locale: String, type: Int, saveGlobal: Boolean): Boolean {
+        val longId = resolveId(id) ?: return false
+        val quest = getQuest(longId) ?: return false
+        val key = getTranslationKey(type)
 
-    @JvmStatic
-    @JvmOverloads
-    fun editQuestDescriptionSaved(
-        level: ServerLevel,
-        id: Any,
-        description: List<String>?,
-        locale: String = "zh_cn"
+        val changed = if (saveGlobal) {
+            applyGlobalQuestEdit(quest, longId, locale, key, type, content)
+        } else {
+            applySavedQuestEdit(quest, longId, locale, type, content)
+        }
+
+        if (changed) {
+            PacketDistributor.sendToAllPlayers(
+                SyncQuestTextMessage(longId, locale, type, content)
+            )
+        }
+
+        return changed
+    }
+
+    private fun applyGlobalQuestEdit(
+        quest: Quest,
+        longId: Long,
+        locale: String,
+        key: TranslationKey,
+        type: Int,
+        content: Any?
     ): Boolean {
-        if (editQuestDescriptionInternal(id, description, locale, false)) {
-            val savedData = QuestOverrideSavedData.get(level)
-            val questId = resolveId(id) ?: return false
-            val currentOverride = savedData.getOverride(questId) ?: CompoundTag()
-
-            val currentDescMap = if (currentOverride.contains("description", Tag.TAG_COMPOUND.toInt())) {
-                currentOverride.getCompound("description")
+        if (type == 2) {
+            val list = if (content == null) {
+                ArrayList<String>()
             } else {
-                CompoundTag()
+                (content as? List<*>)?.mapTo(ArrayList()) { it.toString() } ?: ArrayList()
             }
+            quest.questFile.translationManager.addTranslation(quest, locale, key, list)
+        } else {
+            val str = content?.toString() ?: ""
+            quest.questFile.translationManager.addTranslation(quest, locale, key, str)
+        }
 
-            if (description != null) {
-                val listTag = ListTag()
-                description.forEach { listTag.add(StringTag.valueOf(it)) }
-                currentDescMap.put(locale, listTag)
-            } else {
-                currentDescMap.remove(locale)
-            }
+        ServerQuestFile.INSTANCE.markDirty()
+        ServerQuestFile.INSTANCE.saveNow()
+        quest.clearCachedData()
 
-            val mapToSave = HashMap<String, List<String>>()
-            currentDescMap.allKeys.forEach { key ->
-                val list = currentDescMap.getList(key, Tag.TAG_STRING.toInt()).map { it.asString }
-                mapToSave[key] = list
-            }
-            savedData.setOverride(questId, "description", mapToSave, level.registryAccess())
+        LOGGER.info("ContactQuests: Globally edited text for quest $longId (Silent Save)")
+        return true
+    }
 
+    private fun applySavedQuestEdit(
+        quest: Quest,
+        longId: Long,
+        locale: String,
+        type: Int,
+        content: Any?
+    ): Boolean {
+        val ext = quest as? IQuestExtension ?: return false
+
+        when (type) {
+            0 -> ext.`contactQuests$setTitleOverride`(locale, content as? String)
+            1 -> ext.`contactQuests$setSubtitleOverride`(locale, content as? String)
+            2 -> ext.`contactQuests$setDescriptionOverride`(locale, content as? ArrayList<String>)
+        }
+
+        quest.clearCachedData()
+        LOGGER.debug("ContactQuests: Updated in-memory text override for quest $longId")
+        return true
+    }
+
+    private fun getTranslationKey(type: Int): TranslationKey {
+        return when (type) {
+            0 -> TranslationKey.TITLE
+            1 -> TranslationKey.QUEST_SUBTITLE
+            else -> TranslationKey.QUEST_DESC
+        }
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun resetQuestTextSaved(level: ServerLevel, id: Any, locale: String = "zh_cn"): Boolean {
+        var result = true
+        if (!editQuestTextInternal(id, null, locale, 0, false)) result = false
+        if (!editQuestTextInternal(id, null, locale, 1, false)) result = false
+        if (!editQuestTextInternal(id, null, locale, 2, false)) result = false
+
+        saveTextOverride(level, id, "title", null, locale)
+        saveTextOverride(level, id, "subtitle", null, locale)
+        saveTextOverride(level, id, "description", null, locale)
+
+        return result
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestDescriptionSaved(level: ServerLevel, id: Any, desc: List<String>?, locale: String = "zh_cn"): Boolean {
+        if (desc != null && editQuestTextInternal(id, desc, locale, 2, false)) {
+            saveTextOverride(level, id, "description", desc, locale)
             return true
         }
         return false
     }
 
-    private fun editQuestDescriptionInternal(
-        id: Any,
-        description: List<String>?,
-        locale: String,
-        save: Boolean
-    ): Boolean {
-
-        val success = executeEdit(id, save, { getQuest(it) }) { quest, tracker ->
-            if (description != null) {
-                if (save) {
-                    quest.questFile.translationManager.addTranslation(
-                        quest,
-                        locale,
-                        TranslationKey.QUEST_DESC,
-                        ArrayList(description)
-                    )
-                } else {
-                    if (quest is IQuestExtension) {
-                        (quest as IQuestExtension).`contactQuests$setDescriptionOverride`(
-                            locale,
-                            ArrayList(description)
-                        )
-                    }
-                }
-
-                quest.clearCachedData()
-                tracker.changed = true
-            }
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestDescription(id: Any, desc: List<String>? = null, locale: String = "zh_cn"): Boolean {
+        if (desc != null) {
+            return editQuestTextInternal(id, desc, locale, 2, true)
         }
-
-        if (success && description != null) {
-            val questId = resolveId(id)
-            if (questId != null) {
-                PacketDistributor.sendToAllPlayers(
-                    SyncQuestDescriptionMessage(questId, locale, description)
-                )
-            }
-        }
-
-        return success
+        return false
     }
 
     @JvmStatic
+    @JvmOverloads
+    fun editQuestTitleSaved(level: ServerLevel, id: Any, title: String? = null, locale: String = "zh_cn"): Boolean {
+        if (title != null && editQuestTextInternal(id, title, locale, 0, false)) {
+            saveTextOverride(level, id, "title", title, locale)
+            return true
+        }
+        return false
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestTitle(id: Any, title: String? = null, locale: String = "zh_cn"): Boolean {
+        if (title != null) {
+            return editQuestTextInternal(id, title, locale, 0, true)
+        }
+        return false
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestSubtitleSaved(
+        level: ServerLevel,
+        id: Any,
+        subtitle: String? = null,
+        locale: String = "zh_cn"
+    ): Boolean {
+        if (subtitle != null && editQuestTextInternal(id, subtitle, locale, 1, false)) {
+            saveTextOverride(level, id, "subtitle", subtitle, locale)
+            return true
+        }
+        return false
+    }
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestSubtitle(id: Any, subtitle: String? = null, locale: String = "zh_cn"): Boolean {
+        if (subtitle != null) {
+            return editQuestTextInternal(id, subtitle, locale, 1, true)
+        }
+        return false
+    }
+
+    private fun saveTextOverride(level: ServerLevel, id: Any, key: String, content: Any?, locale: String) {
+        val savedData = QuestOverrideSavedData.get(level)
+        val questId = resolveId(id) ?: return
+        val currentOverride = savedData.getOverride(questId) ?: CompoundTag()
+
+        val currentMap = if (currentOverride.contains(key, Tag.TAG_COMPOUND.toInt())) {
+            currentOverride.getCompound(key)
+        } else {
+            CompoundTag()
+        }
+
+        if (content != null) {
+            if (content is String) currentMap.putString(locale, content)
+            else if (content is List<*>) {
+                val listTag = ListTag()
+                content.forEach { listTag.add(StringTag.valueOf(it.toString())) }
+                currentMap.put(locale, listTag)
+            }
+        } else {
+            currentMap.remove(locale)
+        }
+
+        val mapToSave = HashMap<String, Any>()
+        currentMap.allKeys.forEach { k ->
+            if (currentMap.contains(k, Tag.TAG_STRING.toInt())) mapToSave[k] = currentMap.getString(k)
+            else if (currentMap.contains(k, Tag.TAG_LIST.toInt())) {
+                mapToSave[k] = currentMap.getList(k, Tag.TAG_STRING.toInt()).map { it.asString }
+            }
+        }
+        savedData.setOverride(questId, key, mapToSave, level.registryAccess())
+    }
+    @JvmStatic
     fun syncAllOverridesToPlayer(player: ServerPlayer) {
         val savedData = QuestOverrideSavedData.get(player.serverLevel())
-
         savedData.overrides.forEach { (id, tag) ->
-            if (tag.contains("description", Tag.TAG_COMPOUND.toInt())) {
-                val descMap = tag.getCompound("description")
-
-                descMap.allKeys.forEach { locale ->
-                    val listTag = descMap.getList(locale, Tag.TAG_STRING.toInt())
-                    val descList = listTag.map { it.asString }
-
+            if (tag.contains("title", Tag.TAG_COMPOUND.toInt())) {
+                tag.getCompound("title").allKeys.forEach { locale ->
                     PacketDistributor.sendToPlayer(
                         player,
-                        SyncQuestDescriptionMessage(id, locale, descList)
+                        SyncQuestTextMessage(id, locale, 0, tag.getCompound("title").getString(locale))
                     )
+                }
+            }
+            if (tag.contains("subtitle", Tag.TAG_COMPOUND.toInt())) {
+                tag.getCompound("subtitle").allKeys.forEach { locale ->
+                    PacketDistributor.sendToPlayer(
+                        player,
+                        SyncQuestTextMessage(id, locale, 1, tag.getCompound("subtitle").getString(locale))
+                    )
+                }
+            }
+            if (tag.contains("description", Tag.TAG_COMPOUND.toInt())) {
+                val map = tag.getCompound("description")
+                map.allKeys.forEach { locale ->
+                    val list = map.getList(locale, Tag.TAG_STRING.toInt()).map { it.asString }
+                    PacketDistributor.sendToPlayer(player, SyncQuestTextMessage(id, locale, 2, list))
                 }
             }
         }

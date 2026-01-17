@@ -72,12 +72,14 @@ class QuestOverrideSavedData : SavedData() {
             is Map<*, *> -> {
                 val mapTag = CompoundTag()
                 value.forEach { (k, v) ->
-                    if (k is String && v is Collection<*>) {
-                        val listTag = ListTag()
-                        v.forEach { item ->
-                            if (item != null) listTag.add(StringTag.valueOf(item.toString()))
+                    if (k is String) {
+                        if (v is Collection<*>) {
+                            val listTag = ListTag()
+                            v.forEach { item -> if (item != null) listTag.add(StringTag.valueOf(item.toString())) }
+                            mapTag.put(k, listTag)
+                        } else if (v is String) {
+                            mapTag.putString(k, v)
                         }
-                        mapTag.put(k, listTag)
                     }
                 }
                 tag.put(key, mapTag)

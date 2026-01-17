@@ -37,9 +37,9 @@ object NetworkHandler {
         )
 
         registrar.playToClient(
-            SyncQuestDescriptionMessage.TYPE,
-            SyncQuestDescriptionMessage.STREAM_CODEC,
-            SyncQuestDescriptionMessage::handle
+            SyncQuestTextMessage.TYPE,
+            SyncQuestTextMessage.STREAM_CODEC,
+            SyncQuestTextMessage::handle
         )
     }
 

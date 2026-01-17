@@ -54,6 +54,10 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private boolean contactQuests$hideIfLocked = false;
     @Unique
     private final Map<String, List<String>> contactQuests$descOverrides = new HashMap<>();
+    @Unique
+    private final Map<String, String> contactQuests$titleOverrides = new HashMap<>();
+    @Unique
+    private final Map<String, String> contactQuests$subtitleOverrides = new HashMap<>();
 
     protected QuestMixin(long id) {
         super(id);
@@ -239,11 +243,40 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
+    @Override
+    public void contactQuests$setTitleOverride(String locale, String title) {
+        if (title == null) contactQuests$titleOverrides.remove(locale);
+        else contactQuests$titleOverrides.put(locale, title);
+    }
+
+    @Override
+    public void contactQuests$setSubtitleOverride(String locale, String subtitle) {
+        if (subtitle == null) contactQuests$subtitleOverrides.remove(locale);
+        else contactQuests$subtitleOverrides.put(locale, subtitle);
+    }
+
     @Inject(method = "getRawDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetRawDescription(CallbackInfoReturnable<List<String>> cir) {
         String locale = this.getQuestFile().getLocale();
         if (contactQuests$descOverrides.containsKey(locale)) {
             cir.setReturnValue(contactQuests$descOverrides.get(locale));
+        }
+    }
+
+    @Override
+    public String getRawTitle() {
+        String locale = this.getQuestFile().getLocale();
+        if (contactQuests$titleOverrides.containsKey(locale)) {
+            return contactQuests$titleOverrides.get(locale);
+        }
+        return super.getRawTitle();
+    }
+
+    @Inject(method = "getRawSubtitle", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetRawSubtitle(CallbackInfoReturnable<String> cir) {
+        String locale = this.getQuestFile().getLocale();
+        if (contactQuests$subtitleOverrides.containsKey(locale)) {
+            cir.setReturnValue(contactQuests$subtitleOverrides.get(locale));
         }
     }
 
