@@ -27,9 +27,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Mixin(Quest.class)
@@ -54,6 +52,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private int contactQuests$mutexNum = 1;
     @Unique
     private boolean contactQuests$hideIfLocked = false;
+    @Unique
+    private final Map<String, List<String>> contactQuests$descOverrides = new HashMap<>();
 
     protected QuestMixin(long id) {
         super(id);
@@ -227,6 +227,23 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
         if (contactQuests$internal$checkTagsMet(data)) {
             cir.setReturnValue(false);
+        }
+    }
+
+    @Override
+    public void contactQuests$setDescriptionOverride(String locale, List<String> description) {
+        if (description == null) {
+            contactQuests$descOverrides.remove(locale);
+        } else {
+            contactQuests$descOverrides.put(locale, description);
+        }
+    }
+
+    @Inject(method = "getRawDescription", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetRawDescription(CallbackInfoReturnable<List<String>> cir) {
+        String locale = this.getQuestFile().getLocale();
+        if (contactQuests$descOverrides.containsKey(locale)) {
+            cir.setReturnValue(contactQuests$descOverrides.get(locale));
         }
     }
 

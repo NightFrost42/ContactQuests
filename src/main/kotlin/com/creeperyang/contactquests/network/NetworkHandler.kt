@@ -35,6 +35,12 @@ object NetworkHandler {
             SyncTeamTagsMessage.STREAM_CODEC,
             SyncTeamTagsMessage::handle
         )
+
+        registrar.playToClient(
+            SyncQuestDescriptionMessage.TYPE,
+            SyncQuestDescriptionMessage.STREAM_CODEC,
+            SyncQuestDescriptionMessage::handle
+        )
     }
 
     private fun handleRequestBinder(payload: RequestBinderPayload, context: IPayloadContext) {

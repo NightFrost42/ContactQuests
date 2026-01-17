@@ -64,7 +64,7 @@ object EventHandler {
         val player = event.entity
         if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
             ContactKubeJSPlugin.updatePlayerTaskCache(player)
-
+            ContactKubeJSPlugin.syncAllOverridesToPlayer(player)
         }
     }
 

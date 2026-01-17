@@ -5,20 +5,24 @@ import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import com.creeperyang.contactquests.network.OpenQuestMessage
+import com.creeperyang.contactquests.network.SyncQuestDescriptionMessage
 import com.creeperyang.contactquests.quest.reward.ParcelReward
 import com.creeperyang.contactquests.quest.reward.PostcardReward
 import com.creeperyang.contactquests.quest.task.ContactTask
 import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.creeperyang.contactquests.quest.task.RedPacketTask
+import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.common.item.RedPacketItem
+import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.QuestObjectBase
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.reward.Reward
 import dev.ftb.mods.ftbquests.quest.task.Task
+import dev.ftb.mods.ftbquests.quest.translation.TranslationKey
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import dev.latvian.mods.kubejs.event.EventGroup
 import dev.latvian.mods.kubejs.event.KubeEvent
@@ -28,6 +32,7 @@ import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.StringTag
+import net.minecraft.nbt.Tag
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.level.ServerLevel
@@ -197,6 +202,11 @@ object ContactKubeJSPlugin {
         LOGGER.info("Reloaded ContactQuests KubeJS integration")
     }
 
+    private fun getQuest(id: Any): Quest? {
+        val longId = resolveId(id) ?: return null
+        return ServerQuestFile.INSTANCE.get(longId) as? Quest
+    }
+
     @JvmStatic
     fun loadPersistentData(server: MinecraftServer) {
         val level = server.overworld()
@@ -228,11 +238,33 @@ object ContactKubeJSPlugin {
                     count++
                 }
 
+                val quest = getQuest(id)
+                if (quest != null) {
+                    applyQuestOverride(quest, tag, registryAccess)
+                    count++
+                }
+
             } catch (e: Exception) {
                 LOGGER.error("ContactQuests: Failed to apply override for ID $id", e)
             }
         }
         LOGGER.info("ContactQuests: Applied $count overrides.")
+    }
+
+    private fun applyQuestOverride(quest: Quest, tag: CompoundTag, provider: HolderLookup.Provider) {
+        if (tag.contains("description", Tag.TAG_COMPOUND.toInt())) {
+            val descMap = tag.getCompound("description")
+
+            descMap.allKeys.forEach { locale ->
+                val listTag = descMap.getList(locale, Tag.TAG_STRING.toInt())
+                val lines = listTag.map { it.asString }
+
+                if (quest is IQuestExtension) {
+                    (quest as IQuestExtension).`contactQuests$setDescriptionOverride`(locale, ArrayList(lines))
+                }
+            }
+            quest.clearCachedData()
+        }
     }
 
     private fun applyTaskOverride(task: ContactTask, tag: CompoundTag, provider: HolderLookup.Provider) {
@@ -313,6 +345,15 @@ object ContactKubeJSPlugin {
         fun updateItem(key: String = "item", setter: (ItemStack) -> Unit) {
             if (tag.contains(key)) {
                 setter(ItemStack.parseOptional(provider, tag.getCompound(key)))
+                changed = true
+            }
+        }
+
+        fun updateStringList(key: String, setter: (List<String>) -> Unit) {
+            if (tag.contains(key, Tag.TAG_LIST.toInt())) {
+                val listTag = tag.getList(key, Tag.TAG_STRING.toInt())
+                val list = listTag.map { it.asString }
+                setter(list)
                 changed = true
             }
         }
@@ -840,6 +881,113 @@ object ContactKubeJSPlugin {
             tracker.update(reward.postcardText, text) { reward.postcardText = it }
             tracker.update(reward.targetAddressee, sender) { reward.targetAddressee = it }
         }
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestDescription(id: Any, description: List<String>?, locale: String = "zh_cn") =
+        editQuestDescriptionInternal(id, description, locale, true)
+
+    @JvmStatic
+    @JvmOverloads
+    fun editQuestDescriptionSaved(
+        level: ServerLevel,
+        id: Any,
+        description: List<String>?,
+        locale: String = "zh_cn"
+    ): Boolean {
+        if (editQuestDescriptionInternal(id, description, locale, false)) {
+            val savedData = QuestOverrideSavedData.get(level)
+            val questId = resolveId(id) ?: return false
+            val currentOverride = savedData.getOverride(questId) ?: CompoundTag()
+
+            val currentDescMap = if (currentOverride.contains("description", Tag.TAG_COMPOUND.toInt())) {
+                currentOverride.getCompound("description")
+            } else {
+                CompoundTag()
+            }
+
+            if (description != null) {
+                val listTag = ListTag()
+                description.forEach { listTag.add(StringTag.valueOf(it)) }
+                currentDescMap.put(locale, listTag)
+            } else {
+                currentDescMap.remove(locale)
+            }
+
+            val mapToSave = HashMap<String, List<String>>()
+            currentDescMap.allKeys.forEach { key ->
+                val list = currentDescMap.getList(key, Tag.TAG_STRING.toInt()).map { it.asString }
+                mapToSave[key] = list
+            }
+            savedData.setOverride(questId, "description", mapToSave, level.registryAccess())
+
+            return true
+        }
+        return false
+    }
+
+    private fun editQuestDescriptionInternal(
+        id: Any,
+        description: List<String>?,
+        locale: String,
+        save: Boolean
+    ): Boolean {
+
+        val success = executeEdit(id, save, { getQuest(it) }) { quest, tracker ->
+            if (description != null) {
+                if (save) {
+                    quest.questFile.translationManager.addTranslation(
+                        quest,
+                        locale,
+                        TranslationKey.QUEST_DESC,
+                        ArrayList(description)
+                    )
+                } else {
+                    if (quest is IQuestExtension) {
+                        (quest as IQuestExtension).`contactQuests$setDescriptionOverride`(
+                            locale,
+                            ArrayList(description)
+                        )
+                    }
+                }
+
+                quest.clearCachedData()
+                tracker.changed = true
+            }
+        }
+
+        if (success && description != null) {
+            val questId = resolveId(id)
+            if (questId != null) {
+                PacketDistributor.sendToAllPlayers(
+                    SyncQuestDescriptionMessage(questId, locale, description)
+                )
+            }
+        }
+
+        return success
+    }
+
+    @JvmStatic
+    fun syncAllOverridesToPlayer(player: ServerPlayer) {
+        val savedData = QuestOverrideSavedData.get(player.serverLevel())
+
+        savedData.overrides.forEach { (id, tag) ->
+            if (tag.contains("description", Tag.TAG_COMPOUND.toInt())) {
+                val descMap = tag.getCompound("description")
+
+                descMap.allKeys.forEach { locale ->
+                    val listTag = descMap.getList(locale, Tag.TAG_STRING.toInt())
+                    val descList = listTag.map { it.asString }
+
+                    PacketDistributor.sendToPlayer(
+                        player,
+                        SyncQuestDescriptionMessage(id, locale, descList)
+                    )
+                }
+            }
+        }
+    }
 
     @JvmStatic
     fun refreshQuests() {

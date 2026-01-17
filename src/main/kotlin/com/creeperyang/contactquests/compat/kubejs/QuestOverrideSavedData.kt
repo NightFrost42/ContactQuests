@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.compat.kubejs
 import net.minecraft.core.HolderLookup
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.StringTag
 import net.minecraft.nbt.Tag
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.ItemStack
@@ -58,6 +59,29 @@ class QuestOverrideSavedData : SavedData() {
             is String -> tag.putString(key, value)
             is Boolean -> tag.putBoolean(key, value)
             is ItemStack -> tag.put(key, value.saveOptional(provider))
+            is Collection<*> -> {
+                val listTag = ListTag()
+                value.forEach { item ->
+                    if (item != null) {
+                        listTag.add(StringTag.valueOf(item.toString()))
+                    }
+                }
+                tag.put(key, listTag)
+            }
+
+            is Map<*, *> -> {
+                val mapTag = CompoundTag()
+                value.forEach { (k, v) ->
+                    if (k is String && v is Collection<*>) {
+                        val listTag = ListTag()
+                        v.forEach { item ->
+                            if (item != null) listTag.add(StringTag.valueOf(item.toString()))
+                        }
+                        mapTag.put(k, listTag)
+                    }
+                }
+                tag.put(key, mapTag)
+            }
         }
         setDirty()
     }

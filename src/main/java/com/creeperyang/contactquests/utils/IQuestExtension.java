@@ -11,4 +11,6 @@ public interface IQuestExtension {
     boolean contactQuests$areTagsMet(TeamData data);
 
     boolean contactQuests$isLockedByMutex(TeamData data);
+
+    void contactQuests$setDescriptionOverride(String locale, List<String> description);
 }
