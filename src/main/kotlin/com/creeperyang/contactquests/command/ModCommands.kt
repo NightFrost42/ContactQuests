@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.command
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.registry.ModItems
@@ -34,8 +35,11 @@ object ModCommands {
     private val NPC_NAME_SUGGESTION_PROVIDER = SuggestionProvider<CommandSourceStack> { context, builder ->
         val level = context.source.level
         val data = CollectionSavedData.get(level)
-        val names = data.getStoredNpcNames()
-        SharedSuggestionProvider.suggest(names, builder)
+        val names = data.getStoredNpcNames() + NpcConfigManager.getAllNpcNames()
+
+        val quotedNames = names.map { "\"$it\"" }
+
+        SharedSuggestionProvider.suggest(quotedNames, builder)
     }
 
     @SubscribeEvent
@@ -99,6 +103,18 @@ object ModCommands {
                                                     Commands.argument("target", EntityArgument.player())
                                                         .executes(this::setCountTarget)
                                                 )
+                                        )
+                                )
+                        )
+                        .then(
+                            Commands.literal("getcount")
+                                .then(
+                                    Commands.argument("npc", StringArgumentType.string())
+                                        .suggests(NPC_NAME_SUGGESTION_PROVIDER)
+                                        .executes(this::getCountSelf)
+                                        .then(
+                                            Commands.argument("target", EntityArgument.player())
+                                                .executes(this::getCountTarget)
                                         )
                                 )
                         )
@@ -354,9 +370,58 @@ object ModCommands {
             context.source.sendSuccess({
                 Component.translatable(
                     "contactquests.command.set_count.success_target",
+                    target.displayName,
                     npcName,
-                    count,
-                    target.displayName
+                    count
+                )
+            }, true)
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing setcount target command", e)
+            return 0
+        }
+    }
+
+    private fun getCountSelf(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val player = context.source.playerOrException
+            val level = context.source.level
+            val npcName = StringArgumentType.getString(context, "npc")
+            val count = IntegerArgumentType.getInteger(context, "count")
+
+            val data = CollectionSavedData.get(level)
+            data.getTriggerCount(player.uuid, npcName)
+
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.get_count.success",
+                    npcName,
+                    count
+                )
+            }, true)
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing setcount command", e)
+            return 0
+        }
+    }
+
+    private fun getCountTarget(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val level = context.source.level
+            val target = EntityArgument.getPlayer(context, "target")
+            val npcName = StringArgumentType.getString(context, "npc")
+            val count = IntegerArgumentType.getInteger(context, "count")
+
+            val data = CollectionSavedData.get(level)
+            data.getTriggerCount(target.uuid, npcName)
+
+            context.source.sendSuccess({
+                Component.translatable(
+                    "contactquests.command.get_count.success_target",
+                    target.displayName,
+                    npcName,
+                    count
                 )
             }, true)
             return Command.SINGLE_SUCCESS

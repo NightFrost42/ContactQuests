@@ -49,9 +49,8 @@ public abstract class RewardButtonMixin {
 
         RenderSystem.enableBlend();
 
-        int size = w / 2;
-
-        int drawX = x + w - size;
+        int size = (h >= 32 ? 16 : 10);
+        int drawX = x + w + size - 29;
         int drawY = y + h - size;
 
         overlayIcon.draw(graphics, drawX, drawY, size, size);

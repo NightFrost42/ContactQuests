@@ -2,7 +2,8 @@ package com.creeperyang.contactquests.item
 
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
 import com.flechazo.contact.common.block.MailboxBlock
-import com.flechazo.contact.common.storage.MailboxDataManager
+import com.flechazo.contact.common.handler.MailboxManager
+import com.flechazo.contact.platform.PlatformHelper
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
@@ -27,8 +28,12 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
         val pos = context.clickedPos
         val state = level.getBlockState(pos)
 
-        if (level.isClientSide || player == null || !player.isShiftKeyDown || state.block !is MailboxBlock) {
+        if (player == null || !player.isShiftKeyDown || state.block !is MailboxBlock) {
             return InteractionResult.PASS
+        }
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS
         }
 
         val team = FTBTeamsAPI.api().manager.getTeamForPlayerID(player.uuid).orElse(null)
@@ -40,10 +45,9 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             return InteractionResult.FAIL
         }
 
-        val dataManager = MailboxDataManager.getData(level)
         val teamId = team.id
 
-        if (!checkAndHandleExistingMailbox(dataManager, teamId, level, pos, player)) {
+        if (!checkAndHandleExistingMailbox(teamId, level, pos, player)) {
             return InteractionResult.FAIL
         }
 
@@ -53,7 +57,9 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             pos.above()
         }
 
-        dataManager.setMailboxData(teamId, level.dimension(), targetPos)
+        PlatformHelper.setMailboxData(teamId, level.dimension(), targetPos)
+        PlatformHelper.setMailboxContents(teamId, PlatformHelper.getMailboxContents(teamId))
+        MailboxManager.updateState(level, targetPos)
 
         updateMailboxVisuals(level, targetPos, teamId)
 
@@ -68,13 +74,12 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
     }
 
     private fun checkAndHandleExistingMailbox(
-        dataManager: com.flechazo.contact.common.storage.IMailboxDataProvider,
         teamId: UUID,
         level: Level,
         currentPos: BlockPos,
         player: Player
     ): Boolean {
-        val existingPos: GlobalPos = dataManager.getMailboxPos(teamId) ?: return true
+        val existingPos: GlobalPos = PlatformHelper.getMailboxPos(teamId) ?: return true
 
         val isSameDimension = existingPos.dimension() == level.dimension()
         val isSamePos = existingPos.pos() == currentPos ||

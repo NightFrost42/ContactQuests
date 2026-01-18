@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.quest.task
 
+import com.creeperyang.contactquests.config.ContactConfig
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.IconAnimation
@@ -26,7 +27,7 @@ import kotlin.math.min
 
 abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<ItemStack> {
 
-    var targetAddressee: String = "QuestNPC"
+    var targetAddressee: String = ContactConfig.defaultTargetAddressee.get()
     var count: Long = 1
 
     override fun getMaxProgress(): Long = count
@@ -35,8 +36,11 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
         return max(0L, count - teamData.getProgress(this))
     }
 
-    fun insert(teamData: TeamData, stack: ItemStack, simulate: Boolean): ItemStack {
-        if (!teamData.isCompleted(this) && test(stack) && teamData.canStartTasks(quest)) {
+    fun insert(teamData: TeamData, stack: ItemStack, simulate: Boolean, needTest: Boolean = true): ItemStack {
+        val test = if (needTest) {
+            test(stack)
+        } else true
+        if (!teamData.isCompleted(this) && test && teamData.canStartTasks(quest)) {
             val add = min(stack.count.toLong(), count - teamData.getProgress(this))
 
             if (add > 0L) {

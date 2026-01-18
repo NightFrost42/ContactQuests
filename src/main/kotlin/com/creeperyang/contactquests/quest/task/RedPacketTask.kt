@@ -4,6 +4,7 @@ import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.client.gui.ValidRedPacketItemsScreen
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.utils.RegistryUtils
 import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.util.TooltipList
@@ -115,7 +116,12 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         val contentStack = stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
             .stream().findFirst().orElse(ItemStack.EMPTY)
 
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, contentStack, matchComponents)
+        return ItemMatchingSystem.INSTANCE.doesItemMatch(
+            itemStack,
+            contentStack,
+            matchComponents,
+            RegistryUtils.registryAccess
+        )
     }
 
     fun getResolvedText(teamData: TeamData?, player: Player?): String {
@@ -150,10 +156,11 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
             return submitItemStack
         }
         tempContext = player to teamData
-        ContactQuests.info(tempContext.toString())
         try {
+            val contentStack = submitItemStack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
+                .stream().findFirst().orElse(ItemStack.EMPTY)
             if (itemStack.item is MissingItem || submitItemStack.item is MissingItem) return submitItemStack
-            return insert(teamData, submitItemStack, false)
+            return insert(teamData, contentStack, false, needTest = false)
         } finally {
             tempContext = null
         }

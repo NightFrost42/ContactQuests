@@ -13,6 +13,8 @@ object ContactConfig {
 
     val retryInterval: ModConfigSpec.IntValue
 
+    val defaultTargetAddressee: ModConfigSpec.ConfigValue<String>
+
     init {
         BUILDER.comment("Contact Quests General Configuration").push("general")
 
@@ -32,6 +34,11 @@ object ContactConfig {
             .comment("邮箱已满或发送失败时的重试检测间隔 (Retry interval when mailbox is full)")
             .comment("单位：Tick")
             .defineInRange("retry_interval", 10, 1, 12000)
+
+        defaultTargetAddressee = BUILDER
+            .comment("新创建的任务和奖励默认的收件人 (Default target addressee for new rewards)")
+            .comment("这将作为默认值填入，你可以随时在任务编辑器中修改它。")
+            .define("default_target_addressee", "QuestNPC")
 
         BUILDER.pop()
 

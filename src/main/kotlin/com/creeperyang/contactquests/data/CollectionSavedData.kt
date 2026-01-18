@@ -21,13 +21,13 @@ import kotlin.random.Random
 
 class CollectionSavedData : SavedData() {
 
-    data class ErrorData(
+    data class CollectionData(
         val name: String,
         var triggerCount: Int,
         val itemStacks: MutableList<ItemStack>
     )
 
-    private val dataMap: MutableMap<UUID, MutableMap<String, ErrorData>> = Collections.synchronizedMap(HashMap())
+    private val dataMap: MutableMap<UUID, MutableMap<String, CollectionData>> = Collections.synchronizedMap(HashMap())
 
     companion object {
         private val LEGACY_UUID = UUID(0L, 0L)
@@ -109,7 +109,7 @@ class CollectionSavedData : SavedData() {
                     val uuid = pTag.getUUID("uuid")
                     val npcList = pTag.getList("npcData", Tag.TAG_COMPOUND.toInt())
 
-                    val npcMap = Collections.synchronizedMap(HashMap<String, ErrorData>())
+                    val npcMap = Collections.synchronizedMap(HashMap<String, CollectionData>())
                     for (j in 0 until npcList.size) {
                         val npcTag = npcList.getCompound(j)
                         val name = npcTag.getString("name")
@@ -120,7 +120,7 @@ class CollectionSavedData : SavedData() {
                             val stack = ItemStack.parseOptional(provider, itemsTag.getCompound(k))
                             if (!stack.isEmpty) itemStacks.add(stack)
                         }
-                        npcMap[name] = ErrorData(name, count, itemStacks)
+                        npcMap[name] = CollectionData(name, count, itemStacks)
                     }
                     data.dataMap[uuid] = npcMap
                 }
@@ -141,7 +141,7 @@ class CollectionSavedData : SavedData() {
                         val stack = ItemStack.parseOptional(provider, stackTag)
                         if (!stack.isEmpty) itemStacks.add(stack)
                     }
-                    legacyMap.putIfAbsent(name, ErrorData(name, count, itemStacks))
+                    legacyMap.putIfAbsent(name, CollectionData(name, count, itemStacks))
                 }
             }
 
@@ -149,15 +149,15 @@ class CollectionSavedData : SavedData() {
         }
     }
 
-    private fun getOrCreateData(uuid: UUID, name: String): ErrorData {
+    private fun getOrCreateData(uuid: UUID, name: String): CollectionData {
         val playerMap = dataMap.computeIfAbsent(uuid) { Collections.synchronizedMap(HashMap()) }
 
         return playerMap.computeIfAbsent(name) {
             val legacyData = dataMap[LEGACY_UUID]?.get(name)
             if (legacyData != null) {
-                ErrorData(name, legacyData.triggerCount, ArrayList(legacyData.itemStacks.map { it.copy() }))
+                CollectionData(name, legacyData.triggerCount, ArrayList(legacyData.itemStacks.map { it.copy() }))
             } else {
-                ErrorData(name, 0, ArrayList())
+                CollectionData(name, 0, ArrayList())
             }
         }
     }
@@ -196,7 +196,7 @@ class CollectionSavedData : SavedData() {
         }
     }
 
-    private fun mergeItemsIntoData(data: ErrorData, stacks: List<ItemStack>) {
+    private fun mergeItemsIntoData(data: CollectionData, stacks: List<ItemStack>) {
         for (stack in stacks) {
             var merged = false
             for (existingStack in data.itemStacks) {

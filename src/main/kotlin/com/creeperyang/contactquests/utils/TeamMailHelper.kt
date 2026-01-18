@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.utils
 
 import com.flechazo.contact.common.handler.MailboxManager
-import com.flechazo.contact.common.storage.MailboxDataManager
+import com.flechazo.contact.platform.PlatformHelper
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.component.DataComponentType
 import net.minecraft.core.registries.BuiltInRegistries
@@ -18,11 +18,9 @@ object TeamMailHelper {
         content: ItemStack,
         senderName: String = "Quest System"
     ): String? {
-        val dataManager = MailboxDataManager.getData(level)
+        val pos = PlatformHelper.getMailboxPos(teamId) ?: return "message.contact.mailbox.no_owner"
 
-        val pos = dataManager.getMailboxPos(teamId) ?: return "message.contact.mailbox.no_owner"
-
-        if (dataManager.isMailboxFull(teamId)) {
+        if (PlatformHelper.isMailboxFull(teamId)) {
             return "message.contact.mailbox.full"
         }
 
@@ -41,11 +39,10 @@ object TeamMailHelper {
             }
         }
 
-        dataManager.addMailboxContents(teamId, toSend)
+        PlatformHelper.addMailboxContents(teamId, toSend)
 
-        if (pos.dimension() == level.dimension() && level.isLoaded(pos.pos())) {
-            MailboxManager.updateState(level, pos.pos())
-        }
+        MailboxManager.updateState(level, pos.pos())
+
 
         if (!level.isClientSide) {
             val server = level.server

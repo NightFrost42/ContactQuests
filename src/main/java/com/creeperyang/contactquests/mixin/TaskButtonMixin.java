@@ -65,7 +65,7 @@ public abstract class TaskButtonMixin {
         RenderSystem.enableBlend();
 
         int size = (h >= 32 ? 16 : 10);
-        int drawX = x + w - size;
+        int drawX = x + w - size - 10;
         int drawY = y + h - size;
 
         icon.draw(graphics, drawX, drawY, size, size);

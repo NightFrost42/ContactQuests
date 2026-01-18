@@ -14,8 +14,8 @@ import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.utils.RedPacketUtils
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.QuestObjectBase
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
@@ -488,7 +488,7 @@ object ContactKubeJSPlugin {
     fun createRedPacket(sender: String, blessing: String, item: ItemStack): ItemStack {
         val container = SimpleContainer(1)
         container.setItem(0, item.copy())
-        return RedPacketItem.getRedPacket(container, blessing, sender)
+        return RedPacketUtils.getRedPacket(container, blessing, sender)
     }
 
     @JvmStatic

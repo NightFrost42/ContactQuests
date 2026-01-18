@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.quest.reward
 
-import com.flechazo.contact.common.item.RedPacketItem
+import com.creeperyang.contactquests.utils.RedPacketUtils
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.ItemIcon
@@ -39,7 +39,7 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
         val container = SimpleContainer(1)
         container.setItem(0, stackToSend)
-        val redPacket = RedPacketItem.getRedPacket(container, blessing, targetAddressee)
+        val redPacket = RedPacketUtils.getRedPacket(container, blessing, targetAddressee)
 
         distributeItem(player, redPacket)
     }

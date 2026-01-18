@@ -83,21 +83,21 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId="ftbquests"
 type = "required"
-versionRange = "[2101.1.19,)"
+versionRange = "[2101.1.21,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies."${mod_id}"]]
 modId="contact"
 type = "required"
-versionRange="[1.2.1,)"
+versionRange = "[1.2.3,)"
 ordering="AFTER"
 side="BOTH"
 
 [[dependencies."${mod_id}"]]
 modId = "ftblibrary"
 type = "required"
-versionRange = "[2101.1.26,)"
+versionRange = "[2101.1.30,)"
 ordering = "AFTER"
 side = "BOTH"
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares

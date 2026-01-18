@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.quest.reward
 
+import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.TagConfig
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.RewardDistributionManager
@@ -18,7 +19,7 @@ import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 
 abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
-    var targetAddressee: String = "QuestNPC"
+    var targetAddressee: String = ContactConfig.defaultTargetAddressee.get()
     var isEnder: Boolean = false
 
     var unlockTags: MutableList<String> = ArrayList()

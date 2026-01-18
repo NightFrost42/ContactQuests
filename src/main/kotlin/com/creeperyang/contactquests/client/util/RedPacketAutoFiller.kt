@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.client.util
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.mixin.RedPacketEnvelopeScreenAccessor
 import com.creeperyang.contactquests.quest.task.RedPacketTask
+import com.creeperyang.contactquests.utils.RegistryUtils
 import com.flechazo.contact.client.gui.screen.RedPacketEnvelopeScreen
 import com.flechazo.contact.common.screenhandler.RedPacketEnvelopeScreenHandler
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
@@ -17,6 +18,7 @@ import net.neoforged.api.distmarker.Dist
 import net.neoforged.api.distmarker.OnlyIn
 import net.neoforged.bus.api.SubscribeEvent
 import net.neoforged.neoforge.client.event.ClientTickEvent
+import kotlin.math.min
 
 @OnlyIn(Dist.CLIENT)
 object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
@@ -26,9 +28,13 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     private var currentState = State.IDLE
     private var currentSourceSlot = -1
 
+    private var itemsToDeposit = 0
+    private const val CLICKS_PER_TICK = 4
+
     data class RedPacketRequirement(
         val itemStack: ItemStack,
-        val blessing: String
+        val blessing: String,
+        val amountNeeded: Long
     )
 
     override fun resetState() {
@@ -74,24 +80,31 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         }
 
         val slotItem = menu.getSlot(0).item
-        val isItemCorrect = if (slotItem.isEmpty) {
-            req.itemStack.isEmpty
-        } else {
-            ItemMatchingSystem.INSTANCE.doesItemMatch(req.itemStack, slotItem, taskData?.matchComponents)
-        }
 
-        if (isItemCorrect) {
-            finishTask("需求已满足")
-            return
-        }
+        if (!slotItem.isEmpty) {
+            val isMatch = !req.itemStack.isEmpty &&
+                    ItemMatchingSystem.INSTANCE.doesItemMatch(
+                        req.itemStack, slotItem, taskData?.matchComponents,
+                        RegistryUtils.registryAccess
+                    )
 
-        if (!req.itemStack.isEmpty) {
-            if (!slotItem.isEmpty) {
+            if (!isMatch) {
                 finishTask("槽位已有错误物品")
                 return
             }
-            findItemAndSetup(menu, req)
+
+            val targetCount = min(req.amountNeeded, 64L).toInt()
+            if (slotItem.count >= targetCount) {
+                finishTask("需求已满足")
+                return
+            }
+        } else {
+            if (req.itemStack.isEmpty) {
+                finishTask("无需物品")
+                return
+            }
         }
+        findItemAndSetup(menu, req, player)
     }
 
     private fun handleFillTextState(
@@ -122,20 +135,46 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         actionDelay = 0
     }
 
-    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement) {
+    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement, player: Player) {
         val inventoryStart = RedPacketEnvelopeScreenHandler.CONTENT_COUNT
         val inventoryEnd = menu.slots.size
 
         for (i in inventoryStart until inventoryEnd) {
             val stack = menu.getSlot(i).item
-            if (ItemMatchingSystem.INSTANCE.doesItemMatch(req.itemStack, stack, taskData?.matchComponents)) {
-                currentSourceSlot = i
-                currentState = State.PICKUP_SOURCE
-                ContactQuests.debug("RedPacketAutoFiller: 找到物品在槽位 $i")
+            if (ItemMatchingSystem.INSTANCE.doesItemMatch(
+                    req.itemStack,
+                    stack,
+                    taskData?.matchComponents,
+                    RegistryUtils.registryAccess
+                )
+            ) {
+                setupTransferAction(menu.containerId, player, i, stack, req.amountNeeded)
                 return
             }
         }
         finishTask("未找到匹配物品")
+    }
+
+    private fun setupTransferAction(
+        containerId: Int, player: Player, sourceSlot: Int,
+        stack: ItemStack, amountNeeded: Long
+    ) {
+        val mc = Minecraft.getInstance()
+        val maxAddable = 64
+        val amountToTransfer = min(amountNeeded, maxAddable.toLong()).toInt()
+
+        if (stack.count <= amountToTransfer) {
+            ContactQuests.debug("RedPacketAutoFiller: 快速移动全部 ${stack.hoverName.string}")
+            click(mc, containerId, sourceSlot, 0, ClickType.QUICK_MOVE, player)
+            currentState = State.IDLE
+            actionDelay = 1
+        } else {
+            ContactQuests.debug("RedPacketAutoFiller: 启动精准拆分 ${stack.hoverName.string} x$amountToTransfer")
+            currentSourceSlot = sourceSlot
+            itemsToDeposit = amountToTransfer
+            currentState = State.PICKUP_SOURCE
+            actionDelay = 1
+        }
     }
 
     private fun handlePickupSource(mc: Minecraft, menu: RedPacketEnvelopeScreenHandler, player: Player) {
@@ -145,15 +184,21 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     }
 
     private fun handleDeposit(mc: Minecraft, menu: RedPacketEnvelopeScreenHandler, player: Player) {
-        click(mc, menu.containerId, 0, 1, ClickType.PICKUP, player) // 放入单个
-
-        val carried = player.containerMenu.carried
-        currentState = if (!carried.isEmpty) {
-            State.RETURN_REST
-        } else {
-            State.IDLE
+        var clicksThisTick = 0
+        while (itemsToDeposit > 0 && clicksThisTick < CLICKS_PER_TICK) {
+            click(mc, menu.containerId, 0, 1, ClickType.PICKUP, player)
+            itemsToDeposit--
+            clicksThisTick++
         }
-        actionDelay = 1
+
+        if (itemsToDeposit <= 0) {
+            val carried = player.containerMenu.carried
+            currentState = if (!carried.isEmpty) {
+                State.RETURN_REST
+            } else {
+                State.IDLE
+            }
+        }
     }
 
     private fun handleReturnRest(mc: Minecraft, menu: RedPacketEnvelopeScreenHandler, player: Player) {
@@ -167,6 +212,9 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         if (teamData.isCompleted(task)) return null
 
         val resolvedBlessing = task.getResolvedText(teamData, player)
-        return RedPacketRequirement(task.itemStack, resolvedBlessing)
+
+        val needed = task.count - teamData.getProgress(task)
+
+        return RedPacketRequirement(task.itemStack, resolvedBlessing, needed)
     }
 }

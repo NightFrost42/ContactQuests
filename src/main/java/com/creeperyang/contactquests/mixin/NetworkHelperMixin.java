@@ -7,9 +7,8 @@ import com.flechazo.contact.common.item.ParcelItem;
 import com.flechazo.contact.common.item.PostcardItem;
 import com.flechazo.contact.common.item.RedPacketItem;
 import com.flechazo.contact.common.screenhandler.PostboxScreenHandler;
-import com.flechazo.contact.common.storage.IMailboxDataProvider;
-import com.flechazo.contact.network.ActionS2CMessage;
-import com.flechazo.contact.network.EnquireAddresseeMessage;
+import com.flechazo.contact.helper.NetworkHelper;
+import com.flechazo.contact.network.ActionMessage;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,17 +18,17 @@ import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Slice;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 
-@Mixin(EnquireAddresseeMessage.class)
-public class EnquireAddresseeMessageMixin {
+@Mixin(NetworkHelper.class)
+public class NetworkHelperMixin {
 
     @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
-    private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
+    private static void onHandleSendMail(ServerPlayer player, String recipientName, int deliveryTicks, CallbackInfo ci) {
         if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
             return;
         }
@@ -67,14 +66,15 @@ public class EnquireAddresseeMessageMixin {
 
         if (taskMatched) {
             container.parcel.setItem(0, ItemStack.EMPTY);
-            ActionS2CMessage.create(1).sendTo(player);
+            ActionMessage msg = new ActionMessage(1, "");
+            msg.sendTo(player);
             ci.cancel();
         }
     }
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
     @Unique
-    private String findKeyIgnoreCase(String inputName, ServerPlayer player) {
+    private static String findKeyIgnoreCase(String inputName, ServerPlayer player) {
         Set<String> allKeys = new HashSet<>();
         allKeys.addAll(DataManager.parcelReceiver.keySet());
         allKeys.addAll(DataManager.redPacketReceiver.keySet());
@@ -95,17 +95,27 @@ public class EnquireAddresseeMessageMixin {
             method = "handleNormalEnquiry",
             at = @At(
                     value = "FIELD",
-                    target = "Lcom/flechazo/contact/network/EnquireAddresseeMessage;shouldSend:Z",
-                    opcode = Opcodes.GETFIELD),
+                    target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
+                    opcode = Opcodes.GETFIELD
+            ),
+            slice = @Slice(
+                    from = @At(
+                            value = "FIELD",
+                            target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
+                            opcode = Opcodes.GETFIELD,
+                            ordinal = 0
+                    )
+            ),
             remap = false
     )
-    private void injectCustomTargetsNames(
+    private static void injectCustomTargetsNames(
             ServerPlayer player,
-            IMailboxDataProvider data,
             String lowerIn,
+            String nameIn,
+            boolean shouldSend,
             CallbackInfo ci,
-            @Local(ordinal = 0) @Coerce List<String> names,
-            @Local(ordinal = 1) @Coerce List<Integer> ticks
+            @Local(ordinal = 0) List<String> names,
+            @Local(ordinal = 1) List<Integer> ticks
     ) {
         List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
 
@@ -115,7 +125,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Unique
-    private List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
+    private static List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
         Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
@@ -131,7 +141,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Unique
-    private int compareTargets(String name1, String name2, String lowerIn) {
+    private static int compareTargets(String name1, String name2, String lowerIn) {
         String lower1 = name1.toLowerCase(Locale.ROOT);
         String lower2 = name2.toLowerCase(Locale.ROOT);
 
@@ -147,7 +157,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Unique
-    private void insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
+    private static void insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
         for (int i = matches.size() - 1; i >= 0; i--) {
             Map.Entry<String, Integer> entry = matches.get(i);
             //noinspection SequencedCollectionMethodCanBeUsed
@@ -160,7 +170,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Unique
-    private void ensureHiddenTarget(ServerPlayer player, String lowerIn, List<String> names, List<Integer> ticks) {
+    private static void ensureHiddenTarget(ServerPlayer player, String lowerIn, List<String> names, List<Integer> ticks) {
         if (!names.isEmpty() && names.get(0).toLowerCase(Locale.ROOT).equals(lowerIn)) {
             return;
         }
@@ -177,7 +187,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Unique
-    private void trimToSize(List<String> names, List<Integer> ticks) {
+    private static void trimToSize(List<String> names, List<Integer> ticks) {
         while (names.size() > 4) {
             //noinspection SequencedCollectionMethodCanBeUsed
             names.remove(names.size() - 1);

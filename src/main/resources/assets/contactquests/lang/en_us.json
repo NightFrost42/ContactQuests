@@ -91,5 +91,8 @@
   "contactquest.task.parcel.item": "item",
   "ftbquests.task.contactquests.parcel_task.match_components": "Match Data Components",
   "ftbquests.task.contactquests.red_packet_task.match_components": "Match Data Components",
-  "ftbquests.reward.contactquests.red_packet": "Red Packet Reward"
+  "ftbquests.reward.contactquests.red_packet": "Red Packet Reward",
+  "contactquests.command.set_count.success_target": "The trigger count for %s of NPC [%s] %s has been set to %d.",
+  "contactquests.command.get_count.success": "NPC [%s] has a trigger count of %d.",
+  "contactquests.command.get_count.success_target": "The %s 's trigger count of the NPC [%s] is %d. "
 }

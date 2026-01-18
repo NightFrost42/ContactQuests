@@ -10,8 +10,6 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.level.Level
 import net.neoforged.fml.loading.FMLPaths
 import java.io.File
-import java.io.FileReader
-import java.io.FileWriter
 import kotlin.random.Random
 
 enum class ErrorSolveType {
@@ -85,7 +83,7 @@ object NpcConfigManager {
     private fun loadFromDisk() {
         if (CONFIG_FILE.exists()) {
             try {
-                FileReader(CONFIG_FILE).use { reader ->
+                CONFIG_FILE.reader(Charsets.UTF_8).use { reader ->
                     val type = object : TypeToken<Map<String, NpcData>>() {}.type
                     val loaded: Map<String, NpcData>? = GSON.fromJson(reader, type)
                     if (loaded != null) {
@@ -121,6 +119,10 @@ object NpcConfigManager {
             save()
             ContactQuests.info("同步新NPC到配置文件")
         }
+    }
+
+    fun getAllNpcNames(): Set<String> {
+        return npcMap.keys
     }
 
     fun getNpcData(name: String): NpcData {
@@ -160,7 +162,7 @@ object NpcConfigManager {
 
     private fun save() {
         try {
-            FileWriter(CONFIG_FILE).use { writer ->
+            CONFIG_FILE.writer(Charsets.UTF_8).use { writer ->
                 GSON.toJson(npcMap, writer)
             }
         } catch (e: Exception) {

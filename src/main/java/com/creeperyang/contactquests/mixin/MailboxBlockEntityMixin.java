@@ -117,4 +117,18 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
             MailboxGlobalRenderer.INSTANCE.untrack((MailboxBlockEntity) (Object) this);
         }
     }
+
+    @Inject(method = "saveAdditional", at = @At("TAIL"), remap = false)
+    private void injectSaveAdditional(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
+        if (this.contactQuestsTeamId != null) {
+            nbt.putUUID(TEAM_ID_NBT_KEY, this.contactQuestsTeamId);
+        }
+    }
+
+    @Inject(method = "loadAdditional", at = @At("TAIL"), remap = false)
+    private void injectLoadAdditional(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
+        if (nbt.hasUUID(TEAM_ID_NBT_KEY)) {
+            this.contactQuestsTeamId = nbt.getUUID(TEAM_ID_NBT_KEY);
+        }
+    }
 }

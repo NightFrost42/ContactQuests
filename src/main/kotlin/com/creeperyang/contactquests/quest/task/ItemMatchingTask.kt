@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.quest.task
 
+import com.creeperyang.contactquests.utils.RegistryUtils
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.math.Bits
 import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
@@ -60,12 +61,17 @@ abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest)
     }
 
     override fun getValidDisplayItems(): MutableList<ItemStack> {
-        return ItemMatchingSystem.INSTANCE.getAllMatchingStacks(itemStack)
+        return ItemMatchingSystem.INSTANCE.getAllMatchingStacks(itemStack, RegistryUtils.registryAccess)
     }
 
     fun isTargetItem(stack: ItemStack): Boolean {
         if (itemStack.isEmpty) return false
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, matchComponents)
+        return ItemMatchingSystem.INSTANCE.doesItemMatch(
+            itemStack,
+            stack,
+            matchComponents,
+            RegistryUtils.registryAccess
+        )
     }
 
     open fun getItemNbtKey() = "item"
