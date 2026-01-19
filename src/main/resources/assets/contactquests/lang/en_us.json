@@ -84,5 +84,13 @@
   "contactquests.config.hide_if_locked": "Hide if Locked",
   "contactquests.utils.mutexmode.all": "Complete ALL",
   "contactquests.utils.mutexmode.any": "Complete ANY",
-  "contactquests.utils.mutexmode.number": "Complete Specific Number"
+  "contactquests.utils.mutexmode.number": "Complete Specific Number",
+  "contactquest.task.red_packet.item": "item",
+  "contactquest.task.parcel.item": "item",
+  "ftbquests.task.contactquests.parcel_task.match_components": "Match Data Components",
+  "ftbquests.task.contactquests.red_packet_task.match_components": "Match Data Components",
+  "ftbquests.reward.contactquests.red_packet": "Red Packet Reward",
+  "contactquests.command.set_count.success_target": "The trigger count for %s of NPC [%s] %s has been set to %d.",
+  "contactquests.command.get_count.success": "NPC [%s] has a trigger count of %d.",
+  "contactquests.command.get_count.success_target": "The %s 's trigger count of the NPC [%s] is %d. "
 }

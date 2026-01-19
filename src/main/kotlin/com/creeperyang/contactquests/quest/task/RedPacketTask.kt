@@ -121,6 +121,7 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
             return submitItemStack
         }
         if (itemStack.item is MissingItem || submitItemStack.item is MissingItem) return submitItemStack
-        return insert(teamData, submitItemStack, false)
+        val contentStack = getFirstItemFromRedPacket(submitItemStack)
+        return insert(teamData, contentStack, false, needTest = false)
     }
 }

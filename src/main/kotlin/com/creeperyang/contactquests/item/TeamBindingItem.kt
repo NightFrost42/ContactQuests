@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.item
 
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
 import com.flechazo.contact.common.block.MailboxBlock
+import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.common.storage.IMailboxDataProvider
 import com.flechazo.contact.common.storage.MailboxDataManager
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
@@ -28,9 +29,14 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
         val pos = context.clickedPos
         val state = level.getBlockState(pos)
 
-        if (level.isClientSide || player == null || !player.isShiftKeyDown || state.block !is MailboxBlock) {
+        if (player == null || !player.isShiftKeyDown || state.block !is MailboxBlock) {
             return InteractionResult.PASS
         }
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS
+        }
+
 
         val team = FTBTeamsAPI.api().manager.getTeamForPlayerID(player.uuid).orElse(null)
         if (team == null) {
@@ -55,6 +61,8 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
         }
 
         dataManager.setMailboxData(teamId, level.dimension(), targetPos)
+        dataManager.setMailboxContents(teamId, dataManager.getMailboxContents(teamId))
+        MailboxManager.updateState(level, targetPos)
 
         updateMailboxVisuals(level, targetPos, teamId)
 

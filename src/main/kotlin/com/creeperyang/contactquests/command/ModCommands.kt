@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.command
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.network.OpenQuestMessage
@@ -34,8 +35,10 @@ object ModCommands {
     private val NPC_NAME_SUGGESTION_PROVIDER = SuggestionProvider<CommandSourceStack> { context, builder ->
         val level = context.source.level
         val data = CollectionSavedData.get(level)
-        val names = data.getStoredNpcNames()
-        SharedSuggestionProvider.suggest(names, builder)
+        val names = data.getStoredNpcNames() + NpcConfigManager.getAllNpcNames()
+
+        val quotedNames = names.map { "\"$it\"" }
+        SharedSuggestionProvider.suggest(quotedNames, builder)
     }
 
     @SubscribeEvent

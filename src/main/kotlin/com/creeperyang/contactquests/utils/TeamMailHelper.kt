@@ -36,9 +36,8 @@ object TeamMailHelper {
 
         dataManager.addMailboxContents(teamId, toSend)
 
-        if (pos.dimension() == level.dimension() && level.isLoaded(pos.pos())) {
-            MailboxManager.updateState(level, pos.pos())
-        }
+        MailboxManager.updateState(level, pos.pos())
+
 
         if (!level.isClientSide) {
             val server = level.server

@@ -84,5 +84,13 @@
   "contactquests.utils.mutexmode.all": "完成所有",
   "contactquests.utils.mutexmode.any": "完成任一",
   "contactquests.utils.mutexmode.number": "完成特定数量",
-  "contactquests.quest.locked.mutex_tasks": "与这些任务冲突: %s"
+  "contactquests.quest.locked.mutex_tasks": "与这些任务冲突: %s",
+  "contactquest.task.red_packet.item": "物品",
+  "contactquest.task.parcel.item": "物品",
+  "ftbquests.task.contactquests.parcel_task.match_components": "数据匹配模式",
+  "ftbquests.task.contactquests.red_packet_task.match_components": "数据匹配模式",
+  "ftbquests.reward.contactquests.red_packet": "红包奖励",
+  "contactquests.command.set_count.success_target": "已将 %s 的 NPC [%s] 的触发计数设置为 %d。",
+  "contactquests.command.get_count.success": "NPC [%s] 的触发计数为 %d。",
+  "contactquests.command.get_count.success_target": "%s 的 NPC [%s] 的触发计数为 %d。"
 }

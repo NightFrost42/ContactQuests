@@ -17,13 +17,13 @@ import kotlin.random.Random
 
 class CollectionSavedData : SavedData() {
 
-    data class ErrorData(
+    data class CollectionData(
         val name: String,
         var triggerCount: Int,
         val itemStacks: MutableList<ItemStack>
     )
 
-    private val dataMap: MutableMap<String, ErrorData> = Collections.synchronizedMap(HashMap())
+    private val dataMap: MutableMap<String, CollectionData> = Collections.synchronizedMap(HashMap())
 
     fun addItem(player: ServerPlayer, name: String, stack: ItemStack) {
         addItems(player, name, listOf(stack))
@@ -37,7 +37,7 @@ class CollectionSavedData : SavedData() {
 
         synchronized(dataMap) {
             val data = dataMap.computeIfAbsent(name) {
-                ErrorData(it, 0, ArrayList())
+                CollectionData(it, 0, ArrayList())
             }
 
             data.triggerCount++
@@ -64,7 +64,7 @@ class CollectionSavedData : SavedData() {
         }
     }
 
-    private fun mergeItemsIntoData(data: ErrorData, stacks: List<ItemStack>) {
+    private fun mergeItemsIntoData(data: CollectionData, stacks: List<ItemStack>) {
         for (stack in stacks) {
             var merged = false
             for (existingStack in data.itemStacks) {
@@ -204,7 +204,7 @@ class CollectionSavedData : SavedData() {
     fun setTriggerCount(name: String, count: Int) {
         synchronized(dataMap) {
             val data = dataMap.computeIfAbsent(name) {
-                ErrorData(it, 0, ArrayList())
+                CollectionData(it, 0, ArrayList())
             }
             data.triggerCount = count
             setDirty()
@@ -395,7 +395,7 @@ class CollectionSavedData : SavedData() {
                     }
                 }
 
-                data.dataMap[name] = ErrorData(name, count, itemStacks)
+                data.dataMap[name] = CollectionData(name, count, itemStacks)
             }
             return data
         }
