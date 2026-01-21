@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests
 
+import com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin
 import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import dev.ftb.mods.ftbquests.quest.Quest
@@ -10,6 +11,8 @@ import net.minecraft.network.chat.ClickEvent
 import net.minecraft.network.chat.Component
 import net.minecraft.network.chat.HoverEvent
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.InteractionHand
+import net.minecraftforge.event.entity.player.PlayerEvent
 import net.minecraftforge.event.entity.player.PlayerInteractEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
 
@@ -18,6 +21,9 @@ object EventHandler {
     @SubscribeEvent
     fun onItemRightClick(event: PlayerInteractEvent.RightClickItem) {
         if (event.level.isClientSide) return
+
+        if (event.hand != InteractionHand.MAIN_HAND) return
+
         val player = event.entity as? ServerPlayer ?: return
         val stack = event.itemStack
 
@@ -50,6 +56,15 @@ object EventHandler {
             )
 
             checkAndNotifyQuests(player, newUnlockedTags)
+        }
+    }
+
+    @SubscribeEvent
+    fun onPlayerLoggedIn(event: PlayerEvent.PlayerLoggedInEvent) {
+        val player = event.entity
+        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
+            ContactKubeJSPlugin.updatePlayerTaskCache(player)
+            ContactKubeJSPlugin.syncAllOverridesToPlayer(player)
         }
     }
 

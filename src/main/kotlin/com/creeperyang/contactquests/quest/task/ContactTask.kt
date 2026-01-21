@@ -83,7 +83,7 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
         config.addString("target_addressee", targetAddressee, { targetAddressee = it }, "Quest NPC")
-            .nameKey = "contactquest.task.parcel.recipient"
+            .nameKey = "contactquest.task.parcel.recipient_setting"
         config.addLong("count", count, { v: Long? -> count = v!! }, 1, 1, Long.MAX_VALUE)
     }
 

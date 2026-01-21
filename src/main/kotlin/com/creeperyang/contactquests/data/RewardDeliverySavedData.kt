@@ -42,7 +42,6 @@ class RewardDeliverySavedData : SavedData() {
                     iterator.remove()
                     setDirty()
                 } else {
-                    // 失败重试：使用配置的间隔
                     entry.ticksLeft = ContactConfig.retryInterval.get()
                     setDirty()
                 }

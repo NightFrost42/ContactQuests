@@ -1,10 +1,13 @@
 package com.creeperyang.contactquests.config
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.compat.kubejs.KubeJSNpcSavedData
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.annotations.SerializedName
 import com.google.gson.reflect.TypeToken
+import net.minecraft.server.level.ServerLevel
+import net.minecraft.world.level.Level
 import net.minecraftforge.fml.loading.FMLPaths
 import java.io.File
 import kotlin.random.Random
@@ -126,7 +129,13 @@ object NpcConfigManager {
         return npcMap.getOrDefault(name, NpcData())
     }
 
-    fun getDeliveryTime(name: String): Int {
+    fun getDeliveryTime(name: String, level: Level? = null): Int {
+        if (level is ServerLevel) {
+            val kubeConfig = KubeJSNpcSavedData.get(level).getNpcData(name)
+            if (kubeConfig != null) {
+                return kubeConfig.deliveryTime
+            }
+        }
         return getNpcData(name).deliveryTime
     }
 

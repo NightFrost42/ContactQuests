@@ -212,8 +212,10 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         val task = taskData ?: return null
         if (teamData.isCompleted(task)) return null
 
+        val resolvedBlessing = task.getResolvedText(teamData, player)
+
         val needed = task.count - teamData.getProgress(task)
 
-        return RedPacketRequirement(task.itemStack, task.blessing, needed)
+        return RedPacketRequirement(task.itemStack, resolvedBlessing, needed)
     }
 }

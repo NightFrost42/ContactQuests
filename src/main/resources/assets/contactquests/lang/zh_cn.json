@@ -17,6 +17,7 @@
   "contactquest.task.ftbquests.parcel.valid_for": "需要的包裹内容",
   "contactquest.task.ftbquests.postcard.valid_for": "需要的明信片",
   "contactquest.task.ftbquests.redpacket.valid_for": "需要的红包内容",
+  "contactquest.task.redpacket.req_text": "需求的红包祝福语",
   "contactquest.task.no_valid_items": "无合法的物品",
   "contactquest.task.parcel.recipient": "邮寄收件人",
   "contactquest.task.postcard.req_style": "需求的明信片样式",

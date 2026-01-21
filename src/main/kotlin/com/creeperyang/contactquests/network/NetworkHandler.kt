@@ -41,6 +41,18 @@ object NetworkHandler {
             .decoder { buf -> OpenQuestMessage.decode(buf) }
             .consumerMainThread { msg, ctxSupplier -> msg.handle(ctxSupplier) }
             .add()
+
+        CHANNEL.messageBuilder(SyncTeamExtensionMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> SyncTeamExtensionMessage(buf) }
+            .consumerMainThread { msg, ctx -> msg.handle(ctx) }
+            .add()
+
+        CHANNEL.messageBuilder(SyncQuestTextMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> SyncQuestTextMessage(buf) }
+            .consumerMainThread { msg, ctx -> msg.handle(ctx) }
+            .add()
     }
 
     internal fun handleRequestBinder(msg: RequestBinderPayload, ctxSupplier: Supplier<NetworkEvent.Context>) {

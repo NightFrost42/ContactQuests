@@ -2,10 +2,7 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.ContactQuests;
 import com.creeperyang.contactquests.config.TagConfig;
-import com.creeperyang.contactquests.utils.DependencyMode;
-import com.creeperyang.contactquests.utils.IQuestExtension;
-import com.creeperyang.contactquests.utils.ITeamDataExtension;
-import com.creeperyang.contactquests.utils.MutexMode;
+import com.creeperyang.contactquests.utils.*;
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftbquests.quest.*;
 import dev.ftb.mods.ftbquests.quest.task.Task;
@@ -26,9 +23,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Predicate;
 
 @Mixin(Quest.class)
@@ -54,6 +49,12 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private int contactQuests$mutexNum = 1;
     @Unique
     private boolean contactQuests$hideIfLocked = false;
+    @Unique
+    private final Map<String, List<String>> contactQuests$descOverrides = new HashMap<>();
+    @Unique
+    private final Map<String, String> contactQuests$titleOverrides = new HashMap<>();
+    @Unique
+    private final Map<String, String> contactQuests$subtitleOverrides = new HashMap<>();
 
     protected QuestMixin(long id) {
         super(id);
@@ -209,6 +210,17 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectDependenciesCheck(TeamData data, CallbackInfoReturnable<Boolean> cir) {
+        if (data instanceof ITeamDataExtension ext) {
+            if (ext.contactQuests$isQuestForced(this.id)) {
+                cir.setReturnValue(true);
+                return;
+            }
+            if (ext.contactQuests$isQuestBlocked(this.id)) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
+
         if (Boolean.FALSE.equals(cir.getReturnValue())) return;
 
         if (contactQuests$internal$checkMutexLocked(data)) {
@@ -218,6 +230,38 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
         if (contactQuests$internal$checkTagsMet(data)) {
             cir.setReturnValue(false);
+        }
+    }
+
+    @Override
+    public void contactQuests$setDescriptionOverride(String locale, List<String> description) {
+        if (description == null) {
+            contactQuests$descOverrides.remove(locale);
+        } else {
+            contactQuests$descOverrides.put(locale, description);
+        }
+    }
+
+
+    @Override
+    public void contactQuests$setSubtitleOverride(String locale, String subtitle) {
+        if (subtitle == null) contactQuests$subtitleOverrides.remove(locale);
+        else contactQuests$subtitleOverrides.put(locale, subtitle);
+    }
+
+    @Inject(method = "getRawDescription", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetRawDescription(CallbackInfoReturnable<List<String>> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$descOverrides.containsKey(locale)) {
+            cir.setReturnValue(contactQuests$descOverrides.get(locale));
+        }
+    }
+
+    @Inject(method = "getRawSubtitle", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetRawSubtitle(CallbackInfoReturnable<String> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$subtitleOverrides.containsKey(locale)) {
+            cir.setReturnValue(contactQuests$subtitleOverrides.get(locale));
         }
     }
 

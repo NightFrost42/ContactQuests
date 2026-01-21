@@ -7,6 +7,7 @@ import com.creeperyang.contactquests.mixin.TextBoxAccessor
 import com.creeperyang.contactquests.mixin.TextInputUtilAccessor
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.screen.PostcardEditScreen
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.screens.Screen
 import net.minecraft.world.entity.player.Player
@@ -29,6 +30,10 @@ object PostcardAutoFiller : BaseAutoFiller<PostcardTask>() {
 
     override fun resetState() {
         val task = taskData ?: return
+
+        val player = Minecraft.getInstance().player
+        val teamData = ClientQuestFile.INSTANCE.selfTeamData
+        targetText = task.getResolvedText(teamData, player)
         targetText = task.postcardText.replace("\\n", "\n")
         typingSpeed = ContactConfig.autoFillSpeed.get()
         currentIndex = 0

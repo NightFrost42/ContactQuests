@@ -11,6 +11,7 @@
     "MailboxBlockMixin",
     "OtherButtonsPanelTopMixin",
     "QuestMixin",
+    "QuestObjectBaseMixin",
     "TeamDataMixin"
   ],
   "client": [

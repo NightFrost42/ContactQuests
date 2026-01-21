@@ -1,15 +1,14 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.network.NetworkHandler;
+import com.creeperyang.contactquests.network.SyncTeamExtensionMessage;
 import com.creeperyang.contactquests.network.SyncTeamTagsMessage;
 import com.creeperyang.contactquests.utils.IQuestExtension;
 import com.creeperyang.contactquests.utils.ITeamDataExtension;
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftbquests.quest.Quest;
 import dev.ftb.mods.ftbquests.quest.TeamData;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import org.spongepowered.asm.mixin.Mixin;
@@ -19,14 +18,25 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 @Mixin(TeamData.class)
 public class TeamDataMixin implements ITeamDataExtension {
 
     @Unique
     private final Set<String> contactQuests$unlockedTags = new HashSet<>();
+
+    @Unique
+    private final Set<Long> contactQuests$forcedQuests = new HashSet<>();
+
+    @Unique
+    private final Set<Long> contactQuests$blockedQuests = new HashSet<>();
+
+    @Unique
+    private final Map<Long, String> contactQuests$postcardCache = new HashMap<>();
+
+    @Unique
+    private final Map<Long, String> contactQuests$redPacketCache = new HashMap<>();
 
     @Override
     @Unique
@@ -71,12 +81,177 @@ public class TeamDataMixin implements ITeamDataExtension {
 
     @Override
     @Unique
+    public boolean contactQuests$forceQuest(long questId) {
+        if (contactQuests$forcedQuests.add(questId)) {
+            contactQuests$blockedQuests.remove(questId);
+            return contactQuests$operationSync();
+        }
+        return false;
+    }
+
+    @Override
+    @Unique
+    public boolean contactQuests$unforceQuest(long questId) {
+        if (contactQuests$forcedQuests.remove(questId)) {
+            return contactQuests$operationSync();
+        }
+        return false;
+    }
+
+    @Override
+    @Unique
+    public boolean contactQuests$isQuestForced(long questId) {
+        return contactQuests$forcedQuests.contains(questId);
+    }
+
+    @Override
+    @Unique
+    public boolean contactQuests$blockQuest(long questId) {
+        if (contactQuests$blockedQuests.add(questId)) {
+            contactQuests$forcedQuests.remove(questId);
+            return contactQuests$operationSync();
+        }
+        return false;
+    }
+
+    @Override
+    @Unique
+    public boolean contactQuests$unblockQuest(long questId) {
+        if (contactQuests$blockedQuests.remove(questId)) {
+            return contactQuests$operationSync();
+        }
+        return false;
+    }
+
+    @Override
+    @Unique
+    public boolean contactQuests$isQuestBlocked(long questId) {
+        return contactQuests$blockedQuests.contains(questId);
+    }
+
+    @Override
+    @Unique
+    public Collection<Long> contactQuests$getForcedQuests() {
+        return Collections.unmodifiableSet(contactQuests$forcedQuests);
+    }
+
+    @Override
+    @Unique
+    public Collection<Long> contactQuests$getBlockedQuests() {
+        return Collections.unmodifiableSet(contactQuests$blockedQuests);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setForcedQuests(Collection<Long> ids) {
+        contactQuests$forcedQuests.clear();
+        contactQuests$forcedQuests.addAll(ids);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setBlockedQuests(Collection<Long> ids) {
+        contactQuests$blockedQuests.clear();
+        contactQuests$blockedQuests.addAll(ids);
+    }
+
+    @Override
+    @Unique
+    public String contactQuests$getPostcardText(long taskId) {
+        return contactQuests$postcardCache.get(taskId);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setPostcardText(long taskId, String text) {
+        if (!Objects.equals(contactQuests$postcardCache.get(taskId), text)) {
+            contactQuests$postcardCache.put(taskId, text);
+            contactQuests$operationSync();
+        }
+    }
+
+    @Override
+    @Unique
+    public Map<Long, String> contactQuests$getAllPostcardTexts() {
+        return Collections.unmodifiableMap(contactQuests$postcardCache);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setAllPostcardTexts(Map<Long, String> texts) {
+        contactQuests$postcardCache.clear();
+        contactQuests$postcardCache.putAll(texts);
+    }
+
+    @Override
+    @Unique
+    public String contactQuests$getRedPacketBlessing(long taskId) {
+        return contactQuests$redPacketCache.get(taskId);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setRedPacketBlessing(long taskId, String text) {
+        if (!Objects.equals(contactQuests$redPacketCache.get(taskId), text)) {
+            contactQuests$redPacketCache.put(taskId, text);
+            contactQuests$operationSync();
+        }
+    }
+
+    @Override
+    @Unique
+    public Map<Long, String> contactQuests$getAllRedPacketBlessings() {
+        return Collections.unmodifiableMap(contactQuests$redPacketCache);
+    }
+
+    @Override
+    @Unique
+    public void contactQuests$setAllRedPacketBlessings(Map<Long, String> texts) {
+        contactQuests$redPacketCache.clear();
+        contactQuests$redPacketCache.putAll(texts);
+    }
+
+    @Unique
+    private boolean contactQuests$operationSync() {
+        TeamData self = (TeamData) (Object) this;
+        self.markDirty();
+        self.clearCachedProgress();
+
+        if (self.getFile().isServerSide()) {
+            SyncTeamExtensionMessage msg = new SyncTeamExtensionMessage(
+                    self.getTeamId(),
+                    contactQuests$unlockedTags,
+                    contactQuests$forcedQuests,
+                    contactQuests$blockedQuests,
+                    contactQuests$postcardCache,
+                    contactQuests$redPacketCache
+            );
+
+            for (ServerPlayer player : self.getOnlineMembers()) {
+                NetworkHandler.sendToPlayer(msg, player);
+            }
+        }
+        return true;
+    }
+
+    @Override
+    @Unique
     public java.util.Collection<String> contactQuests$getTags() {
         return java.util.Collections.unmodifiableSet(contactQuests$unlockedTags);
     }
 
     @Inject(method = "areDependenciesComplete", at = @At("RETURN"), cancellable = true, remap = false)
     private void injectAreDependenciesComplete(Quest quest, CallbackInfoReturnable<Boolean> cir) {
+        long id = quest.id;
+        if (contactQuests$isQuestForced(id)) {
+            cir.setReturnValue(true);
+            return;
+        }
+        if (contactQuests$isQuestBlocked(id)) {
+            cir.setReturnValue(false);
+            return;
+        }
+
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
             if (((IQuestExtension) questObj).contactQuests$isLockedByMutex((TeamData) (Object) this)) {
@@ -93,10 +268,31 @@ public class TeamDataMixin implements ITeamDataExtension {
 
     @Inject(method = "serializeNBT", at = @At("RETURN"), remap = false)
     private void injectSerializeNBT(CallbackInfoReturnable<SNBTCompoundTag> cir) {
+        SNBTCompoundTag tag = cir.getReturnValue();
         if (!contactQuests$unlockedTags.isEmpty()) {
             ListTag list = new ListTag();
             contactQuests$unlockedTags.forEach(t -> list.add(StringTag.valueOf(t)));
-            cir.getReturnValue().put("ContactQuestsUnlockedTags", list);
+            tag.put("ContactQuestsUnlockedTags", list);
+        }
+        if (!contactQuests$forcedQuests.isEmpty()) {
+            ListTag list = new ListTag();
+            contactQuests$forcedQuests.forEach(id -> list.add(LongTag.valueOf(id)));
+            tag.put("ContactQuestsForcedQuests", list);
+        }
+        if (!contactQuests$blockedQuests.isEmpty()) {
+            ListTag list = new ListTag();
+            contactQuests$blockedQuests.forEach(id -> list.add(LongTag.valueOf(id)));
+            tag.put("ContactQuestsBlockedQuests", list);
+        }
+        if (!contactQuests$postcardCache.isEmpty()) {
+            CompoundTag pcTag = new CompoundTag();
+            contactQuests$postcardCache.forEach((k, v) -> pcTag.putString(String.valueOf(k), v));
+            tag.put("ContactQuestsPostcardCache", pcTag);
+        }
+        if (!contactQuests$redPacketCache.isEmpty()) {
+            CompoundTag rpTag = new CompoundTag();
+            contactQuests$redPacketCache.forEach((k, v) -> rpTag.putString(String.valueOf(k), v));
+            tag.put("ContactQuestsRedPacketCache", rpTag);
         }
     }
 
@@ -107,12 +303,68 @@ public class TeamDataMixin implements ITeamDataExtension {
             ListTag list = nbt.getList("ContactQuestsUnlockedTags", Tag.TAG_STRING);
             list.forEach(t -> contactQuests$unlockedTags.add(t.getAsString()));
         }
+
+
+        contactQuests$forcedQuests.clear();
+        if (nbt.contains("ContactQuestsForcedQuests")) {
+            ListTag list = nbt.getList("ContactQuestsForcedQuests", Tag.TAG_LONG);
+            list.forEach(t -> contactQuests$forcedQuests.add(((LongTag) t).getAsLong()));
+        }
+
+        contactQuests$blockedQuests.clear();
+        if (nbt.contains("ContactQuestsBlockedQuests")) {
+            ListTag list = nbt.getList("ContactQuestsBlockedQuests", Tag.TAG_LONG);
+            list.forEach(t -> contactQuests$blockedQuests.add(((LongTag) t).getAsLong()));
+        }
+
+        contactQuests$postcardCache.clear();
+        if (nbt.contains("ContactQuestsPostcardCache")) {
+            CompoundTag pcTag = nbt.getCompound("ContactQuestsPostcardCache");
+            for (String key : pcTag.getAllKeys()) {
+                try {
+                    long id = Long.parseLong(key);
+                    contactQuests$postcardCache.put(id, pcTag.getString(key));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+
+        contactQuests$redPacketCache.clear();
+        if (nbt.contains("ContactQuestsRedPacketCache")) {
+            CompoundTag rpTag = nbt.getCompound("ContactQuestsRedPacketCache");
+            for (String key : rpTag.getAllKeys()) {
+                try {
+                    long id = Long.parseLong(key);
+                    contactQuests$redPacketCache.put(id, rpTag.getString(key));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
     }
 
     @Inject(method = "write", at = @At("TAIL"), remap = false)
     private void injectWrite(FriendlyByteBuf buffer, boolean self, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$unlockedTags.size());
         contactQuests$unlockedTags.forEach(buffer::writeUtf);
+
+
+        buffer.writeVarInt(contactQuests$forcedQuests.size());
+        contactQuests$forcedQuests.forEach(buffer::writeLong);
+
+        buffer.writeVarInt(contactQuests$blockedQuests.size());
+        contactQuests$blockedQuests.forEach(buffer::writeLong);
+
+        buffer.writeVarInt(contactQuests$postcardCache.size());
+        contactQuests$postcardCache.forEach((k, v) -> {
+            buffer.writeLong(k);
+            buffer.writeUtf(v);
+        });
+
+        buffer.writeVarInt(contactQuests$redPacketCache.size());
+        contactQuests$redPacketCache.forEach((k, v) -> {
+            buffer.writeLong(k);
+            buffer.writeUtf(v);
+        });
     }
 
     @Inject(method = "read", at = @At("TAIL"), remap = false)
@@ -121,6 +373,30 @@ public class TeamDataMixin implements ITeamDataExtension {
         contactQuests$unlockedTags.clear();
         for (int i = 0; i < size; i++) {
             contactQuests$unlockedTags.add(buffer.readUtf());
+        }
+
+        int forcedSize = buffer.readVarInt();
+        contactQuests$forcedQuests.clear();
+        for (int i = 0; i < forcedSize; i++) {
+            contactQuests$forcedQuests.add(buffer.readLong());
+        }
+
+        int blockedSize = buffer.readVarInt();
+        contactQuests$blockedQuests.clear();
+        for (int i = 0; i < blockedSize; i++) {
+            contactQuests$blockedQuests.add(buffer.readLong());
+        }
+
+        int pcSize = buffer.readVarInt();
+        contactQuests$postcardCache.clear();
+        for (int i = 0; i < pcSize; i++) {
+            contactQuests$postcardCache.put(buffer.readLong(), buffer.readUtf());
+        }
+
+        int rpSize = buffer.readVarInt();
+        contactQuests$redPacketCache.clear();
+        for (int i = 0; i < rpSize; i++) {
+            contactQuests$redPacketCache.put(buffer.readLong(), buffer.readUtf());
         }
     }
 }

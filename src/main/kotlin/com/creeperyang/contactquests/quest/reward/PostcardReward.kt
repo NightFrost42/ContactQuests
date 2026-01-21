@@ -34,10 +34,20 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
     }
 
     companion object {
+        private val defaultReplacers = mutableListOf<PostcardTextReplacer>()
         private val replacers = mutableListOf<PostcardTextReplacer>()
 
         fun registerReplacer(replacer: PostcardTextReplacer) {
             replacers.add(replacer)
+        }
+
+        private fun registerDefault(replacer: PostcardTextReplacer) {
+            defaultReplacers.add(replacer)
+        }
+
+        fun reset() {
+            replacers.clear()
+            replacers.addAll(defaultReplacers)
         }
 
         fun processText(text: String, player: ServerPlayer): String {
@@ -49,7 +59,7 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         }
 
         init {
-            registerReplacer { text, player ->
+            registerDefault { text, player ->
                 if (text.contains("<team_size>")) {
                     val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
                     val size = team?.members?.size ?: 1
@@ -59,23 +69,25 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
                 }
             }
 
-            registerReplacer { text, player ->
+            registerDefault { text, player ->
                 if (text.contains("<team_name>")) {
                     val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
-                    val name = team.name.string
+                    val name = team?.name?.string ?: "Unknown Team"
                     text.replace("<team_name>", name)
                 } else {
                     text
                 }
             }
 
-            registerReplacer { text, player ->
+            registerDefault { text, player ->
                 if (text.contains("<player_name>")) {
                     text.replace("<player_name>", player.gameProfile.name)
                 } else {
                     text
                 }
             }
+
+            reset()
         }
     }
 

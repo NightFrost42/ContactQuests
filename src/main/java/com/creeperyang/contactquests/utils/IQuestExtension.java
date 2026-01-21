@@ -8,7 +8,12 @@ public interface IQuestExtension {
     List<String> contactQuests$getRequiredTags();
 
     List<String> contactQuests$getMutexTasks();
+
     boolean contactQuests$areTagsMet(TeamData data);
 
     boolean contactQuests$isLockedByMutex(TeamData data);
+
+    void contactQuests$setDescriptionOverride(String locale, List<String> description);
+
+    void contactQuests$setSubtitleOverride(String locale, String subtitle);
 }

@@ -34,6 +34,28 @@ repositories {
     maven { url = "https://cursemaven.com" }
     maven { url = "https://api.modrinth.com/maven" }
     maven { url = "https://maven.blamejared.com/" }
+
+    maven {
+        url "https://maven.latvian.dev/releases"
+        content {
+            includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
+        }
+    }
+
+    maven {
+        url 'https://jitpack.io'
+        content {
+            includeGroup "com.github.rtyley"
+        }
+    }
+
+    maven {
+        url "https://maven.architectury.dev/"
+        content {
+            includeGroup "dev.architectury"
+        }
+    }
 }
 
 base {
@@ -134,17 +156,20 @@ dependencies {
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}")
-    implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}")
-    implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}")
-    implementation fg.deobf("curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}")
-    implementation fg.deobf("curse.maven:jade-324717:${jade_neoforge_21}")
+    implementation fg.deobf("curse.maven:ftb-quests-forge-289412:${ftbquests_forge_20}")
+    implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_forge_20}")
+    implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_forge_20}")
+    implementation fg.deobf("curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_forge_20}")
+    implementation fg.deobf("curse.maven:jade-324717:${jade_forge_20}")
 
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 
-    implementation fg.deobf("curse.maven:architectury-api-419699:${architectury_api_neoforge_21}")
-    runtimeOnly fg.deobf("curse.maven:jupiter-1072905:${jupiter_neoforge_21}")
-    runtimeOnly fg.deobf("curse.maven:oelib-1319210:${oelib_neoforge_21}")
+//    implementation fg.deobf("curse.maven:architectury-api-419699:${architectury_api_forge_20}")
+    implementation fg.deobf("dev.architectury:architectury-forge:${architectury_api_forge_20}")
+    runtimeOnly fg.deobf("curse.maven:jupiter-1072905:${jupiter_forge_20}")
+    runtimeOnly fg.deobf("curse.maven:oelib-1319210:${oelib_forge_20}")
+    implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_forge_20}")
+    implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
 }
 
 tasks.named('processResources', ProcessResources).configure {

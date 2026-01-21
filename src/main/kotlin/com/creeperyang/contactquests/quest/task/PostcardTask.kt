@@ -2,6 +2,7 @@ package com.creeperyang.contactquests.quest.task
 
 import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
+import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.resourse.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
@@ -14,15 +15,19 @@ import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftblibrary.util.TooltipList
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.TaskType
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
+import net.minecraft.client.Minecraft
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
@@ -32,6 +37,9 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
     var postcardStyle: String = ""
     var postcardText: String = ""
+
+    @Transient
+    private var tempContext: Pair<Player, TeamData>? = null
 
     override fun getType(): TaskType = TaskRegistry.POSTCARD
 
@@ -101,10 +109,35 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
         val itemText = if (tag.contains("Text")) tag.getString("Text") else ""
 
-        val normalizedConfig = postcardText.replace("\\n", "\n").trim()
-        val normalizedItem = itemText.trim()
+        if (tempContext != null) {
+            val (player, teamData) = tempContext!!
+            val normalizedItem = itemText.trim()
 
-        return normalizedItem.contains(normalizedConfig)
+            val resolvedText = getResolvedText(teamData, player)
+
+            val normalizedConfig = resolvedText.replace("\\n", "\n").trim()
+
+            val result = normalizedItem.contains(normalizedConfig)
+
+            return result
+        }
+        return false
+    }
+
+    fun getResolvedText(teamData: TeamData?, player: Player?): String {
+        if (teamData != null) {
+            val cached = (teamData as ITeamDataExtension).`contactQuests$getPostcardText`(this.id)
+            if (!cached.isNullOrEmpty()) {
+                return cached
+            } else {
+            }
+        }
+
+        if (player != null && teamData != null) {
+            return PostcardPlaceholderSupport.replace(postcardText, player, teamData)
+        }
+
+        return postcardText
     }
 
     override fun getValidDisplayItems(): MutableList<ItemStack> {
@@ -220,8 +253,15 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
             }
         }
         if (postcardText.isNotEmpty()) {
-            list.add(Component.translatable("contactquest.task.postcard.req_text")
-                .append(Component.literal(postcardText).withStyle(ChatFormatting.GOLD)))
+            val player = Minecraft.getInstance().player
+
+            val resolvedText = getResolvedText(ClientQuestFile.INSTANCE.selfTeamData, player)
+            val textToDraw = resolvedText.replace("\\n", "\n")
+
+            list.add(
+                Component.translatable("contactquest.task.postcard.req_text").withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(textToDraw).withStyle(ChatFormatting.GOLD))
+            )
         }
 
         super.addMouseOverText(list, teamData)
@@ -232,6 +272,63 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
             DataManager.completePostcardTask(this)
             return submitItemStack
         }
-        return insert(teamData, submitItemStack, false)
+        tempContext = player to teamData
+        try {
+            return insert(teamData, submitItemStack, false)
+        } finally {
+            tempContext = null
+        }
+    }
+
+    fun setContext(player: Player, teamData: TeamData) {
+        tempContext = player to teamData
+    }
+
+    fun clearContext() {
+        tempContext = null
+    }
+
+    object PostcardPlaceholderSupport {
+        private val defaultReplacers = mutableMapOf<String, (Player, TeamData) -> String>()
+        val replacers = mutableMapOf<String, (Player, TeamData) -> String>()
+
+        init {
+            registerDefault("<player_name>") { p, _ -> p.name.string }
+            registerDefault("<team_name>") { _, t -> t.name }
+            registerDefault("<team_size>") { p, t ->
+                val teamId = t.teamId
+                if (p.level().isClientSide) {
+                    val team = FTBTeamsAPI.api().clientManager.getTeamByID(teamId).orElse(null)
+                    team?.members?.size?.toString() ?: "1"
+                } else {
+                    val team = FTBTeamsAPI.api().manager.getTeamByID(teamId).orElse(null)
+                    team?.members?.size?.toString() ?: "1"
+                }
+            }
+            reset()
+        }
+
+        private fun registerDefault(key: String, func: (Player, TeamData) -> String) {
+            defaultReplacers[key] = func
+        }
+
+        fun register(key: String, func: (Player, TeamData) -> String) {
+            replacers[key] = func
+        }
+
+        fun reset() {
+            replacers.clear()
+            replacers.putAll(defaultReplacers)
+        }
+
+        fun replace(text: String, player: Player, team: TeamData): String {
+            var result = text
+            replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
     }
 }

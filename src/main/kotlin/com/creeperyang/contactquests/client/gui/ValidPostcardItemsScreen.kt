@@ -11,6 +11,7 @@ import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.Theme
 import dev.ftb.mods.ftblibrary.ui.WidgetType
 import dev.ftb.mods.ftblibrary.util.TooltipList
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
@@ -78,11 +79,14 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
 
                 if (task.postcardText.isNotEmpty()) {
                     val font = Minecraft.getInstance().font
-                    val textToDraw = task.postcardText.replace("\\n", "\n")
                     val textX = cardX + currentStyle.textPosX()
                     val textY = cardY + currentStyle.textPosY()
                     val textW = currentStyle.textWidth()
                     val textColor = currentStyle.textColor()
+
+                    val player = Minecraft.getInstance().player
+                    val teamData = ClientQuestFile.INSTANCE.selfTeamData
+                    val textToDraw = task.getResolvedText(teamData, player)
                     graphics.drawWordWrap(font, Component.literal(textToDraw), textX, textY, textW, textColor)
                 }
             }

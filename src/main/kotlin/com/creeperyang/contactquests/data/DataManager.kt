@@ -1,8 +1,13 @@
 package com.creeperyang.contactquests.data
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin
+import com.creeperyang.contactquests.compat.kubejs.KubeJSMailQueueSavedData
+import com.creeperyang.contactquests.compat.kubejs.KubeJSNpcSavedData
+import com.creeperyang.contactquests.compat.kubejs.MailReceivedEventJS
 import com.creeperyang.contactquests.config.ContactConfig
 import com.creeperyang.contactquests.config.NpcConfigManager
+import com.creeperyang.contactquests.config.NpcData
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase
 import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
@@ -14,6 +19,7 @@ import dev.ftb.mods.ftbquests.quest.TeamData
 import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.nbt.Tag
+import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import kotlin.math.min
@@ -71,14 +77,41 @@ object DataManager {
     }
 
     fun getAvailableTargets(player: ServerPlayer): Map<String, Int> {
-        val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null) ?: return emptyMap()
-        val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id) ?: return emptyMap()
+        val available = getBaseAvailableTargets(player)
+        val level = player.serverLevel()
+
+        val kubeData = KubeJSNpcSavedData.get(level)
+        kubeData.getAllNpcs().forEach { (name, config) ->
+            if (config.autoFill && !available.containsKey(name)) {
+                available[name] = if (ContactConfig.enableDeliveryTime.get()) config.deliveryTime else 0
+            }
+        }
+        return available
+    }
+
+    fun getHiddenTargets(player: ServerPlayer): Map<String, Int> {
+        val hidden = mutableMapOf<String, Int>()
+        val level = player.serverLevel()
+        val kubeData = KubeJSNpcSavedData.get(level)
+
+        kubeData.getAllNpcs().forEach { (name, config) ->
+            if (!config.autoFill) {
+                hidden[name] = if (ContactConfig.enableDeliveryTime.get()) config.deliveryTime else 0
+            }
+        }
+        return hidden
+    }
+
+    private fun getBaseAvailableTargets(player: ServerPlayer): MutableMap<String, Int> {
+        val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null) ?: return mutableMapOf()
+        val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id) ?: return mutableMapOf()
         val enableDelay = ContactConfig.enableDeliveryTime.get()
         val available = mutableMapOf<String, Int>()
+        val level = player.serverLevel()
 
         fun checkAndAdd(task: Task, targetName: String) {
             if (teamData.canStartTasks(task.quest)) {
-                available[targetName] = if (enableDelay) NpcConfigManager.getDeliveryTime(targetName) else 0
+                available[targetName] = if (enableDelay) NpcConfigManager.getDeliveryTime(targetName, level) else 0
             }
         }
 
@@ -94,11 +127,41 @@ object DataManager {
     fun completePostcardTask(task: PostcardTask) = completeTaskHelper(task, task.targetAddressee, postcardReceiver, postcardTasks, postcardItemTestFunc)
 
     fun matchParcelTaskItem(player: ServerPlayer, parcelStack: ItemStack, recipientName: String): Boolean {
+        val level = player.serverLevel()
+        var deliveryTime = if (ContactConfig.enableDeliveryTime.get()) {
+            NpcConfigManager.getDeliveryTime(recipientName, level)
+        } else {
+            0
+        }
+
+        val item = parcelStack.item
+        if (item is ParcelItem && item.isEnderType) {
+            deliveryTime = 0
+        }
+
+
+        val parcelItems = getParcelItems(parcelStack)
+        if (parcelItems.isEmpty()) return false
+
+        val isKubeJSNpc = KubeJSNpcSavedData.get(level).getNpcData(recipientName) != null
+
+        if (isKubeJSNpc && deliveryTime > 0) {
+            KubeJSMailQueueSavedData.get(level).addMail(
+                player, recipientName, parcelItems, deliveryTime,
+                isPostcard = false,
+                isRedPacket = false
+            )
+            return true
+        }
+
+        val event = MailReceivedEventJS(player, recipientName, parcelItems, false)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+
+        if (event.isIntercepted()) return true
+
         val teamData = getTeamData(player) ?: return false
         var anyConsumed = false
         val rejectedItems = ArrayList<ItemStack>()
-
-        val parcelItems = getParcelItems(parcelStack)
 
         parcelItems.stream().forEach { itemStack ->
             val consumed = processSingleItem(player, teamData, itemStack, parcelStack, recipientName, parcelStrategy)
@@ -134,6 +197,25 @@ object DataManager {
     }
 
     fun matchRedPacketTaskItem(player: ServerPlayer, redPacket: ItemStack, recipientName: String): Boolean {
+        val level = player.serverLevel()
+        val deliveryTime = if (ContactConfig.enableDeliveryTime.get()) {
+            NpcConfigManager.getDeliveryTime(recipientName, level)
+        } else {
+            0
+        }
+        val isKubeJSNpc = KubeJSNpcSavedData.get(level)
+            .getNpcData(recipientName) != null && NpcConfigManager.getNpcData(recipientName) == NpcData()
+
+        if (isKubeJSNpc && deliveryTime > 0) {
+            KubeJSMailQueueSavedData.get(level)
+                .addMail(player, recipientName, listOf(redPacket), deliveryTime, isPostcard = false, isRedPacket = true)
+            return true
+        }
+
+        val event = MailReceivedEventJS(player, recipientName, listOf(redPacket), false)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+        if (event.isIntercepted()) return true
+
         val teamData = getTeamData(player) ?: return false
         val consumed = processSingleItem(player, teamData, redPacket, redPacket, recipientName, redPacketStrategy)
         if (!consumed) {
@@ -143,6 +225,30 @@ object DataManager {
     }
 
     fun matchPostcardTaskItem(player: ServerPlayer, postcard: ItemStack, recipientName: String): Boolean {
+        val level = player.serverLevel()
+        var deliveryTime = if (ContactConfig.enableDeliveryTime.get()) {
+            NpcConfigManager.getDeliveryTime(recipientName, level)
+        } else {
+            0
+        }
+        val isKubeJSNpc = KubeJSNpcSavedData.get(level)
+            .getNpcData(recipientName) != null && NpcConfigManager.getNpcData(recipientName) == NpcData()
+
+        val item = postcard.item
+        if (item is PostcardItem && item.isEnderType) {
+            deliveryTime = 0
+        }
+
+        if (isKubeJSNpc && deliveryTime > 0) {
+            KubeJSMailQueueSavedData.get(level)
+                .addMail(player, recipientName, listOf(postcard), deliveryTime, isPostcard = true, isRedPacket = false)
+            return true
+        }
+
+        val event = MailReceivedEventJS(player, recipientName, listOf(postcard), true)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+        if (event.isIntercepted()) return true
+
         val teamData = getTeamData(player) ?: return false
         val consumed = processSingleItem(player, teamData, postcard, postcard, recipientName, postcardStrategy)
         if (!consumed) {
@@ -202,6 +308,21 @@ object DataManager {
         postcardReceiver, postcardTasks, postcardItemTestFunc
     ) { task, td, p, stack -> task.submitPostcardTask(td, p, stack) }
 
+    fun processParcelDelivery(player: ServerPlayer, items: List<ItemStack>, recipient: String) {
+        val event = MailReceivedEventJS(player, recipient, items, false)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+    }
+
+    fun processRedPacketDelivery(player: ServerPlayer, item: ItemStack, recipient: String) {
+        val event = MailReceivedEventJS(player, recipient, listOf(item), false)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+    }
+
+    fun processPostcardDelivery(player: ServerPlayer, item: ItemStack, recipient: String) {
+        val event = MailReceivedEventJS(player, recipient, listOf(item), true)
+        ContactKubeJSPlugin.MAIL_RECEIVED.post(event)
+    }
+
     private fun <T : Task> processSingleItem(
         player: ServerPlayer,
         teamData: TeamData,
@@ -216,11 +337,27 @@ object DataManager {
             val task = strategy.taskMap[taskId] ?: continue
             val testFunc = strategy.testMap[taskId] ?: continue
 
-            if (!testFunc(initialStack) || !teamData.canStartTasks(task.quest) || teamData.isCompleted(task)) {
+            if (task is PostcardTask) {
+                task.setContext(player, teamData)
+            } else if (task is RedPacketTask) {
+                task.setContext(player, teamData)
+            }
+
+            val isMatch = try {
+                testFunc(initialStack)
+            } finally {
+                if (task is PostcardTask) {
+                    task.clearContext()
+                } else if (task is RedPacketTask) {
+                    task.clearContext()
+                }
+            }
+
+            if (!isMatch || !teamData.canStartTasks(task.quest) || teamData.isCompleted(task)) {
                 continue
             }
 
-            val sendTime = calculateEffectiveSendTime(recipientName, contextStack)
+            val sendTime = calculateEffectiveSendTime(player.serverLevel(), recipientName, contextStack)
 
             if (executeDelivery(player, teamData, task, initialStack, sendTime, recipientName, strategy.submitAction)) {
                 return true
@@ -260,17 +397,17 @@ object DataManager {
         return resultStack.count < stackToSubmit.count
     }
 
-    private fun calculateEffectiveSendTime(recipientName: String, contextStack: ItemStack): Int {
+    private fun calculateEffectiveSendTime(level: ServerLevel, recipientName: String, contextStack: ItemStack): Int {
         if (!ContactConfig.enableDeliveryTime.get()) return 0
 
-        val configTime = NpcConfigManager.getDeliveryTime(recipientName)
+        val configTime = NpcConfigManager.getDeliveryTime(recipientName, level)
         if (configTime <= 0) return 0
 
         val item = contextStack.item
         if (item is ParcelItem && item.isEnderType) {
             ContactQuests.debug("检测到末影包裹！$recipientName 即时送达。")
             return 0
-        }else if (item is PostcardItem && item.isEnderType){
+        } else if (item is PostcardItem && item.isEnderType) {
             ContactQuests.debug("检测到末影明信片！$recipientName 即时送达。")
             return 0
         }

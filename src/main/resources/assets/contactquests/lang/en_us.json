@@ -17,6 +17,7 @@
   "contactquest.task.ftbquests.parcel.valid_for": "required package contents",
   "contactquest.task.ftbquests.postcard.valid_for": "postcards needed",
   "contactquest.task.ftbquests.redpacket.valid_for": "the content of the red envelope required",
+  "contactquest.task.redpacket.req_text": "red envelope blessings in demand",
   "contactquest.task.no_valid_items": "No valid items!",
   "contactquest.task.parcel.recipient": "mail recipients",
   "contactquest.task.postcard.req_style": "postcard style in demand",
