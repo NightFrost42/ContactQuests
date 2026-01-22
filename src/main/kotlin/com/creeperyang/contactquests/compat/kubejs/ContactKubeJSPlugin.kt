@@ -618,8 +618,9 @@ object ContactKubeJSPlugin {
         }
 
         fun updateItem(current: ItemStack, new: ItemStack?, setter: (ItemStack) -> Unit) {
-            if (new != null && !ItemStack.matches(current, new)) {
-                setter(new)
+            val stack = asItemStack(new)
+            if (stack != null && !ItemStack.matches(current, stack)) {
+                setter(stack)
                 changed = true
             }
         }
@@ -1110,6 +1111,39 @@ object ContactKubeJSPlugin {
         if (server != null) {
             val count = updateAllTeamsTaskCache(server)
             LOGGER.info("ContactQuests: Calculated postcard texts for $count teams.")
+
+            ServerQuestFile.INSTANCE.markDirty()
+            ServerQuestFile.INSTANCE.saveNow()
+
+            try {
+                val msgClassName = "dev.ftb.mods.ftbquests.net.SyncQuestsMessage"
+                val msgClass = Class.forName(msgClassName)
+
+                val ctor = msgClass.constructors.firstOrNull { it.parameterCount == 1 }
+                    ?: throw NoSuchMethodException("No 1-arg constructor found for $msgClassName")
+
+                val message = ctor.newInstance(ServerQuestFile.INSTANCE)
+
+                val sendMethod = msgClass.getMethod("sendToAll", MinecraftServer::class.java)
+                sendMethod.invoke(message, server)
+
+                LOGGER.info("ContactQuests: Sent Full SyncQuestsMessage manually.")
+            } catch (e: Exception) {
+                LOGGER.error("ContactQuests: Failed to send sync packet! First attempt failed.", e)
+
+                try {
+                    val msgClass = Class.forName("dev.ftb.mods.ftbquests.network.SyncQuestsMessage")
+                    val ctor = msgClass.constructors.first { it.parameterCount == 1 }
+                    val message = ctor.newInstance(ServerQuestFile.INSTANCE)
+
+                    val helperClass = Class.forName("dev.ftb.mods.ftblibrary.util.NetworkHelper")
+                    val sendMethod = helperClass.getMethod("sendToAll", MinecraftServer::class.java, Any::class.java)
+                    sendMethod.invoke(null, server, message)
+                    LOGGER.info("ContactQuests: Sent Full SyncQuestsMessage manually (fallback).")
+                } catch (e2: Exception) {
+                    LOGGER.warn("ContactQuests: Fallback sync attempt also failed: ${e2.message}")
+                }
+            }
         }
 
         ServerQuestFile.INSTANCE.refreshGui()
@@ -1122,6 +1156,10 @@ object ContactKubeJSPlugin {
             val teamData = ServerQuestFile.INSTANCE.getOrCreateTeamData(team)
             val ext = teamData as ITeamDataExtension
 
+            var changed = false
+            val postcardMap = HashMap<Long, String>()
+            val redPacketMap = HashMap<Long, String>()
+
             val postcardTasks = DataManager.postcardTasks.values
             for (task in postcardTasks) {
                 val originalText = task.postcardText
@@ -1130,8 +1168,9 @@ object ContactKubeJSPlugin {
                 val cached = ext.`contactQuests$getPostcardText`(task.id)
                 if (cached != resolvedText) {
                     ext.`contactQuests$setPostcardText`(task.id, resolvedText)
-                    ContactQuests.LOGGER.debug("ContactQuests: Updated postcard cache for ${player.name.string} (Task ${task.id})")
+                    changed = true
                 }
+                postcardMap[task.id] = resolvedText
             }
 
             val redPacketTasks = DataManager.redPacketTasks.values
@@ -1142,9 +1181,24 @@ object ContactKubeJSPlugin {
                 val cached = ext.`contactQuests$getRedPacketBlessing`(task.id)
                 if (cached != resolvedText) {
                     ext.`contactQuests$setRedPacketBlessing`(task.id, resolvedText)
-                    ContactQuests.LOGGER.debug("ContactQuests: Updated red packet cache for ${player.name.string} (Task ${task.id})")
+                    changed = true
                 }
+                redPacketMap[task.id] = resolvedText
             }
+
+            NetworkHandler.sendToPlayer(
+                com.creeperyang.contactquests.network.SyncTeamExtensionMessage(
+                    teamData.teamId,
+                    ext.`contactQuests$getTags`().toSet(),
+                    ext.`contactQuests$getForcedQuests`().toSet(),
+                    ext.`contactQuests$getBlockedQuests`().toSet(),
+                    postcardMap,
+                    redPacketMap
+                ),
+                player
+            )
+            ContactQuests.LOGGER.debug("ContactQuests: Sent updated task cache packet to ${player.name.string}")
+
 
         } catch (e: Exception) {
             ContactQuests.LOGGER.error("Failed to update task cache for player ${player.name.string}", e)
