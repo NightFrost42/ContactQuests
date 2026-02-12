@@ -51,27 +51,80 @@ object ContactKubeJSPlugin {
 
     private val LOGGER = LogManager.getLogger("contactquests-kubejs")
 
+    private val SYNC_QUESTS_MESSAGE_CLASSES = listOf(
+        "dev.ftb.mods.ftbquests.net.SyncQuestsMessage",
+        "dev.ftb.mods.ftbquests.network.SyncQuestsMessage"
+    )
+
     private fun syncObject(obj: QuestObjectBase, saveToConfig: Boolean = true) {
         obj.clearCachedData()
+
+        if (obj is Reward) obj.quest.clearCachedData()
+        if (obj is Task) obj.quest.clearCachedData()
 
         handleConfigState(saveToConfig)
 
         val server = ServerQuestFile.INSTANCE.server ?: return
 
-        val message = createSyncPacket() ?: run {
-            fallbackRefresh("Failed to create sync packet")
-            return
-        }
+        if (sendEditPacket(server, obj)) {
 
-        var sent = false
-        if (sendViaNetworkHelper(server, message)) sent = true
-        else if (sendViaArchitectury(server, message)) sent = true
-
-        if (!sent) {
-            fallbackRefresh("Packet sync failed completely")
+            if (obj is Reward) {
+                if (sendFullSync(server)) {
+                    LOGGER.debug("Manual Full Sync sent successfully (No-Save).")
+                } else {
+                    LOGGER.error("Failed to send SyncQuestsMessage by any means!")
+                }
+            }
+        } else {
+            LOGGER.warn("ContactQuests: [Debug] EditObjectMessage failed. Fallback to standard logic.")
+            if (!sendFullSync(server)) {
+                fallbackRefresh("Packet sync failed completely")
+            }
         }
 
         resendAllOverrides()
+    }
+
+    private fun sendFullSync(server: MinecraftServer): Boolean {
+        val message = createSyncPacket() ?: return false
+
+        if (runCatching {
+                val sendToAllMethod = message.javaClass.getMethod("sendToAll", MinecraftServer::class.java)
+                sendToAllMethod.invoke(message, server)
+                true
+            }.getOrDefault(false)) {
+            return true
+        }
+
+        if (sendViaNetworkHelper(server, message)) return true
+
+        if (sendViaArchitectury(server, message)) return true
+
+        return false
+    }
+
+    private fun sendEditPacket(server: MinecraftServer, obj: QuestObjectBase): Boolean {
+        return runCatching {
+            val msgClasses = listOf(
+                "dev.ftb.mods.ftbquests.net.EditObjectMessage",
+                "dev.ftb.mods.ftbquests.network.EditObjectMessage"
+            )
+
+            val msgClass = msgClasses.firstNotNullOfOrNull { className ->
+                runCatching { Class.forName(className) }.getOrNull()
+            } ?: return false
+
+            val ctor = msgClass.constructors.firstOrNull {
+                it.parameterCount == 1 && it.parameterTypes[0].isAssignableFrom(obj.javaClass)
+            } ?: return false
+
+            val message = ctor.newInstance(obj)
+
+            if (sendViaNetworkHelper(server, message)) return true
+            if (sendViaArchitectury(server, message)) return true
+
+            return false
+        }.getOrDefault(false)
     }
 
     private fun resendAllOverrides() {
@@ -81,7 +134,7 @@ object ContactKubeJSPlugin {
             server.playerList.players.forEach { player ->
                 syncAllOverridesToPlayer(player)
             }
-            LOGGER.info("ContactQuests: Resent all overrides to ${server.playerList.playerCount} players (delayed 1 tick).")
+            LOGGER.info("esent all overrides to ${server.playerList.playerCount} players (delayed 1 tick).")
         })
     }
 
@@ -89,7 +142,7 @@ object ContactKubeJSPlugin {
         if (saveToConfig) {
             ServerQuestFile.INSTANCE.markDirty()
             ServerQuestFile.INSTANCE.saveNow()
-            LOGGER.info("ContactQuests: Global edit saved to disk.")
+            LOGGER.debug(" Global edit saved to disk.")
         } else {
             resetDirtyFlagsReflectively()
         }
@@ -110,12 +163,7 @@ object ContactKubeJSPlugin {
     }
 
     private fun createSyncPacket(): Any? {
-        val packetClasses = listOf(
-            "dev.ftb.mods.ftbquests.net.SyncQuestsMessage",
-            "dev.ftb.mods.ftbquests.network.SyncQuestsMessage"
-        )
-
-        return packetClasses.firstNotNullOfOrNull { className ->
+        return SYNC_QUESTS_MESSAGE_CLASSES.firstNotNullOfOrNull { className ->
             runCatching {
                 val msgClass = Class.forName(className)
                 msgClass.constructors.firstOrNull { ctor ->
@@ -136,7 +184,7 @@ object ContactKubeJSPlugin {
             }
 
             sendMethod?.invoke(null, server, message)
-            LOGGER.info("ContactQuests: Full sync sent via NetworkHelper.")
+            LOGGER.debug("Full sync sent via NetworkHelper.")
             true
         }.getOrDefault(false)
     }
@@ -153,6 +201,7 @@ object ContactKubeJSPlugin {
             var sentCount = 0
             for (player in server.playerList.players) {
                 sendMethod.invoke(null, player, message)
+                sentCount++
                 sentCount++
             }
 
@@ -958,7 +1007,40 @@ object ContactKubeJSPlugin {
         when (type) {
             0 -> extBase.`contactQuests$setTitleOverride`(locale, content as? String)
             1 -> ext.`contactQuests$setSubtitleOverride`(locale, content as? String)
-            2 -> ext.`contactQuests$setDescriptionOverride`(locale, content as? ArrayList<String>)
+            2 -> {
+                val list = ArrayList<String>()
+                fun addContent(str: String) {
+                    if (str.contains("\n")) {
+                        val lines = str.split("\n")
+                        list.addAll(lines)
+                    } else {
+                        list.add(str)
+                    }
+                }
+
+                if (content != null) {
+                    when (content) {
+                        is CharSequence -> {
+                            addContent(content.toString())
+                        }
+
+                        is Iterable<*> -> {
+                            content.forEach { addContent(it.toString()) }
+                        }
+
+                        is Array<*> -> {
+                            content.forEach { addContent(it.toString()) }
+                        }
+
+                        else -> {
+                            addContent(content.toString())
+                        }
+                    }
+                }
+
+                LOGGER.debug(list)
+                ext.`contactQuests$setDescriptionOverride`(locale, list)
+            }
         }
 
         quest.clearCachedData()
@@ -1115,35 +1197,13 @@ object ContactKubeJSPlugin {
             ServerQuestFile.INSTANCE.markDirty()
             ServerQuestFile.INSTANCE.saveNow()
 
-            try {
-                val msgClassName = "dev.ftb.mods.ftbquests.net.SyncQuestsMessage"
-                val msgClass = Class.forName(msgClassName)
-
-                val ctor = msgClass.constructors.firstOrNull { it.parameterCount == 1 }
-                    ?: throw NoSuchMethodException("No 1-arg constructor found for $msgClassName")
-
-                val message = ctor.newInstance(ServerQuestFile.INSTANCE)
-
-                val sendMethod = msgClass.getMethod("sendToAll", MinecraftServer::class.java)
-                sendMethod.invoke(message, server)
-
+            if (sendFullSync(server)) {
                 LOGGER.info("ContactQuests: Sent Full SyncQuestsMessage manually.")
-            } catch (e: Exception) {
-                LOGGER.error("ContactQuests: Failed to send sync packet! First attempt failed.", e)
-
-                try {
-                    val msgClass = Class.forName("dev.ftb.mods.ftbquests.network.SyncQuestsMessage")
-                    val ctor = msgClass.constructors.first { it.parameterCount == 1 }
-                    val message = ctor.newInstance(ServerQuestFile.INSTANCE)
-
-                    val helperClass = Class.forName("dev.ftb.mods.ftblibrary.util.NetworkHelper")
-                    val sendMethod = helperClass.getMethod("sendToAll", MinecraftServer::class.java, Any::class.java)
-                    sendMethod.invoke(null, server, message)
-                    LOGGER.info("ContactQuests: Sent Full SyncQuestsMessage manually (fallback).")
-                } catch (e2: Exception) {
-                    LOGGER.warn("ContactQuests: Fallback sync attempt also failed: ${e2.message}")
-                }
+            } else {
+                LOGGER.warn("ContactQuests: Failed to send sync packet in refreshQuests.")
             }
+
+            resendAllOverrides()
         }
 
         ServerQuestFile.INSTANCE.refreshGui()

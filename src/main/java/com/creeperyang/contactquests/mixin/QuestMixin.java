@@ -3,15 +3,18 @@ package com.creeperyang.contactquests.mixin;
 import com.creeperyang.contactquests.ContactQuests;
 import com.creeperyang.contactquests.config.TagConfig;
 import com.creeperyang.contactquests.utils.*;
+import com.mojang.datafixers.util.Pair;
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftbquests.quest.*;
 import dev.ftb.mods.ftbquests.quest.task.Task;
 import dev.ftb.mods.ftbquests.util.ConfigQuestObject;
+import dev.ftb.mods.ftbquests.util.TextUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.spongepowered.asm.mixin.Final;
@@ -25,6 +28,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Mixin(Quest.class)
 public abstract class QuestMixin extends QuestObject implements IQuestExtension {
@@ -51,8 +55,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private boolean contactQuests$hideIfLocked = false;
     @Unique
     private final Map<String, List<String>> contactQuests$descOverrides = new HashMap<>();
-    @Unique
-    private final Map<String, String> contactQuests$titleOverrides = new HashMap<>();
     @Unique
     private final Map<String, String> contactQuests$subtitleOverrides = new HashMap<>();
 
@@ -262,6 +264,51 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         String locale = ClientLocaleHelper.getLocale();
         if (contactQuests$subtitleOverrides.containsKey(locale)) {
             cir.setReturnValue(contactQuests$subtitleOverrides.get(locale));
+        }
+    }
+
+    @Inject(method = "getSubtitle", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetSubtitle(CallbackInfoReturnable<Component> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$subtitleOverrides.containsKey(locale)) {
+            cir.setReturnValue(TextUtils.parseRawText(contactQuests$subtitleOverrides.get(locale)));
+        }
+    }
+
+    @Inject(method = "getDescription", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetDescription(CallbackInfoReturnable<List<Component>> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$descOverrides.containsKey(locale)) {
+            List<String> rawList = contactQuests$descOverrides.get(locale);
+
+            List<Component> description = rawList.stream()
+                    .map(TextUtils::parseRawText)
+                    .collect(Collectors.toCollection(ArrayList::new));
+
+            cir.setReturnValue(description);
+        }
+    }
+
+    @Inject(method = "buildDescriptionIndex", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectBuildDescriptionIndex(CallbackInfoReturnable<List<Pair<Integer, Integer>>> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$descOverrides.containsKey(locale)) {
+            List<String> overrideList = contactQuests$descOverrides.get(locale);
+            List<Pair<Integer, Integer>> index = new ArrayList<>();
+            int l1 = 0;
+
+            for (int l2 = l1; l2 < overrideList.size(); ++l2) {
+                if (overrideList.get(l2).equals("{@pagebreak}")) {
+                    index.add(Pair.of(l1, l2 - 1));
+                    l1 = l2 + 1;
+                }
+            }
+
+            if (l1 < overrideList.size()) {
+                index.add(Pair.of(l1, overrideList.size() - 1));
+            }
+
+            cir.setReturnValue(index);
         }
     }
 

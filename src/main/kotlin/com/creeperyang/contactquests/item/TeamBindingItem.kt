@@ -49,6 +49,10 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
 
         val dataManager = MailboxDataManager.getData(level)
         val teamId = team.id
+        if (teamId == null) {
+            player.sendSystemMessage(Component.literal("Error: Team ID is null! Cannot bind mailbox."))
+            return InteractionResult.FAIL
+        }
 
         if (!checkAndHandleExistingMailbox(dataManager, teamId, level, pos, player)) {
             return InteractionResult.FAIL

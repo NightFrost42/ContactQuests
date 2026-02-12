@@ -15,6 +15,8 @@ object TeamMailHelper {
         content: ItemStack,
         senderName: String = "Quest System"
     ): String? {
+        if (teamId == null) return "message.contact.mailbox.no_owner"
+
         val dataManager = MailboxDataManager.getData(level)
 
         val pos = dataManager.getMailboxPos(teamId) ?: return "message.contact.mailbox.no_owner"
@@ -28,16 +30,15 @@ object TeamMailHelper {
         val tag = toSend.getOrCreateTag()
         tag.putString("Sender", senderName)
 
+        if (!tag.hasUUID("SenderUUID")) {
+            tag.putUUID("SenderUUID", UUID.nameUUIDFromBytes(senderName.toByteArray(Charsets.UTF_8)))
+        }
+
         dataManager.addMailboxContents(teamId, toSend)
 
         if (pos.dimension() == level.dimension() && level.isLoaded(pos.pos())) {
             MailboxManager.updateState(level, pos.pos())
         }
-
-        dataManager.addMailboxContents(teamId, toSend)
-
-        MailboxManager.updateState(level, pos.pos())
-
 
         if (!level.isClientSide) {
             val server = level.server

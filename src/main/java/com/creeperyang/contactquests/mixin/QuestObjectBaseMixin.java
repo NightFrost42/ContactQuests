@@ -3,6 +3,8 @@ package com.creeperyang.contactquests.mixin;
 import com.creeperyang.contactquests.utils.ClientLocaleHelper;
 import com.creeperyang.contactquests.utils.IQuestObjectBaseExtension;
 import dev.ftb.mods.ftbquests.quest.QuestObjectBase;
+import dev.ftb.mods.ftbquests.util.TextUtils;
+import net.minecraft.network.chat.Component;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,6 +33,14 @@ public class QuestObjectBaseMixin implements IQuestObjectBaseExtension {
         String locale = ClientLocaleHelper.getLocale();
         if (contactQuests$titleOverrides.containsKey(locale)) {
             cir.setReturnValue(contactQuests$titleOverrides.get(locale));
+        }
+    }
+
+    @Inject(method = "getTitle", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetTitle(CallbackInfoReturnable<Component> cir) {
+        String locale = ClientLocaleHelper.getLocale();
+        if (contactQuests$titleOverrides.containsKey(locale)) {
+            cir.setReturnValue(TextUtils.parseRawText(contactQuests$titleOverrides.get(locale)));
         }
     }
 }

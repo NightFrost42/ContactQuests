@@ -1,6 +1,8 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.ContactQuests;
+import com.creeperyang.contactquests.compat.kubejs.KubeJSNpcSavedData;
+import com.creeperyang.contactquests.config.NpcConfigManager;
 import com.creeperyang.contactquests.data.DataManager;
 import com.flechazo.contact.common.item.LetterItem;
 import com.flechazo.contact.common.item.ParcelItem;
@@ -27,7 +29,7 @@ public class EnquireAddresseeMessageMixin {
 
     @Unique
     private static List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
-        Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
+        Map<String, Integer> customTargets = getAllKnownTargets(player);
         List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : customTargets.entrySet()) {
@@ -62,9 +64,7 @@ public class EnquireAddresseeMessageMixin {
     private static void insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
         for (int i = matches.size() - 1; i >= 0; i--) {
             Map.Entry<String, Integer> entry = matches.get(i);
-            //noinspection SequencedCollectionMethodCanBeUsed
             names.add(0, entry.getKey());
-            //noinspection SequencedCollectionMethodCanBeUsed
             ticks.add(0, entry.getValue());
         }
 
@@ -74,9 +74,7 @@ public class EnquireAddresseeMessageMixin {
     @Unique
     private static void trimToSize(List<String> names, List<Integer> ticks) {
         while (names.size() > 4) {
-            //noinspection SequencedCollectionMethodCanBeUsed
             names.remove(names.size() - 1);
-            //noinspection SequencedCollectionMethodCanBeUsed
             ticks.remove(ticks.size() - 1);
         }
     }
@@ -98,6 +96,34 @@ public class EnquireAddresseeMessageMixin {
         }
     }
 
+    @Unique
+    private static Map<String, Integer> getAllKnownTargets(ServerPlayer player) {
+        Map<String, Integer> targets = new HashMap<>();
+
+        for (String name : DataManager.parcelReceiver.keySet()) targets.putIfAbsent(name, 0);
+        for (String name : DataManager.redPacketReceiver.keySet()) targets.putIfAbsent(name, 0);
+        for (String name : DataManager.postcardReceiver.keySet()) targets.putIfAbsent(name, 0);
+
+        Set<String> configNpcs = NpcConfigManager.INSTANCE.getAllNpcNames();
+        for (String name : configNpcs) {
+            targets.put(name, NpcConfigManager.INSTANCE.getDeliveryTime(name, player.level()));
+        }
+
+        try {
+            KubeJSNpcSavedData kubeData = KubeJSNpcSavedData.Companion.get(player.serverLevel());
+            Map<String, KubeJSNpcSavedData.NpcConfig> kubeNpcs = kubeData.getAllNpcs();
+            for (Map.Entry<String, KubeJSNpcSavedData.NpcConfig> entry : kubeNpcs.entrySet()) {
+                targets.put(entry.getKey(), entry.getValue().getDeliveryTime());
+            }
+        } catch (Exception e) {
+            ContactQuests.warn("Failed to load KubeJS NPCs", e);
+        }
+
+        targets.putAll(DataManager.INSTANCE.getAvailableTargets(player));
+
+        return targets;
+    }
+
     @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
     private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
         if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
@@ -107,38 +133,39 @@ public class EnquireAddresseeMessageMixin {
         ItemStack stackInSlot = container.parcel.getItem(0);
         if (stackInSlot.isEmpty()) return;
 
+        String knownKey = findKeyIgnoreCase(recipientName, player);
+        boolean isKnownNpc = (knownKey != null);
+        String finalRecipientKey = isKnownNpc ? knownKey : recipientName;
 
-        String finalRecipientKey = findKeyIgnoreCase(recipientName, player);
+        boolean taskMatched = checkTaskMatch(player, stackInSlot, finalRecipientKey);
 
-        if (finalRecipientKey == null) {
-            finalRecipientKey = recipientName;
-        }
-
-        boolean taskMatched = false;
-
-        if (stackInSlot.getItem() instanceof PostcardItem) {
-            if (DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey)) {
-                taskMatched = true;
+        if (taskMatched || isKnownNpc) {
+            if (isKnownNpc && !taskMatched) {
+                ContactQuests.debug("Sending mail to known NPC (No Task): " + finalRecipientKey);
             }
-        }
-        else if (stackInSlot.getItem() instanceof RedPacketItem) {
-            if (DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey)) {
-                taskMatched = true;
-            }
-        }
-        else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
-            if (DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, finalRecipientKey)) {
-                taskMatched = true;
-            }
-        } else {
-            ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
-        }
 
-        if (taskMatched) {
             container.parcel.setItem(0, ItemStack.EMPTY);
             ActionMessage.create(1).sendTo(player);
             ci.cancel();
         }
+    }
+
+    @Unique
+    private boolean checkTaskMatch(ServerPlayer player, ItemStack stack, String recipientKey) {
+        if (stack.getItem() instanceof PostcardItem) {
+            return DataManager.INSTANCE.matchPostcardTaskItem(player, stack, recipientKey);
+        }
+
+        if (stack.getItem() instanceof RedPacketItem) {
+            return DataManager.INSTANCE.matchRedPacketTaskItem(player, stack, recipientKey);
+        }
+
+        if (stack.getItem() instanceof ParcelItem || stack.getItem() instanceof LetterItem) {
+            return DataManager.INSTANCE.matchParcelTaskItem(player, stack, recipientKey);
+        }
+
+        ContactQuests.debug("未知的物品类型 " + stack.getItem().getClass().getName());
+        return false;
     }
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
