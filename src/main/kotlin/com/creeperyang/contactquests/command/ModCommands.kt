@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.command
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.CollectionSavedData
+import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.registry.ModItems
@@ -116,6 +117,10 @@ object ModCommands {
                                                 .executes(this::getCountTarget)
                                         )
                                 )
+                        )
+                        .then(
+                            Commands.literal("removedRedundantNPC")
+                                .executes(this::pruneNpcs)
                         )
                         .then(
                             Commands.literal("tags")
@@ -429,6 +434,29 @@ object ModCommands {
             return Command.SINGLE_SUCCESS
         } catch (e: Exception) {
             ContactQuests.LOGGER.error("Error executing setcount target command", e)
+            return 0
+        }
+    }
+
+    private fun pruneNpcs(context: CommandContext<CommandSourceStack>): Int {
+        try {
+            val activeNpcs = mutableSetOf<String>()
+            activeNpcs.addAll(DataManager.parcelReceiver.keys)
+            activeNpcs.addAll(DataManager.redPacketReceiver.keys)
+            activeNpcs.addAll(DataManager.postcardReceiver.keys)
+            activeNpcs.addAll(DataManager.rewardSenders)
+
+            val removedCount = NpcConfigManager.removeUnusedNpcs(activeNpcs)
+
+            context.source.sendSuccess({
+                Component.literal("配置清理完成：移除了 $removedCount 个未使用的NPC数据。")
+                    .withStyle(ChatFormatting.GREEN)
+            }, true)
+
+            return Command.SINGLE_SUCCESS
+        } catch (e: Exception) {
+            ContactQuests.LOGGER.error("Error executing prune command", e)
+            context.source.sendFailure(Component.literal("清理失败，请查看日志。"))
             return 0
         }
     }

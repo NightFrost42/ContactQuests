@@ -190,17 +190,13 @@ object ContactKubeJSPlugin {
     }
 
     private fun sendViaArchitectury(server: MinecraftServer, message: Any): Boolean {
+        val method = architecturySendMethod ?: return false
+
         return runCatching {
-            val netManagerClass = Class.forName("dev.architectury.networking.NetworkManager")
-            val sendMethod = netManagerClass.methods.find { m ->
-                m.name == "sendToPlayer" &&
-                        m.parameterCount == 2 &&
-                        m.parameterTypes[0] == ServerPlayer::class.java
-            } ?: return false
 
             var sentCount = 0
             for (player in server.playerList.players) {
-                sendMethod.invoke(null, player, message)
+                method.invoke(null, player, message)
                 sentCount++
                 sentCount++
             }
@@ -1203,11 +1199,46 @@ object ContactKubeJSPlugin {
                 LOGGER.warn("ContactQuests: Failed to send sync packet in refreshQuests.")
             }
 
+            server.playerList.players.forEach { player ->
+                try {
+                    val hasPerm =
+                        dev.ftb.mods.ftbquests.integration.PermissionsHelper.hasEditorPermission(player, false)
+
+                    val permMsg = dev.ftb.mods.ftbquests.net.SyncEditorPermissionMessage(hasPerm)
+
+                    if (!sendToPlayer(player, permMsg)) {
+                        LOGGER.warn("ContactQuests: Failed to sync editor permission to ${player.name.string}")
+                    }
+                } catch (e: Exception) {
+                    LOGGER.error("ContactQuests: Error syncing permission for ${player.name.string}", e)
+                }
+            }
+
             resendAllOverrides()
         }
 
         ServerQuestFile.INSTANCE.refreshGui()
         LOGGER.info("ContactQuests: Refreshed Quest GUI for all players.")
+    }
+
+    private val architecturySendMethod: java.lang.reflect.Method? by lazy {
+        runCatching {
+            val netManagerClass = Class.forName("dev.architectury.networking.NetworkManager")
+            netManagerClass.methods.find { m ->
+                m.name == "sendToPlayer" &&
+                        m.parameterCount == 2 &&
+                        m.parameterTypes[0] == ServerPlayer::class.java
+            }
+        }.getOrNull()
+    }
+
+    private fun sendToPlayer(player: ServerPlayer, message: Any): Boolean {
+        val method = architecturySendMethod ?: return false
+
+        return runCatching {
+            method.invoke(null, player, message)
+            true
+        }.getOrDefault(false)
     }
 
     fun updatePlayerTaskCache(player: ServerPlayer) {

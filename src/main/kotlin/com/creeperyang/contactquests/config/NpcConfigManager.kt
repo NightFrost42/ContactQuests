@@ -121,6 +121,19 @@ object NpcConfigManager {
         }
     }
 
+    fun removeUnusedNpcs(activeNpcs: Set<String>): Int {
+        val initialSize = npcMap.size
+        npcMap.keys.retainAll(activeNpcs)
+
+        val removedCount = initialSize - npcMap.size
+
+        if (removedCount > 0) {
+            save()
+            ContactQuests.info("已通过命令清理 $removedCount 个未使用的NPC配置")
+        }
+        return removedCount
+    }
+
     fun getAllNpcNames(): Set<String> {
         return npcMap.keys
     }
