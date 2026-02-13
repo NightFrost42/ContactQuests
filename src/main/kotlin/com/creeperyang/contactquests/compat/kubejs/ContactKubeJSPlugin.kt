@@ -1185,6 +1185,12 @@ object ContactKubeJSPlugin {
             PostcardTask.PostcardPlaceholderSupport.register(key) { p, t -> callback.apply(p, t) }
         }
 
+        fun registerRedPacketReward(callback: BiFunction<String, ServerPlayer, String>) {
+            com.creeperyang.contactquests.quest.reward.RedPacketReward.registerReplacer { text, player ->
+                callback.apply(text, player)
+            }
+        }
+
         fun registerPostcardReward(callback: BiFunction<String, ServerPlayer, String>) {
             PostcardReward.registerReplacer { text, player -> callback.apply(text, player) }
         }
