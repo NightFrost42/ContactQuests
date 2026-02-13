@@ -40,11 +40,27 @@ gameplay loop involving packaging, mailing, and waiting for deliveries.
 
 ### 📚 Documentation Navigation
 
-* **[Getting Started]**: How to bind mailboxes and complete your first delivery quest.
-* **[Task & Rewards]**: Detailed breakdown of new task types and reward configurations.
-* **[Configuration Guide]**: Global settings and setting up delivery delays.
-* **[NPC Interaction]**: How to configure `npc_config.json` for custom reply logic.
-* **[KubeJS Integration]**: (Advanced) Scripting support for custom logistics events.
+* *
+  *[[Getting Started]](https://github.com/NightFrost42/ContactQuests/wiki/Getting-Started---%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8)
+  **: How to bind mailboxes and complete your first delivery quest.
+* *
+  *[[Task & Rewards]](https://github.com/NightFrost42/ContactQuests/wiki/Tasks-&-Rewards-Mechanics---%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A5%96%E5%8A%B1%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3)
+  **: Detailed breakdown of new task types and reward configurations.
+* *
+  *[[Configuration Guide]](https://github.com/NightFrost42/ContactQuests/wiki/Configuration-Guide---%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%8C%87%E5%8D%97)
+  **: Global settings and setting up delivery delays.
+* *
+  *[[NPC Interaction]](https://github.com/NightFrost42/ContactQuests/wiki/NPC-Interaction-Config---NPC-%E4%BA%A4%E4%BA%92%E9%85%8D%E7%BD%AE)
+  **: How to configure `npc_config.json` for custom reply logic.
+* *
+  *[[Commands & Permissions]](https://github.com/NightFrost42/ContactQuests/wiki/Commands-&-Permissions---%E5%91%BD%E4%BB%A4%E4%B8%8E%E6%9D%83%E9%99%90)
+  **: How to use the mod's command function
+* *
+  *[[Advanced Quest Logic]](https://github.com/NightFrost42/ContactQuests/wiki/Advanced-Quest-Logic---%E8%BF%9B%E9%98%B6%E4%BB%BB%E5%8A%A1%E9%80%BB%E8%BE%91)
+  **: (Advanced) How to configure the advanced additional configuration items for a Quest
+* *
+  *[[KubeJS Integration]](https://github.com/NightFrost42/ContactQuests/wiki/KubeJS-Integration---KubeJS-%E8%81%94%E5%8A%A8)
+  **: (Advanced) Scripting support for custom logistics events.
 
 ---
 
@@ -71,11 +87,26 @@ gameplay loop involving packaging, mailing, and waiting for deliveries.
 
 ### 📚 文档导航
 
-* **[快速入门]**：如何绑定队伍邮箱以及完成你的第一个物流任务。
-* **[任务与奖励详解]**：各种新任务类型（邮递、明信片、红包）的详细说明。
-* **[配置文件指南]**：通用设置与物流延迟机制的配置。
-* **[NPC 交互配置]**：如何编写 `npc_config.json` 来自定义 NPC 的回信逻辑。
-* **[KubeJS 联动]**：(进阶) 使用脚本自定义物流事件。
+* *
+  *[[快速入门]](https://github.com/NightFrost42/ContactQuests/wiki/Getting-Started---%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8)
+  **：如何绑定队伍邮箱以及完成你的第一个物流任务。
+* *
+  *[[任务与奖励详解]](https://github.com/NightFrost42/ContactQuests/wiki/Tasks-&-Rewards-Mechanics---%E4%BB%BB%E5%8A%A1%E4%B8%8E%E5%A5%96%E5%8A%B1%E6%9C%BA%E5%88%B6%E8%AF%A6%E8%A7%A3)
+  **：各种新任务类型（邮递、明信片、红包）的详细说明。
+* *
+  *[[配置文件指南]](https://github.com/NightFrost42/ContactQuests/wiki/Configuration-Guide---%E9%85%8D%E7%BD%AE%E6%96%87%E4%BB%B6%E6%8C%87%E5%8D%97)
+  **：通用设置与物流延迟机制的配置。
+* *
+  *[[NPC 交互配置]](https://github.com/NightFrost42/ContactQuests/wiki/NPC-Interaction-Config---NPC-%E4%BA%A4%E4%BA%92%E9%85%8D%E7%BD%AE)
+  **：如何编写 `npc_config.json` 来自定义 NPC 的回信逻辑。
+* *
+  *[[命令与权限]](https://github.com/NightFrost42/ContactQuests/wiki/Commands-&-Permissions---%E5%91%BD%E4%BB%A4%E4%B8%8E%E6%9D%83%E9%99%90)
+  **: 如何使用模组的命令功能
+* *
+  *[[进阶任务逻辑]](https://github.com/NightFrost42/ContactQuests/wiki/Advanced-Quest-Logic---%E8%BF%9B%E9%98%B6%E4%BB%BB%E5%8A%A1%E9%80%BB%E8%BE%91)
+  **：(进阶)如何配置任务的高级额外配置项
+* **[[KubeJS 联动]](https://github.com/NightFrost42/ContactQuests/wiki/KubeJS-Integration---KubeJS-%E8%81%94%E5%8A%A8)
+  **：(进阶) 使用脚本自定义物流事件。
 
 ---
 
