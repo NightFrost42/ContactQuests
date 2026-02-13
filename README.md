@@ -274,7 +274,7 @@ ContactQuests 提供了两个主要的配置文件，分别用于控制全局机
         "isAllEnder": false,
         "message": [
           {
-            "text": "感动！这是给你的回礼，连同之前的物品一起还给你！"
+            "text": "到时候我给你寄东西的时候连带我这里帮你保留的东西一起寄回去吧"
           }
         ]
       }
@@ -289,7 +289,8 @@ ContactQuests 提供了两个主要的配置文件，分别用于控制全局机
 1. **第 1-2 次错误交互** (`count: 1`, `NOW`)：NPC 拒收，物品被立即退回。
 2. **第 3-4 次错误交互** (`count: 3`, `DISCARD`)：**触发 DISCARD**。NPC 没收了玩家的物品（不退还），并使用 `contact:creeper` 样式的明信片回复。由于 `isAllEnder` 为 `true`，这封斥责信会通过末影渠道瞬间送达。
 3. **第 5-9 次错误交互** (`count: 5`, `SAVE`)：NPC 收下物品（玩家背包中消失，但存入服务端数据），回复样式指定为 `contact:touhou_little_maid`。
-4. **第 10 次及以后** (`count: 10`, `WITHREWARDS`)：NPC 将之前第 5-9 次暂存的物品打包退还给玩家（注意：第 3-4 次被 `DISCARD` 的物品**不会**找回）。此时回复使用了指定的 `contact:meikai` 样式。
+4. **第 10 次及以后** (`count: 10`, `WITHREWARDS`)：NPC 将之前第 5-9 次暂存的物品在领取任务奖励时一并打包退还给玩家（注意：第
+   3-4 次被 `DISCARD` 的物品**不会**找回）。此时回复使用了指定的 `contact:meikai` 样式。
 
 ---
 
