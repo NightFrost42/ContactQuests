@@ -66,7 +66,7 @@ gameplay loop involving packaging, mailing, and waiting for deliveries.
 
 
 * **物流奖励系统**：奖励不再凭空出现！完成任务后，奖励将以包裹的形式由物流系统派送到你的邮箱中。
-* **团队无缝协作**：完美支持 FTB Teams 队伍系统。使用 **团队绑定器 (Team Binding Card)** 将邮箱与队伍绑定，确保全队都能收到任务奖励。
+* **团队无缝协作**：完美支持 FTB Teams 队伍系统。使用 **团队绑定器 (Team Binding Card)** 将邮箱与队伍绑定，确保以队伍为单位收到任务奖励。
 * **NPC 交互系统**：高度可配置的 NPC 智能反馈。当玩家寄错物品时，NPC 可以根据配置做出拒收、没收甚至触发彩蛋回复等反应。
 
 ### 📚 文档导航
