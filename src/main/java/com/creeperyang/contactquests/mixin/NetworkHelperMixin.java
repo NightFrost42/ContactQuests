@@ -9,9 +9,8 @@ import com.flechazo.contact.common.item.ParcelItem;
 import com.flechazo.contact.common.item.PostcardItem;
 import com.flechazo.contact.common.item.RedPacketItem;
 import com.flechazo.contact.common.screenhandler.PostboxScreenHandler;
-import com.flechazo.contact.common.storage.IMailboxDataProvider;
+import com.flechazo.contact.helper.NetworkHelper;
 import com.flechazo.contact.network.ActionMessage;
-import com.flechazo.contact.network.EnquireAddresseeMessage;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.objectweb.asm.Opcodes;
@@ -24,8 +23,8 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.*;
 
-@Mixin(EnquireAddresseeMessage.class)
-public class EnquireAddresseeMessageMixin {
+@Mixin(NetworkHelper.class)
+public class NetworkHelperMixin {
 
     @Unique
     private static List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
@@ -125,7 +124,7 @@ public class EnquireAddresseeMessageMixin {
     }
 
     @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
-    private void onHandleSendMail(ServerPlayer player, IMailboxDataProvider data, String recipientName, int deliveryTicks, CallbackInfo ci) {
+    private static void onHandleSendMail(ServerPlayer player, String recipientName, int deliveryTicks, CallbackInfo ci) {
         if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
             return;
         }
@@ -145,13 +144,14 @@ public class EnquireAddresseeMessageMixin {
             }
 
             container.parcel.setItem(0, ItemStack.EMPTY);
-            ActionMessage.create(1).sendTo(player);
+            ActionMessage msg = new ActionMessage(1, "");
+            msg.sendTo(player);
             ci.cancel();
         }
     }
 
     @Unique
-    private boolean checkTaskMatch(ServerPlayer player, ItemStack stack, String recipientKey) {
+    private static boolean checkTaskMatch(ServerPlayer player, ItemStack stack, String recipientKey) {
         if (stack.getItem() instanceof PostcardItem) {
             return DataManager.INSTANCE.matchPostcardTaskItem(player, stack, recipientKey);
         }
@@ -170,7 +170,7 @@ public class EnquireAddresseeMessageMixin {
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
     @Unique
-    private String findKeyIgnoreCase(String inputName, ServerPlayer player) {
+    private static String findKeyIgnoreCase(String inputName, ServerPlayer player) {
         Set<String> allKeys = new HashSet<>();
         allKeys.addAll(DataManager.parcelReceiver.keySet());
         allKeys.addAll(DataManager.redPacketReceiver.keySet());
@@ -191,14 +191,16 @@ public class EnquireAddresseeMessageMixin {
             method = "handleNormalEnquiry",
             at = @At(
                     value = "FIELD",
-                    target = "Lcom/flechazo/contact/network/EnquireAddresseeMessage;shouldSend:Z",
-                    opcode = Opcodes.GETFIELD),
+                    target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
+                    opcode = Opcodes.GETFIELD,
+                    ordinal = 2),
             locals = LocalCapture.CAPTURE_FAILHARD, remap = false
     )
     private void injectCustomTargetsNames(
             ServerPlayer player,
-            IMailboxDataProvider data,
             String lowerIn,
+            String nameIn,
+            boolean shouldSend,
             CallbackInfo ci,
             List<String> names,
             List<Integer> ticks

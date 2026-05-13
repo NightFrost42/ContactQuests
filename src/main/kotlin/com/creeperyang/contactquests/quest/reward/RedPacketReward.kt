@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.quest.reward
 
-import com.flechazo.contact.common.item.RedPacketItem
+import com.creeperyang.contactquests.utils.RedPacketUtils
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.ItemIcon
@@ -8,6 +8,7 @@ import dev.ftb.mods.ftblibrary.ui.Widget
 import dev.ftb.mods.ftblibrary.util.client.PositionedIngredient
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
@@ -27,6 +28,11 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     var blessing: String = "恭喜发财"
 
+    fun interface RedPacketTextReplacer {
+        fun replace(text: String, player: ServerPlayer): String
+    }
+
+
     override fun getType(): RewardType = RewardRegistry.RED_PACKET
 
     override fun claim(player: ServerPlayer, notify: Boolean) {
@@ -38,7 +44,8 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
         val container = SimpleContainer(1)
         container.setItem(0, stackToSend)
-        val redPacket = RedPacketItem.getRedPacket(container, blessing, targetAddressee)
+        val processedBlessing = processText(blessing.replace("\\n", "\n"), player)
+        val redPacket = RedPacketUtils.getRedPacket(container, processedBlessing, targetAddressee)
 
         distributeItem(player, redPacket)
     }
@@ -121,5 +128,64 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
         return PositionedIngredient.of(item, widget, true)
+    }
+
+
+    companion object {
+        private val defaultReplacers = mutableListOf<RedPacketTextReplacer>()
+        private val replacers = mutableListOf<RedPacketTextReplacer>()
+
+        fun registerReplacer(replacer: RedPacketTextReplacer) {
+            replacers.add(replacer)
+        }
+
+        private fun registerDefault(replacer: RedPacketTextReplacer) {
+            defaultReplacers.add(replacer)
+        }
+
+        fun reset() {
+            replacers.clear()
+            replacers.addAll(defaultReplacers)
+        }
+
+        fun processText(text: String, player: ServerPlayer): String {
+            var currentText = text
+            for (replacer in replacers) {
+                currentText = replacer.replace(currentText, player)
+            }
+            return currentText
+        }
+
+        init {
+            registerDefault { text, player ->
+                if (text.contains("<team_size>")) {
+                    val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+                    val size = team?.members?.size ?: 1
+                    text.replace("<team_size>", size.toString())
+                } else {
+                    text
+                }
+            }
+
+            registerDefault { text, player ->
+                if (text.contains("<team_name>")) {
+                    val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)
+                    val name = team?.name?.string ?: "Unknown Team"
+                    text.replace("<team_name>", name)
+                } else {
+                    text
+                }
+            }
+
+            registerDefault { text, player ->
+                if (text.contains("<player_name>")) {
+                    text.replace("<player_name>", player.gameProfile.name)
+                } else {
+                    text
+                }
+            }
+
+            reset()
+        }
     }
 }

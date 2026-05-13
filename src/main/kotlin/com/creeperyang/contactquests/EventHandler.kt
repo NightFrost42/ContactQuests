@@ -15,6 +15,7 @@ import net.minecraft.world.InteractionHand
 import net.minecraftforge.event.entity.player.PlayerEvent
 import net.minecraftforge.event.entity.player.PlayerInteractEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.fml.ModList
 
 object EventHandler {
 
@@ -62,7 +63,7 @@ object EventHandler {
     @SubscribeEvent
     fun onPlayerLoggedIn(event: PlayerEvent.PlayerLoggedInEvent) {
         val player = event.entity
-        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
+        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null && ModList.get().isLoaded("kubejs")) {
             ContactKubeJSPlugin.updatePlayerTaskCache(player)
             ContactKubeJSPlugin.syncAllOverridesToPlayer(player)
         }

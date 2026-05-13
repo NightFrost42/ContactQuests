@@ -56,6 +56,10 @@ repositories {
             includeGroup "dev.architectury"
         }
     }
+
+    maven {
+        url "https://maven.sighs.cc/repository/maven-releases/"
+    }
 }
 
 base {
@@ -160,6 +164,7 @@ dependencies {
     implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_forge_20}")
     implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_forge_20}")
     implementation fg.deobf("curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_forge_20}")
+    implementation fg.deobf("cc.sighs.oelib:OELib-forge-1.20.1:0.2.2")
     implementation fg.deobf("curse.maven:jade-324717:${jade_forge_20}")
 
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")

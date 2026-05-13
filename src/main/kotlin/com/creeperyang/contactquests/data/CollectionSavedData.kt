@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.data
 import com.creeperyang.contactquests.config.*
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.resourse.PostcardDataManager
+import com.flechazo.contact.data.PostcardDataManager
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
 import net.minecraft.nbt.Tag

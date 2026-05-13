@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.quest.reward
 
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.resourse.PostcardDataManager
+import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue

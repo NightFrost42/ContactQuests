@@ -3,8 +3,7 @@ package com.creeperyang.contactquests.item
 import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
 import com.flechazo.contact.common.block.MailboxBlock
 import com.flechazo.contact.common.handler.MailboxManager
-import com.flechazo.contact.common.storage.IMailboxDataProvider
-import com.flechazo.contact.common.storage.MailboxDataManager
+import com.flechazo.contact.platform.PlatformHelper
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
 import net.minecraft.core.BlockPos
@@ -47,14 +46,13 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             return InteractionResult.FAIL
         }
 
-        val dataManager = MailboxDataManager.getData(level)
         val teamId = team.id
         if (teamId == null) {
             player.sendSystemMessage(Component.literal("Error: Team ID is null! Cannot bind mailbox."))
             return InteractionResult.FAIL
         }
 
-        if (!checkAndHandleExistingMailbox(dataManager, teamId, level, pos, player)) {
+        if (!checkAndHandleExistingMailbox(teamId, level, pos, player)) {
             return InteractionResult.FAIL
         }
 
@@ -64,8 +62,8 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             pos.above()
         }
 
-        dataManager.setMailboxData(teamId, level.dimension(), targetPos)
-        dataManager.setMailboxContents(teamId, dataManager.getMailboxContents(teamId))
+        PlatformHelper.setMailboxData(teamId, level.dimension(), targetPos)
+        PlatformHelper.setMailboxContents(teamId, PlatformHelper.getMailboxContents(teamId))
         MailboxManager.updateState(level, targetPos)
 
         updateMailboxVisuals(level, targetPos, teamId)
@@ -81,13 +79,12 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
     }
 
     private fun checkAndHandleExistingMailbox(
-        dataManager: IMailboxDataProvider,
         teamId: UUID,
         level: Level,
         currentPos: BlockPos,
         player: Player
     ): Boolean {
-        val existingPos: GlobalPos = dataManager.getMailboxPos(teamId) ?: return true
+        val existingPos: GlobalPos = PlatformHelper.getMailboxPos(teamId) ?: return true
 
         val isSameDimension = existingPos.dimension() == level.dimension()
         val isSamePos = existingPos.pos() == currentPos ||

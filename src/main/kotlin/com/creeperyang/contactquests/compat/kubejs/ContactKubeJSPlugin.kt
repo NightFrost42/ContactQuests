@@ -9,6 +9,7 @@ import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.network.SyncQuestTextMessage
 import com.creeperyang.contactquests.quest.reward.ParcelReward
 import com.creeperyang.contactquests.quest.reward.PostcardReward
+import com.creeperyang.contactquests.quest.reward.RedPacketReward
 import com.creeperyang.contactquests.quest.task.ContactTask
 import com.creeperyang.contactquests.quest.task.ParcelTask
 import com.creeperyang.contactquests.quest.task.PostcardTask
@@ -16,8 +17,8 @@ import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.creeperyang.contactquests.utils.IQuestExtension
 import com.creeperyang.contactquests.utils.IQuestObjectBaseExtension
 import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.utils.RedPacketUtils
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.QuestObjectBase
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
@@ -376,7 +377,7 @@ object ContactKubeJSPlugin {
                 helper.updateString("target") { reward.targetAddressee = it }
             }
 
-            is com.creeperyang.contactquests.quest.reward.RedPacketReward -> {
+            is RedPacketReward -> {
                 helper.updateItem { reward.item = it }
                 helper.updateInt("count") { reward.count = it }
                 helper.updateInt("randomBonus") { reward.randomBonus = it }
@@ -531,7 +532,7 @@ object ContactKubeJSPlugin {
     fun createRedPacket(sender: String, blessing: String, item: ItemStack): ItemStack {
         val container = SimpleContainer(1)
         container.setItem(0, item.copy())
-        return RedPacketItem.getRedPacket(container, blessing, sender)
+        return RedPacketUtils.getRedPacket(container, blessing, sender)
     }
 
     @JvmStatic
@@ -903,7 +904,7 @@ object ContactKubeJSPlugin {
         executeEdit(
             id,
             save,
-            { getReward(it) as? com.creeperyang.contactquests.quest.reward.RedPacketReward }) { reward, tracker ->
+            { getReward(it) as? RedPacketReward }) { reward, tracker ->
             tracker.updateItem(reward.item, item) { reward.item = it }
             tracker.update(reward.count, count?.toInt()) { reward.count = it }
             tracker.update(reward.blessing, blessing) { reward.blessing = it }
@@ -1313,6 +1314,13 @@ object ContactKubeJSPlugin {
         fun registerPostcardReward(callback: BiFunction<String, ServerPlayer, String>) {
             PostcardReward.registerReplacer { text, player -> callback.apply(text, player) }
         }
+
+        fun registerRedPacketReward(callback: BiFunction<String, ServerPlayer, String>) {
+            RedPacketReward.registerReplacer { text, player ->
+                callback.apply(text, player)
+            }
+        }
+
 
         fun registerNpcReply(callback: BiFunction<String, CollectionSavedData.ReplacerContext, String?>) {
             CollectionSavedData.registerReplacer { text, ctx -> callback.apply(text, ctx) }

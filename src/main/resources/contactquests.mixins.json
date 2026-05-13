@@ -5,10 +5,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "contactquests.refmap.json",
   "mixins": [
-    "EnquireAddresseeMessageMixin",
     "ItemRewardAccessor",
     "MailboxBlockEntityMixin",
     "MailboxBlockMixin",
+    "NetworkHelperMixin",
     "OtherButtonsPanelTopMixin",
     "QuestMixin",
     "QuestObjectBaseMixin",

@@ -4,8 +4,8 @@ import com.creeperyang.contactquests.client.util.PostcardAutoFiller
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.hud.TexturePos
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.resourse.PostcardDataManager
-import com.flechazo.contact.resourse.PostcardStyle
+import com.flechazo.contact.data.PostcardDataManager
+import com.flechazo.contact.data.PostcardStyle
 import com.mojang.blaze3d.systems.RenderSystem
 import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.Theme

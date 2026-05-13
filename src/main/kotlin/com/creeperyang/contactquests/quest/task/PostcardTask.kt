@@ -4,7 +4,7 @@ import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.utils.ITeamDataExtension
 import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.resourse.PostcardDataManager
+import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
