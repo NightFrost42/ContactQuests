@@ -14,6 +14,7 @@ import net.minecraft.network.chat.HoverEvent
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.InteractionHand
 import net.neoforged.bus.api.SubscribeEvent
+import net.neoforged.fml.ModList
 import net.neoforged.neoforge.event.entity.player.PlayerEvent
 import net.neoforged.neoforge.event.entity.player.PlayerInteractEvent
 
@@ -62,7 +63,7 @@ object EventHandler {
     @SubscribeEvent
     fun onPlayerLoggedIn(event: PlayerEvent.PlayerLoggedInEvent) {
         val player = event.entity
-        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null) {
+        if (player is ServerPlayer && ServerQuestFile.INSTANCE != null && ModList.get().isLoaded("kubejs")) {
             ContactKubeJSPlugin.updatePlayerTaskCache(player)
             ContactKubeJSPlugin.syncAllOverridesToPlayer(player)
         }
