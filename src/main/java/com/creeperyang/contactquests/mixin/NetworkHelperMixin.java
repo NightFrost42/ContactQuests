@@ -43,33 +43,26 @@ public class NetworkHelperMixin {
             finalRecipientKey = recipientName;
         }
 
-        boolean taskMatched = false;
+        if (DataManager.INSTANCE.getAvailableTargets(player).containsKey(finalRecipientKey)) {
+//            boolean taskMatched = false;
 
-        if (stackInSlot.getItem() instanceof PostcardItem) {
-            if (DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey)) {
-                taskMatched = true;
+            if (stackInSlot.getItem() instanceof PostcardItem) {
+                DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey);//                    taskMatched = true;
+            } else if (stackInSlot.getItem() instanceof RedPacketItem) {
+                DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey);//                    taskMatched = true;
+            } else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
+                ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
+                DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey);//                    taskMatched = true;
+            } else {
+                ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
             }
-        }
-        else if (stackInSlot.getItem() instanceof RedPacketItem) {
-            if (DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey)) {
-                taskMatched = true;
-            }
-        }
-        else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
-            ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
-            if (DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey)) {
-                taskMatched = true;
-            }
-        } else {
-            ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
-        }
 
-        if (taskMatched) {
             container.parcel.setItem(0, ItemStack.EMPTY);
             ActionMessage msg = new ActionMessage(1, "");
             msg.sendTo(player);
             ci.cancel();
         }
+
     }
 
     @SuppressWarnings("AddedMixinMembersNamePattern")
