@@ -10,8 +10,12 @@ object TagUtils {
 
         file.allChapters.forEach { chapter ->
             chapter.quests.forEach { quest ->
-                if (quest is IQuestExtension) {
-                    tags.addAll((quest as IQuestExtension).`contactQuests$getRequiredTags`())
+                // Quest is final and only gains IQuestExtension at runtime via mixin, so a plain
+                // `quest is IQuestExtension` is rejected by the Kotlin 2.x compiler as "always false".
+                // Widening to Any first keeps the runtime check (same idiom as EventHandler:77).
+                val ext = (quest as Any) as? IQuestExtension
+                if (ext != null) {
+                    tags.addAll(ext.`contactQuests$getRequiredTags`())
                 }
 
                 quest.rewards.forEach { reward ->

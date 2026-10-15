@@ -29,7 +29,7 @@ public abstract class GuiProvidersMixin {
                 gui.run();
                 if (accepted) {
                     ParcelTask parcelTask = new ParcelTask(0L, quest).setStackAndCount(c.getValue(), c.getValue().getCount());
-                    callback.accept(parcelTask, parcelTask.getType().makeExtraNBT());
+                    callback.accept(parcelTask);
                 }
             }).openGui();
         });
@@ -40,7 +40,7 @@ public abstract class GuiProvidersMixin {
                 gui.run();
                 if (accepted) {
                     RedPacketTask parcelTask = new RedPacketTask(0L, quest).setStackAndCount(c.getValue(), c.getValue().getCount());
-                    callback.accept(parcelTask, parcelTask.getType().makeExtraNBT());
+                    callback.accept(parcelTask);
                 }
             }).openGui();
         });
