@@ -76,14 +76,14 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId = "kotlinforforge"
 type = "required"
-versionRange = "[5.3.0,)"
+versionRange = "[5.12.0,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
 modId="ftbquests"
 type = "required"
-versionRange = "[2101.1.21,)"
+versionRange = "[2101.1.36,)"
 ordering="AFTER"
 side="BOTH"
 
@@ -97,7 +97,7 @@ side="BOTH"
 [[dependencies."${mod_id}"]]
 modId = "ftblibrary"
 type = "required"
-versionRange = "[2101.1.30,)"
+versionRange = "[2101.1.37,)"
 ordering = "AFTER"
 side = "BOTH"
 # Features are specific properties of the game environment, that you may want to declare you require. This example declares

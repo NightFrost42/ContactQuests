@@ -122,3 +122,5 @@ runs/
 /src/main/resources/assets/contactquests/textures/item/team_binding_card.aseprite
 !/frontpage.png
 !/logo.png
+
+.dev
