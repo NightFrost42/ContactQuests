@@ -13,7 +13,7 @@ public class ServerQuestFileMixin {
 
     @Inject(method = "markDirty", at = @At("HEAD"), remap = false)
     private void contactQuests$markTargetsDirty(CallbackInfo ci) {
-        DataManager.INSTANCE.targetsDirty = true;
+        DataManager.targetsDirty = true;
     }
 
     @Inject(method = "saveNow", at = @At("TAIL"), remap = false)

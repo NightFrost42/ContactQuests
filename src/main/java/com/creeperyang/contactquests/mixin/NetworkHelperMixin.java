@@ -120,15 +120,15 @@ public class NetworkHelperMixin {
         // 任务文件刚被编辑过的话，先重建登记表，这样新建的任务可以立刻寄送
         DataManager.INSTANCE.ensureTargetsFresh();
 
-        List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
+        List<Map.Entry<String, Integer>> matches = contact_quest_port$getSortedMatches(player, lowerIn, names);
 
-        insertAndTrim(names, ticks, matches);
+        contact_quest_port$insertAndTrim(names, ticks, matches);
 
-        ensureHiddenTarget(player, lowerIn, names, ticks);
+        contact_quest_port$ensureHiddenTarget(player, lowerIn, names, ticks);
     }
 
     @Unique
-    private static List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
+    private static List<Map.Entry<String, Integer>> contact_quest_port$getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
         Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
@@ -139,12 +139,12 @@ public class NetworkHelperMixin {
             }
         }
 
-        matches.sort((e1, e2) -> compareTargets(e1.getKey(), e2.getKey(), lowerIn));
+        matches.sort((e1, e2) -> contact_quest_port$compareTargets(e1.getKey(), e2.getKey(), lowerIn));
         return matches;
     }
 
     @Unique
-    private static int compareTargets(String name1, String name2, String lowerIn) {
+    private static int contact_quest_port$compareTargets(String name1, String name2, String lowerIn) {
         String lower1 = name1.toLowerCase(Locale.ROOT);
         String lower2 = name2.toLowerCase(Locale.ROOT);
 
@@ -160,7 +160,7 @@ public class NetworkHelperMixin {
     }
 
     @Unique
-    private static void insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
+    private static void contact_quest_port$insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
         for (int i = matches.size() - 1; i >= 0; i--) {
             Map.Entry<String, Integer> entry = matches.get(i);
             //noinspection SequencedCollectionMethodCanBeUsed
@@ -169,28 +169,28 @@ public class NetworkHelperMixin {
             ticks.add(0, entry.getValue());
         }
 
-        trimToSize(names, ticks);
+        contact_quest_port$trimToSize(names, ticks);
     }
 
     @Unique
-    private static void ensureHiddenTarget(ServerPlayer player, String lowerIn, List<String> names, List<Integer> ticks) {
-        if (!names.isEmpty() && names.get(0).toLowerCase(Locale.ROOT).equals(lowerIn)) {
+    private static void contact_quest_port$ensureHiddenTarget(ServerPlayer player, String lowerIn, List<String> names, List<Integer> ticks) {
+        if (!names.isEmpty() && names.getFirst().toLowerCase(Locale.ROOT).equals(lowerIn)) {
             return;
         }
 
         Map<String, Integer> hiddenTargets = DataManager.INSTANCE.getHiddenTargets(player);
         for (Map.Entry<String, Integer> entry : hiddenTargets.entrySet()) {
             if (entry.getKey().toLowerCase(Locale.ROOT).equals(lowerIn)) {
-                names.add(0, entry.getKey());
-                ticks.add(0, entry.getValue());
-                trimToSize(names, ticks);
+                names.addFirst(entry.getKey());
+                ticks.addFirst(entry.getValue());
+                contact_quest_port$trimToSize(names, ticks);
                 break;
             }
         }
     }
 
     @Unique
-    private static void trimToSize(List<String> names, List<Integer> ticks) {
+    private static void contact_quest_port$trimToSize(List<String> names, List<Integer> ticks) {
         while (names.size() > 4) {
             //noinspection SequencedCollectionMethodCanBeUsed
             names.remove(names.size() - 1);
