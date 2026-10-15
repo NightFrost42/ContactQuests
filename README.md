@@ -38,6 +38,16 @@ gameplay loop involving packaging, mailing, and waiting for deliveries.
 * **NPC Interaction System**: Define custom responses when players send incorrect or extra items. Create NPCs with
   personality who can reject mail, confiscate items, or send easter egg replies.
 
+### ℹ️ Note: When Quest & Addressee Changes Take Effect
+
+The list of valid addressees is built from your quests. The mod notices an edit as soon as the quest file is marked
+changed and rebuilds that list **the next time you use a mailbox**, so a quest you have just created or edited can be
+mailed to **immediately** — no restart needed.
+
+If the list ever looks stale (for example after hand-editing `npc_config.json`, or in a very large quest pack), run
+`/reload` or rejoin the world to force a full rebuild. A new addressee also gets its own entry in `npc_config.json`
+automatically the first time it appears in a quest.
+
 ### 📚 Documentation Navigation
 
 * **[[Getting Started]](https://github.com/NightFrost42/ContactQuests/wiki/Getting-Started---%E5%BF%AB%E9%80%9F%E5%85%A5%E9%97%A8)**: How to bind mailboxes and complete your first delivery quest.
@@ -70,6 +80,14 @@ gameplay loop involving packaging, mailing, and waiting for deliveries.
 * **物流奖励系统**：奖励不再凭空出现！完成任务后，奖励将以包裹的形式由物流系统派送到你的邮箱中。
 * **团队无缝协作**：完美支持 FTB Teams 队伍系统。使用 **团队绑定器 (Team Binding Card)** 将邮箱与队伍绑定，确保以队伍为单位收到任务奖励。
 * **NPC 交互系统**：高度可配置的 NPC 智能反馈。当玩家寄错物品时，NPC 可以根据配置做出拒收、没收甚至触发彩蛋回复等反应。
+
+### ℹ️ 小提示：任务与收件人的改动何时生效
+
+模组的"有效收件人"名单来自你的任务。任务文件一旦被标记为已改动，模组会在**下一次使用邮筒时**重建这份名单，
+因此刚新建或刚改完的任务可以**立刻**寄送，无需重启游戏。
+
+如果名单看起来仍是旧的（例如你手工修改了 `npc_config.json`，或整合包任务量极大），执行 `/reload` 或重进世界
+即可强制完整重建。当某个收件人第一次出现在任务里时，模组也会自动在 `npc_config.json` 中补上对应条目。
 
 ### 📚 文档导航
 
