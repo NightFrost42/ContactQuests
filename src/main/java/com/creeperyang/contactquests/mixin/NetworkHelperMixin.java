@@ -83,13 +83,20 @@ public class NetworkHelperMixin {
         return null;
     }
 
+    /**
+     * 注意注入点必须是本方法里第三次读取 player.containerMenu：
+     * 前两次都在 `for (String name : names)` 循环体内，而该循环只有在“有玩家昵称匹配输入”时才会执行；
+     * 对于纯 NPC 名字（没有任何玩家匹配）循环体一次都不跑，注入代码就永远不会执行，客户端也就永远收不到自定义收件人。
+     * 另外，在循环体内往 names 里插值还会触发 ConcurrentModificationException。
+     */
     @SuppressWarnings("UnresolvedLocalCapture")
     @Inject(
             method = "handleNormalEnquiry",
             at = @At(
                     value = "FIELD",
                     target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
-                    opcode = Opcodes.GETFIELD
+                    opcode = Opcodes.GETFIELD,
+                    ordinal = 2
             ),
             slice = @Slice(
                     from = @At(
@@ -110,6 +117,9 @@ public class NetworkHelperMixin {
             @Local(ordinal = 0) List<String> names,
             @Local(ordinal = 1) List<Integer> ticks
     ) {
+        // 任务文件刚被编辑过的话，先重建登记表，这样新建的任务可以立刻寄送
+        DataManager.INSTANCE.ensureTargetsFresh();
+
         List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
 
         insertAndTrim(names, ticks, matches);

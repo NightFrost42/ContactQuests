@@ -41,6 +41,18 @@ object DataManager {
     @JvmField
     val rewardSenders: MutableSet<String> = mutableSetOf()
 
+    @JvmField
+    var targetsDirty: Boolean = false
+
+    /** 若任务文件自上次构建后被编辑过，则先重建登记表。 */
+    fun ensureTargetsFresh() {
+        if (!targetsDirty) {
+            return
+        }
+        targetsDirty = false
+        init()
+    }
+
     fun init() {
         clearAllMaps()
         NpcConfigManager.reload()

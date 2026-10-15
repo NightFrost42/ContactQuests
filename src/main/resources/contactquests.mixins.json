@@ -11,6 +11,7 @@
     "NetworkHelperMixin",
     "OtherButtonsPanelTopMixin",
     "QuestMixin",
+    "ServerQuestFileMixin",
     "TeamDataMixin"
   ],
   "client": [
