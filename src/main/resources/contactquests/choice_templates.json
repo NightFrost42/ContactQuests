@@ -1,0 +1,46 @@
+{
+  "default": [
+    {
+      "id": "warm_greeting",
+      "weight": 10,
+      "text": "{recipient}，展信安好：\n托付的「{quest}」已顺利办妥，请放心。\n这回谢礼想要{reward}，得空劳烦寄来，多谢！\n—— {player}"
+    },
+    {
+      "id": "breezy_neighbor",
+      "weight": 10,
+      "text": "嗨，{recipient}：\n拜托的那桩事已经利索搞定啦！\n谢礼最想要{reward}，方便时寄来就行，回见！\n{player}"
+    },
+    {
+      "id": "busy_traveler",
+      "weight": 8,
+      "text": "致 {recipient}：\n这趟差事总算圆满收尾了。\n报酬想领{reward}，劳烦寄到信箱，歇脚时我去取。\n祝好，{player}"
+    },
+    {
+      "id": "plain_note",
+      "weight": 8,
+      "text": "{recipient}，交代的事已顺手办妥。\n酬劳这回我选定了{reward}，有空麻烦寄来。\n辛苦啦，{player} 留字"
+    },
+    {
+      "id": "cozy_homestead",
+      "weight": 7,
+      "text": "{recipient}，近来可好？\n你提过的事已经顺顺当当忙完啦。\n谢礼我最中意{reward}，天晴路顺时寄给我吧，谢啦！\n{player}"
+    }
+  ],
+  "en_us": [
+    {
+      "id": "friendly_card",
+      "weight": 10,
+      "text": "Dear {recipient},\n\"{quest}\" is all taken care of!\nI'd love to go with {reward} whenever you can mail it over.\nThanks, {player}"
+    },
+    {
+      "id": "traveler_update",
+      "weight": 8,
+      "text": "Hey {recipient},\nWrapped things up smoothly on my end.\nI've settled on {reward}—mail it whenever it suits you.\nBest, {player}"
+    },
+    {
+      "id": "casual_favor",
+      "weight": 7,
+      "text": "Hi {recipient}, that favor you asked for is all done!\nI'd really like {reward}—no rush, send it when you have time.\nCheers, {player}"
+    }
+  ]
+}

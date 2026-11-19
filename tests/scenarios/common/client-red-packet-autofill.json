@@ -1,0 +1,262 @@
+{
+  "id": "client.contact.red_packet_autofill",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "install_synthetic_tasks"
+    },
+    {
+      "action": "seed_autofill",
+      "type": "red_packet"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "open_task_display",
+      "type": "red_packet"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "red_packet-valid-task-display"
+    },
+    {
+      "action": "click_task_submit",
+      "type": "red_packet"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 200
+    },
+    {
+      "action": "assert_screen",
+      "screen": "RedPacketEnvelopeScreen"
+    },
+    {
+      "action": "assert_autofill_container",
+      "item": "gold_ingot",
+      "count": 2,
+      "wrong_item": "dirt",
+      "wrong_min_count": 3
+    },
+    {
+      "action": "assert_red_packet_blessing",
+      "value": "fixed autofill blessing"
+    },
+    {
+      "action": "screenshot",
+      "name": "red_packet-autofilled"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "quick_move_exact",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "quick_move_exact",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "quick_move_exact",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "quick_move_exact",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "quick_move_exact",
+      "phase": "verify"
+    },
+    { "action": "autofill_boundary", "type": "red_packet", "variant": "quick_move_exact", "phase": "seal_red_packet" },
+    { "action": "wait_ticks", "ticks": 20 },
+    { "action": "autofill_boundary", "type": "red_packet", "variant": "quick_move_exact", "phase": "snapshot_sealed" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "autofill_boundary", "type": "red_packet", "variant": "quick_move_exact", "phase": "verify_sealed" },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "prefilled_remaining",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "prefilled_remaining",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "prefilled_remaining",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "prefilled_remaining",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "prefilled_remaining",
+      "phase": "verify"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "wrong_item_preserved",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "wrong_item_preserved",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "wrong_item_preserved",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "wrong_item_preserved",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "wrong_item_preserved",
+      "phase": "verify"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "missing_item",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "missing_item",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "missing_item",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "missing_item",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "red_packet",
+      "variant": "missing_item",
+      "phase": "verify"
+    },
+    {
+      "action": "finish"
+    }
+  ]
+}

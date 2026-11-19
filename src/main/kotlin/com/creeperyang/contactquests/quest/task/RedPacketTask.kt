@@ -3,7 +3,7 @@ package com.creeperyang.contactquests.quest.task
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.client.gui.ValidRedPacketItemsScreen
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import com.creeperyang.contactquests.utils.RegistryUtils
 import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
@@ -78,43 +78,32 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
     override fun test(stack: ItemStack): Boolean {
         if (stack.isEmpty || stack.item !is RedPacketItem) return false
 
+        val contentStack = stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
+            .stream().filter { !it.isEmpty }.findFirst().orElse(ItemStack.EMPTY)
+        if (contentStack.isEmpty) return false
+
         if (blessing.isNotEmpty()) {
             val id = ResourceLocation.fromNamespaceAndPath("contact", "red_packet_blessing")
             val compType = BuiltInRegistries.DATA_COMPONENT_TYPE[id]
 
-            val stackBlessing: String? = if (compType != null) {
-                stack[compType] as? String
+            val stackBlessing = if (compType != null) {
+                (stack[compType] as? String).orEmpty().trim()
             } else {
-                null
+                ""
             }
 
-            var targetBlessing = blessing
-            val (player, teamData) = tempContext!!
-            var normalizedConfig = ""
-            if (tempContext != null) {
-                targetBlessing = getResolvedText(teamData, player)
-
-                normalizedConfig = targetBlessing.replace("\\n", "\n").trim()
+            val ctx = tempContext
+            val targetBlessing = if (ctx != null) {
+                getResolvedText(ctx.second, ctx.first)
+            } else {
+                blessing
             }
-
-            if (stackBlessing != targetBlessing && !player.level().isClientSide) {
-                ContactQuests.info("--- Postcard Task Validation Failed ---")
-                ContactQuests.info("Task ID: $id")
-                ContactQuests.info("Config Raw: '$blessing'")
-                ContactQuests.info("Config Resolved: '$targetBlessing'")
-                ContactQuests.info("Config Normalized (Expected): '$normalizedConfig'")
-                ContactQuests.info("Match Result: false")
-
-                ContactQuests.info("---------------------------------------")
-            }
+            val normalizedConfig = targetBlessing.replace("\\n", "\n").trim()
 
             if (stackBlessing != normalizedConfig) return false
         }
 
         if (itemStack.isEmpty) return true
-
-        val contentStack = stack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
-            .stream().findFirst().orElse(ItemStack.EMPTY)
 
         return ItemMatchingSystem.INSTANCE.doesItemMatch(
             itemStack,
@@ -128,10 +117,7 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         if (teamData != null) {
             val cached = (teamData as ITeamDataExtension).`contactQuests$getRedPacketBlessing`(this.id)
             if (!cached.isNullOrEmpty()) {
-//                ContactQuests.info("[Debug Client] Task $id found cached text: $cached")
-                return cached
-            } else {
-//                ContactQuests.info("[Debug Client] Task $id has NO cached text.")
+                return if (player != null) RedPacketPlaceholderSupport.replace(cached, player, teamData) else cached
             }
         }
 
@@ -144,6 +130,8 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
     fun checkContent(stack: ItemStack): Boolean {
         return isTargetItem(stack)
     }
+
+    override fun allowsEmptyDisplayItems(): Boolean = itemStack.isEmpty
 
     @OnlyIn(Dist.CLIENT)
     override fun openTaskGui(validItems: MutableList<ItemStack>) {
@@ -158,7 +146,7 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         tempContext = player to teamData
         try {
             val contentStack = submitItemStack.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY)
-                .stream().findFirst().orElse(ItemStack.EMPTY)
+                .stream().filter { !it.isEmpty }.findFirst().orElse(ItemStack.EMPTY)
             if (itemStack.item is MissingItem || submitItemStack.item is MissingItem) return submitItemStack
             return insert(teamData, contentStack, false, needTest = false)
         } finally {
@@ -228,6 +216,18 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         fun replace(text: String, player: Player, team: TeamData): String {
             var result = text
             replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
+
+        fun replaceForTeamCache(text: String, player: Player, team: TeamData): String {
+            var result = text
+            val hasCustomPlayer = replacers["<player_name>"] !== defaultReplacers["<player_name>"]
+            replacers.forEach { (key, func) ->
+                if (key == "<player_name>" && !hasCustomPlayer) return@forEach
                 if (result.contains(key)) {
                     result = result.replace(key, func(player, team))
                 }

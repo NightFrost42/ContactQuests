@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.quest.task
 
 import com.creeperyang.contactquests.ContactQuests
 import dev.ftb.mods.ftblibrary.icon.Icon
+import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftbquests.quest.task.TaskType
 import dev.ftb.mods.ftbquests.quest.task.TaskTypes
 import net.minecraft.resources.ResourceLocation
@@ -24,7 +25,7 @@ object TaskRegistry  {
     val POSTCARD: TaskType = TaskTypes.register(
         ResourceLocation.fromNamespaceAndPath(ContactQuests.ID, "postcard_task"),
         ::PostcardTask
-    ) { Icon.getIcon("contact:item/postcard") }
+    ) { ItemIcon.getItemIcon("contact:postcard") }
 
     fun init() {
         //引入

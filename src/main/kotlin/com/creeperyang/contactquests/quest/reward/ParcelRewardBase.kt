@@ -1,10 +1,14 @@
 package com.creeperyang.contactquests.quest.reward
 
 import com.creeperyang.contactquests.config.ContactConfig
+import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.TagConfig
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.RewardDistributionManager
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
+import dev.ftb.mods.ftblibrary.icon.Icon
+import dev.ftb.mods.ftblibrary.icon.ItemIcon
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.Reward
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
@@ -21,14 +25,22 @@ import net.neoforged.api.distmarker.OnlyIn
 abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
     var targetAddressee: String = ContactConfig.defaultTargetAddressee.get()
     var isEnder: Boolean = false
+    var hideContents: Boolean = false
+
+    @OnlyIn(Dist.CLIENT)
+    fun isContentsHiddenForViewer(): Boolean = hideContents &&
+        (ClientQuestFile.INSTANCE == null || !ClientQuestFile.INSTANCE.canEdit())
+
+    @OnlyIn(Dist.CLIENT)
+    fun sealedIcon(): Icon = ItemIcon.getItemIcon("contact:parcel")
 
     var unlockTags: MutableList<String> = ArrayList()
 
     var enableTeamMultiplier: Boolean = false
     var teamRewardMultiplier: Float = 1.0f
 
-    protected fun distributeItem(player: ServerPlayer, stack: ItemStack) {
-        if (stack.isEmpty) return
+    protected fun distributeItem(player: ServerPlayer, stack: ItemStack): Boolean {
+        if (stack.isEmpty) return false
 
         if (unlockTags.isNotEmpty()) {
             val componentType = net.minecraft.core.component.DataComponents.CUSTOM_DATA
@@ -44,7 +56,18 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         }
 
         RewardDistributionManager.distribute(player, stack, targetAddressee, isEnder)
-        CollectionSavedData.get(player.serverLevel()).returnReward(player, targetAddressee)
+        returnStoredItems(player)
+        return true
+    }
+
+    /** 奖励表委托执行非物品型原生奖励时同样会调用本方法触发寄存物品随奖返还。 */
+    protected fun returnStoredItems(player: ServerPlayer) {
+        // 奖励已被发奖缓冲区接收后才触发返还；若 NPC 退回异常绝不能把奖励重新退回可重复领取状态。
+        try {
+            CollectionSavedData.get(player.server.overworld()).returnReward(player, targetAddressee, isEnder)
+        } catch (exception: Exception) {
+            ContactQuests.error("Failed to return stored items for $targetAddressee: $exception")
+        }
     }
 
     fun calculateMultipliedCount(originalCount: Int, player: ServerPlayer): Int {
@@ -59,6 +82,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         super.writeData(nbt, provider)
         nbt.putString("target_addressee", targetAddressee)
         nbt.putBoolean("is_ender", isEnder)
+        nbt.putBoolean("hide_contents", hideContents)
 
         nbt.putBoolean("is_team_reward", enableTeamMultiplier)
         nbt.putFloat("team_reward_multiplier", teamRewardMultiplier)
@@ -74,6 +98,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         super.readData(nbt, provider)
         if (nbt.contains("target_addressee")) targetAddressee = nbt.getString("target_addressee")
         isEnder = nbt.getBoolean("is_ender")
+        hideContents = nbt.getBoolean("hide_contents")
 
         enableTeamMultiplier = nbt.getBoolean("is_team_reward")
         teamRewardMultiplier = if (nbt.contains("team_reward_multiplier")) {
@@ -93,6 +118,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         super.writeNetData(buffer)
         buffer.writeUtf(targetAddressee)
         buffer.writeBoolean(isEnder)
+        buffer.writeBoolean(hideContents)
 
         buffer.writeBoolean(enableTeamMultiplier)
         buffer.writeFloat(teamRewardMultiplier)
@@ -105,6 +131,7 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
         super.readNetData(buffer)
         targetAddressee = buffer.readUtf()
         isEnder = buffer.readBoolean()
+        hideContents = buffer.readBoolean()
 
         enableTeamMultiplier = buffer.readBoolean()
         teamRewardMultiplier = buffer.readFloat()
@@ -117,6 +144,8 @@ abstract class ParcelRewardBase(id: Long, quest: Quest) : Reward(id, quest) {
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
+        config.addBool("hide_contents", hideContents, { hideContents = it }, false)
+            .setNameKey("contactquests.reward.hide_contents")
         config.addString("target_addressee", targetAddressee, { v -> targetAddressee = v }, "QuestNPC")
             .setNameKey("contact.quest.sender_name")
             .setOrder(-3)

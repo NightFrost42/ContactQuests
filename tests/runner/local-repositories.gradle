@@ -1,0 +1,28 @@
+def cqLocalRepo = new File(gradle.gradleUserHomeDir, 'maven')
+settingsEvaluated { settings ->
+    settings.pluginManagement.repositories { maven { url = 'https://maven.aliyun.com/repository/central' }; maven { url = cqLocalRepo; metadataSources { mavenPom(); artifact() } } }
+    settings.pluginManagement.resolutionStrategy.eachPlugin {
+        if (requested.id.id == 'org.gradle.toolchains.foojay-resolver-convention') useModule('org.gradle.toolchains:foojay-resolver:0.8.0')
+        if (requested.id.id == 'org.jetbrains.kotlin.jvm') useModule('org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0')
+        if (requested.id.id == 'net.neoforged.moddev') useModule('net.neoforged:moddev-gradle:2.0.119')
+    }
+}
+beforeSettings { settings ->
+    settings.pluginManagement.repositories { maven { url = 'https://maven.aliyun.com/repository/central' }; maven { url = cqLocalRepo; metadataSources { mavenPom(); artifact() } } }
+    settings.pluginManagement.resolutionStrategy.eachPlugin {
+        if (requested.id.id == 'org.gradle.toolchains.foojay-resolver-convention') useModule('org.gradle.toolchains:foojay-resolver:0.8.0')
+    }
+}
+allprojects {
+    repositories { maven { url = 'https://maven.aliyun.com/repository/central' }; maven { url = cqLocalRepo; metadataSources { mavenPom(); artifact() } } }
+}
+
+projectsEvaluated {
+    allprojects { project ->
+        def local = project.repositories.find { repo -> repo instanceof MavenArtifactRepository && repo.url.toString().replace('\\', '/').contains('/.gradle-cq/maven') }
+        if (local != null) {
+            project.repositories.remove(local)
+            project.repositories.addFirst(local)
+        }
+    }
+}

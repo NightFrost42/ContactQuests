@@ -1,8 +1,8 @@
 package com.creeperyang.contactquests
 
 import com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin
-import com.creeperyang.contactquests.utils.IQuestExtension
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.IQuestExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
@@ -32,19 +32,25 @@ object EventHandler {
         val customData = stack[DataComponents.CUSTOM_DATA] ?: return
         if (!customData.contains("ContactQuestsUnlockTags")) return
 
-        val tagsNbt = customData.copyTag().getList("ContactQuestsUnlockTags", 8) // 8 = String
+        val tagsNbt = customData.copyTag().getList("ContactQuestsUnlockTags", 8) // 8 = NBT 字符串类型
         if (tagsNbt.isEmpty()) return
 
         val team = FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null) ?: return
         val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id) ?: return
 
+        // 仅在任务状态真实从“锁定”转变为“可开启”时才上报提示；仅解锁单个 Tag 不足以绕过 ALL 标签、原生依赖或互斥规则。
+        val startableBefore = ServerQuestFile.INSTANCE.allChapters.flatMap { it.quests }
+            .associate { it.id to teamData.canStartTasks(it) }
+
         val newUnlockedTags = mutableListOf<String>()
 
         if (teamData is ITeamDataExtension) {
-            tagsNbt.forEach {
-                val tagStr = it.asString
-                if ((teamData as ITeamDataExtension).`contactQuests$unlockTag`(tagStr)) {
-                    newUnlockedTags.add(tagStr)
+            com.creeperyang.contactquests.quest.QuestStateEvents.withActor(player, "physical_item") {
+                tagsNbt.forEach {
+                    val tagStr = it.asString
+                    if ((teamData as ITeamDataExtension).`contactQuests$unlockTag`(tagStr)) {
+                        newUnlockedTags.add(tagStr)
+                    }
                 }
             }
         }
@@ -56,7 +62,7 @@ object EventHandler {
                     .withStyle(ChatFormatting.GREEN)
             )
 
-            checkAndNotifyQuests(player, newUnlockedTags)
+            checkAndNotifyQuests(player, newUnlockedTags, startableBefore, teamData)
         }
     }
 
@@ -69,7 +75,8 @@ object EventHandler {
         }
     }
 
-    private fun checkAndNotifyQuests(player: ServerPlayer, newTags: List<String>) {
+    private fun checkAndNotifyQuests(player: ServerPlayer, newTags: List<String>,
+                                     startableBefore: Map<Long, Boolean>, teamData: dev.ftb.mods.ftbquests.quest.TeamData) {
         val file = ServerQuestFile.INSTANCE
         val allQuests = file.allChapters.flatMap { it.quests }
 
@@ -78,15 +85,10 @@ object EventHandler {
 
             val reqTags = ext.`contactQuests$getRequiredTags`()
 
-            if (reqTags.isNotEmpty() && reqTags.any { newTags.contains(it) }) {
+            if (reqTags.isNotEmpty() && reqTags.any { newTags.contains(it) }
+                && startableBefore[quest.id] == false && teamData.canStartTasks(quest) && quest.isVisible(teamData)) {
 
-                val rawTitle = quest.rawTitle
-
-                val safeTitle: Component = if (rawTitle.isNotBlank()) {
-                    Component.literal(rawTitle)
-                } else {
-                    Component.literal("Quest #${quest.codeString}")
-                }
+                val safeTitle: Component = quest.title
 
 
                 val openComponent = Component.translatable("contactquests.message.click_to_open", safeTitle)
@@ -102,7 +104,7 @@ object EventHandler {
                             .withHoverEvent(
                                 HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
-                                    Component.literal("ID: ${quest.codeString}")
+                                    Component.translatable("contactquests.quest.id", quest.codeString)
                                 )
                             )
                     }

@@ -1,7 +1,7 @@
 package com.creeperyang.contactquests.network
 
 import com.creeperyang.contactquests.ContactQuests
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.core.UUIDUtil
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -14,12 +14,18 @@ import java.util.*
 
 class SyncTeamExtensionMessage(
     val teamId: UUID,
-    val tags: Set<String>,
-    val forcedQuests: Set<Long>,
-    val blockedQuests: Set<Long>,
-    val postcardData: Map<Long, String>,
-    val redPacketData: Map<Long, String>
+    tags: Set<String>,
+    forcedQuests: Set<Long>,
+    blockedQuests: Set<Long>,
+    postcardData: Map<Long, String>,
+    redPacketData: Map<Long, String>
 ) : CustomPacketPayload {
+    // 拷贝为不可变快照，防止 Netty 异步编码发送期间服务端并发修改原团队集合。
+    val tags: Set<String> = Collections.unmodifiableSet(HashSet(tags))
+    val forcedQuests: Set<Long> = Collections.unmodifiableSet(HashSet(forcedQuests))
+    val blockedQuests: Set<Long> = Collections.unmodifiableSet(HashSet(blockedQuests))
+    val postcardData: Map<Long, String> = Collections.unmodifiableMap(HashMap(postcardData))
+    val redPacketData: Map<Long, String> = Collections.unmodifiableMap(HashMap(redPacketData))
 
     companion object {
         val ID: ResourceLocation = ResourceLocation.fromNamespaceAndPath("contactquests", "sync_team_extension")

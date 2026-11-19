@@ -2,12 +2,15 @@ package com.creeperyang.contactquests.client.renderer
 
 import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.registry.ModItems
-import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
+import com.creeperyang.contactquests.bridge.IMailboxTeamAccessor
 import com.flechazo.contact.common.tileentity.MailboxBlockEntity
 import com.mojang.blaze3d.vertex.PoseStack
 import com.mojang.math.Axis
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.client.Minecraft
 import net.minecraft.client.renderer.MultiBufferSource
+import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemDisplayContext
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.phys.Vec3
@@ -33,6 +36,25 @@ object MailboxGlobalRenderer {
         TRACKED_MAILBOXES.remove(be)
     }
 
+    fun trackedMailboxes(): Set<MailboxBlockEntity> = TRACKED_MAILBOXES.toSet()
+
+    fun resolveViewerTeamId(): UUID? {
+        val api = FTBTeamsAPI.api()
+        if (api.isClientManagerLoaded) {
+            api.clientManager.selfTeam()?.id?.let { return it }
+        }
+        return ClientQuestFile.INSTANCE?.selfTeamData?.teamId
+    }
+
+    fun shouldRenderMailbox(be: MailboxBlockEntity, player: Player, viewerTeamId: UUID?): Boolean {
+        val level = player.level()
+        if (be.isRemoved || be.level != level) return false
+        if (be.blockPos.distToCenterSqr(player.position()) > 64 * 64) return false
+        if (level.getBlockEntity(be.blockPos) != be) return false
+        val teamId = (be as? IMailboxTeamAccessor)?.`contactQuests$getTeamId`() ?: return false
+        return viewerTeamId != null && teamId == viewerTeamId
+    }
+
     @SubscribeEvent
     fun onLoggingOut(event: ClientPlayerNetworkEvent.LoggingOut) {
         TRACKED_MAILBOXES.clear()
@@ -49,30 +71,18 @@ object MailboxGlobalRenderer {
         val poseStack = event.poseStack
         val cameraPos = event.camera.position
         val bufferSource = mc.renderBuffers().bufferSource()
+        val viewerTeamId = resolveViewerTeamId()
 
         val iterator = TRACKED_MAILBOXES.iterator()
         while (iterator.hasNext()) {
             val be = iterator.next()
 
-            if (be.isRemoved || be.level != level) {
+            if (be.isRemoved || be.level != level || level.getBlockEntity(be.blockPos) != be) {
                 iterator.remove()
                 continue
             }
 
-            if (be.blockPos.distToCenterSqr(player.position()) > 64 * 64) continue
-
-            if (level.getBlockEntity(be.blockPos) != be) {
-                iterator.remove()
-                continue
-            }
-
-            if (be !is IMailboxTeamAccessor) continue
-            val teamId = be.`contactquests$getTeamId`()
-
-            if (teamId == null) {
-                iterator.remove()
-                continue
-            }
+            if (!shouldRenderMailbox(be, player, viewerTeamId)) continue
 
             poseStack.pushPose()
             val pos = Vec3.atLowerCornerOf(be.blockPos).subtract(cameraPos)

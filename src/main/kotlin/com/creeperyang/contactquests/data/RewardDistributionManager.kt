@@ -6,6 +6,7 @@ import com.creeperyang.contactquests.config.NpcConfigManager
 import com.flechazo.contact.common.item.ParcelItem
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.common.item.RedPacketItem
+import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.core.registries.BuiltInRegistries
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
@@ -18,46 +19,44 @@ import kotlin.math.min
 
 object RewardDistributionManager {
 
-    private val buffer: MutableMap<UUID, MutableMap<String, MutableList<ItemStack>>> = mutableMapOf()
+    private data class Recipient(val playerId: UUID, val teamId: UUID?)
+    private val buffer: MutableMap<Recipient, MutableMap<DeliveryKey, MutableList<ItemStack>>> = mutableMapOf()
 
-    private data class DeliveryKey(val sender: String, val isEnder: Boolean) {
-        override fun toString(): String = "$sender|$isEnder"
-
-        companion object {
-            fun fromString(str: String): DeliveryKey {
-                val parts = str.split("|")
-                return DeliveryKey(
-                    parts[0],
-                    parts[1].toBoolean()
-                )
-            }
-        }
-    }
+    private data class DeliveryKey(val sender: String, val isEnder: Boolean, val preserveSender: Boolean)
 
     fun distribute(player: ServerPlayer, stack: ItemStack, sender: String, isEnder: Boolean) {
+        distributeTo(player.uuid, FTBTeamsAPI.api().manager.getTeamForPlayer(player).orElse(null)?.id, stack, sender, isEnder)
+    }
+
+    @JvmOverloads
+    fun distributeTo(playerId: UUID, teamId: UUID?, stack: ItemStack, sender: String, isEnder: Boolean, preserveSender: Boolean = false) {
         if (stack.isEmpty) return
 
-        val key = DeliveryKey(sender, isEnder).toString()
-        val playerMap = buffer.computeIfAbsent(player.uuid) { mutableMapOf() }
+        val key = DeliveryKey(sender, isEnder, preserveSender)
+        val recipient = Recipient(playerId, teamId)
+        val playerMap = buffer.computeIfAbsent(recipient) { mutableMapOf() }
         val items = playerMap.computeIfAbsent(key) { mutableListOf() }
 
         mergeItemIntoList(items, stack)
     }
 
     private fun mergeItemIntoList(list: MutableList<ItemStack>, stack: ItemStack) {
+        val maxStack = stack.maxStackSize.coerceIn(1, 99)
         var remaining = stack.count
         for (existing in list) {
-            if (ItemStack.isSameItemSameComponents(existing, stack) && existing.count < existing.maxStackSize) {
-                val canAdd = min(remaining, existing.maxStackSize - existing.count)
+            if (ItemStack.isSameItemSameComponents(existing, stack) && existing.count < maxStack) {
+                val canAdd = min(remaining, maxStack - existing.count)
                 existing.grow(canAdd)
                 remaining -= canAdd
                 if (remaining <= 0) return
             }
         }
-        if (remaining > 0) {
+        while (remaining > 0) {
+            val chunk = min(remaining, maxStack)
             val copy = stack.copy()
-            copy.count = remaining
+            copy.count = chunk
             list.add(copy)
+            remaining -= chunk
         }
     }
 
@@ -67,12 +66,14 @@ object RewardDistributionManager {
         KubeJSMailQueueSavedData.get(level).tick(level)
     }
 
+    /** 在完成发奖或清空待处理请求前，先将已受理的邮件刷入持久化投递队列。 */
+    fun flush(level: ServerLevel) = processBuffer(level)
+
     private fun processBuffer(level: ServerLevel) {
         if (buffer.isEmpty()) return
 
-        buffer.forEach { (playerId, keyMap) ->
-            keyMap.forEach { (keyStr, items) ->
-                val key = DeliveryKey.fromString(keyStr)
+        buffer.forEach { (recipient, keyMap) ->
+            keyMap.forEach { (key, items) ->
                 val parcels = packItems(items, key.isEnder, key.sender)
 
                 val delayTicks =
@@ -80,7 +81,8 @@ object RewardDistributionManager {
                     else NpcConfigManager.getDeliveryTime(key.sender, level)
 
                 parcels.forEach { parcelStack ->
-                    RewardDeliverySavedData.get(level).addPendingReward(playerId, parcelStack, delayTicks, key.sender)
+                    RewardDeliverySavedData.get(level).addPendingReward(recipient.playerId, parcelStack,
+                        delayTicks, key.sender, recipient.teamId, key.preserveSender)
                 }
             }
         }

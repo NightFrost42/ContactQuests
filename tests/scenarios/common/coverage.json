@@ -1,0 +1,5631 @@
+{
+  "branch": "1.21.1-neoforge",
+  "fixed": true,
+  "scenarios": [
+    {
+      "id": "client.additional_ui.config.empty_reopen",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Mods Config Done saves empty numeric controls as defaults 1/10 after nondefault seeds; reopened controls and TOML match",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.config.overflow_reopen",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Config numeric overflow defaults to 1/10 from nondefault seeds and persists through reopening",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.config.toggle_reopen",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual delivery-toggle click and Done persist the changed value in controls and TOML",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.config.cancel_reopen",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Config Cancel discards changed numeric controls and toggle without changing persisted bytes",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.config.resume",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Done/Mods/Pause return restores original configuration and exact player inventory",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.required_tags.verify_saved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real quest TagConfig selection and native editor Done persist exactly the chosen existing tag on the owning server",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.required_tags.tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reopened native quest tag row tooltip displays the actual selected tag",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.required_tags.verify_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native row deletion and Done restore the original full quest NBT on both sides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.unlock_tags.verify_saved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real reward TagConfig selection and native editor Done persist exactly the chosen existing unlock tag on the owning server",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.unlock_tags.tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reopened native reward tag row tooltip displays the actual selected unlock tag",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.unlock_tags.verify_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native row deletion and Done restore the original full reward NBT on both sides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.parcel.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary parcel stays queued for exactly the configured positive delay, credits exact submitted units once and leaves unrelated progress intact",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.parcel.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ordinary parcel send and online receipt notification occur once, with no replay and restored inventory",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.ender_parcel.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ender parcel immediately credits exact units despite a positive NPC delay and never queues or replays",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.ender_parcel.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ender parcel send has no delayed receipt notification through more than the configured delay",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.postcard.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary Contact postcard observes exact positive NPC delay and credits one submitted card once",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.postcard.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ordinary postcard send has one online translated receipt after the due tick and no repeated notification",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.ender_postcard.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ender postcard immediately credits one card with positive configured NPC delay and leaves no pending queue",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.ender_postcard.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ender postcard send produces no delayed receipt or repeated progress through the entire original delay",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.same_tick.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "One real mixed envelope queues two exact task quantities for the same NPC and both drain in one natural due tick",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.same_tick.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Two same-NPC deliveries completing in one real tick send exactly one actual online receipt message",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.deleted_task.delete",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Delete the real task while its accepted parcel is still in flight without altering the accepted queue",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.delivery_boundary.deleted_task.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Deleted in-flight task drains at the original due tick without crediting any surviving task or requeuing",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.delivery_boundary.deleted_task.finish",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Deleted in-flight task has no false delivered notification and original inventory is restored after the no-repeat window",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.failedNpcRequestAndWithRewardsEscrowPersistExactly",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Provider failure preserves accepted originals and withReward escrow exactly across persistent reload",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.commands.tags_no_team_controls",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real dispatcher view/add/remove reject an unregistered no-team player with exact view error and unchanged existing team tags",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.preview.overflow_instant",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual non-editor task preview clips over-capacity text to native card bounds and exact twelve-pixel line spacing",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.preview.overflow_animated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual non-editor task preview limits excessive explicit newlines to the actual card height",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.preview.overflow_narrow",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual narrow-card task preview uses its own text region and never draws extra lines outside the scissor",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.invalid_shapes_atomic",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino rejects wrong options/children/member types and non-string keys without changing native graph, ID links, overrides or saved files",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.native_numeric_tags",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Public Rhino graph update accepts integral DoubleTag/FloatTag exactly and atomically rejects fractions",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.cancel_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual unsaved-changes confirmation discards selected task style and restores the same quest editor with underlying style unchanged",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.cancel_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual unsaved-changes confirmation discards selected reward style and restores the same quest editor with underlying style unchanged",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.cancel_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.cancel_reopen_empty",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.cancel_noop",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.enter_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.enter_trim_once",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.creation.enter_blank_noop",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Tag creation keyboard/local cancel input; exact Tags, config, callbacks and restoration",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_outer_tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual non-editor RewardButton tooltip includes both native choices and postcard instruction",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_copy_text",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real copy button copies the exact letter without changing request, claim or stationery",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_write_tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real write tooltip names the NPC and reveals no technical identity",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.inventory.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for parcel/prepare; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.inventory.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for parcel/open; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.inventory.inventory",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for parcel/inventory; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.inventory.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for parcel/snapshot; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.inventory.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for parcel/verify; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.inventory.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for red_packet/prepare; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.inventory.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for red_packet/open; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.inventory.inventory",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for red_packet/inventory; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.inventory.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for red_packet/snapshot; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.inventory.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for red_packet/verify; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.inventory.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for postcard/prepare; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.inventory.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for postcard/open; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.inventory.inventory",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for postcard/inventory; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.inventory.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for postcard/snapshot; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.inventory.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real E-key return for postcard/verify; exact client/server inventory and progress preserved, autofillers idle",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.draw",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real list-row frames draw centered Contact texture with native aspect ratio and refresh stale image cache",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.texture_refresh",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real list-row frames draw centered Contact texture with native aspect ratio and refresh stale image cache",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.draw",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real list-row frames draw centered Contact texture with native aspect ratio and refresh stale image cache",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.texture_refresh",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real list-row frames draw centered Contact texture with native aspect ratio and refresh stale image cache",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.no_jei.dependencies_absent",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without optional scripts the actual Windows client also excludes JEI mod/API, including same-world restart",
+      "phases": [
+        "client-no-kubejs",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.no_jei.dependencies_absent",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Optional-dependency dedicated server starts and restarts with JEI mod/API genuinely absent",
+      "phases": [
+        "dedicated-no-kubejs",
+        "dedicated-no-kubejs-restart"
+      ]
+    },
+    {
+      "id": "client.no_jei.recipe_noop",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary item-cell click without JEI keeps submission page, exact inventory/progress and idle autofillers without loading optional classes",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.back.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/back/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.back.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/back/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.back.back",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/back/back; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.back.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/back/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.back.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/back/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.esc.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/esc/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.esc.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/esc/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.esc.esc",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/esc/esc; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.esc.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/esc/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.esc.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/esc/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.recipe_click",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/recipe_click; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.recipe_verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/recipe_verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.recipe_return",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/recipe_return; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.parcel.recipe.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation parcel/recipe/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.back.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/back/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.back.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/back/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.back.back",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/back/back; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.back.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/back/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.back.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/back/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.esc.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/esc/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.esc.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/esc/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.esc.esc",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/esc/esc; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.esc.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/esc/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.esc.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/esc/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.recipe_click",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/recipe_click; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.recipe_verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/recipe_verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.recipe_return",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/recipe_return; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.red_packet.recipe.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation red_packet/recipe/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.back.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/back/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.back.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/back/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.back.back",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/back/back; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.back.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/back/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.back.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/back/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.esc.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/esc/prepare; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.esc.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/esc/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.esc.esc",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/esc/esc; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.esc.snapshot",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/esc/snapshot; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.postcard.esc.verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation postcard/esc/verify; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.pause",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/pause; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.mods",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/mods; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.search",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/search; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.select",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/select; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/open; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/cancel; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.back",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/back; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.navigation.mods_config.resume",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real UI navigation mods_config/resume; exact inventory/progress or live configuration preserved; no autofill scheduled",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.binding_ui.lower",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real client crouch/right-click binder on lower Contact mailbox half binds the original team with matching source owner/markers, consumes one binder and preserves exact mail",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.binding_ui.upper",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real client binder on upper mailbox half independently creates the same correct source owner and synchronized marker, with exact one-card consumption",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.binding_ui.conflict_lower",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real client lower-half conflict receives native occupied denial and preserves binder, source ownership, team markers and foreign mail byte-for-byte",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.binding_ui.conflict_upper",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real client upper-half conflict receives native denial with no source, item or mail change",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.binding_ui.restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "After four actual binder interactions the original team mailbox, exact mail/inventory/location and isolated world cells are restored; temporary foreign team is removed",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.autofill.wrapping.precise",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Ordinary parcel Submit opens real four-slot wrapping paper and precisely splits diamond x2 from x5 with conserved client/server inventory",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.wrapping.prefilled",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Genuine wrapping paper prefilled by moving inventory diamond x1 receives only the missing x1 in a separate input; all four slots match server",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.wrapping.full",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Four real wrapping input slots filled with unrelated dirt remain unchanged; requested diamond stack and empty cursor are preserved on both sides",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.wrapping.missing",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Ordinary wrapping autofill with no requested diamonds finishes without inventing items or moving unrelated dirt",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_display",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real non-editor non-hidden Choice RewardButton exposes native names, quantities, item icons and option tooltips when option_labels is empty",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_request",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Natural visible-choice letter identifies the selected native reward and actual NPC without a visible technical request identifier",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_written",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Contact editor holds the selected native-item prose and hidden marker before native Done persists it",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_claim_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual non-hidden choice native claim state synchronizes after the real postcard was sent",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.visible_choice_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Separate non-hidden choice with empty option labels preserves the existing six hidden rewards and provides real editable stationery",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.visible_choice_delivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Normal visible choice uses real RewardButton, Contact Done and postbox packets to send precisely apple x3, no diamonds and no replay delivery",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "gametest.choiceLegacyPendingAddressRefreshesWithoutChangingProseRules",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Loading an unsubmitted old system-address choice refreshes it to the actual NPC and accepts free prose through its new hidden card identity",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "client.features.choice_stationery_ready",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The real inventory starts with a read-only received letter at slot 0 and editable Contact stationery at slot 9",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_stationery",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The actual Write button skips received mail, picks an editable card outside the hotbar and opens its genuine native editor",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.choice_stationery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "After real choice preparation, Done and postbox submission the earlier received letter is byte-for-byte unchanged and present exactly once",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.autofill.red_packet.sealed_server_state",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual native Seal network packet saves the exact filled blessing and gold x2 in a real Contact red packet on client and server",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.text.team_size",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual client-side FTB team member count resolves in postcard and red packet task text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.text.cache_priority",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client per-task cached postcard/blessing text takes precedence over placeholder templates and preserves Chinese/newlines",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.collectionReplyResolvesRealItemsAndRejectsOutOfRangeTemplates",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Normal NPC reply resolves actual attachment names/counts/totals and exact styles; invalid item indices use the fixed fallback reply",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.collectionLegacyDataCreatesIndependentPlayerCopies",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Old collectionDataList items/counts migrate to independent player copies and preserve them through save/reload",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.taskTextUsesTeamSizeAndPersistentCacheBeforeTemplates",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Normal postcard/red packet text resolves actual team size; persistent per-task caches override templates and absent context preserves raw text",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "client.autofill.parcel.quick_move_exact",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Ordinary parcel button moves exactly the two requested items with exact client/server conservation and no cursor remainder",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.red_packet.quick_move_exact",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Ordinary red packet button quick-moves an exact source stack and synchronizes the blessing and conserved inventory",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.red_packet.prefilled_remaining",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A genuine red packet with one prefilled item receives only its missing one item; exact client/server totals remain unchanged",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.red_packet.wrong_item_preserved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Autofill preserves an unrelated item already occupying the real native red packet input and does not move the requested item",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.red_packet.missing_item",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Opening the ordinary red packet task without its requested item finishes cleanly without fabricating or moving other contents",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.instant_text",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Speed zero through the real ordinary task flow fills exact Chinese text and newlines in Contact's native editor",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.instant_done_saved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Done saves the exact filled text and original Contact item components on client and server",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.cancel_before_complete",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The real editor closes while animated autofill is incomplete rather than after it has finished",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.cancel_timeout",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "After more than 100 real client ticks without the editor, autofill clears and leaves the real unsubmitted postcard unchanged",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.cancel_reopen_idle",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reopening the same actual postcard after timeout does not resume cancelled typing",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.choiceInventoryBindingRejectsInvalidAndReplacedSelections",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Only a real inventory Contact card can bind a server selection; prose/components survive, random/replaced/replayed identities cannot claim",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.choiceSameNpcUsesHiddenIdentityWithoutProseMatching",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Two choices addressed to the same real NPC remain separate through hidden identities; empty or arbitrary prose never decides delivery",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.features.choice_card",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact Done and postbox network packets preserve the hidden selection and completely rewritten letter",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_card_private",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual written card title and normal/advanced tooltips contain no request identity or special address",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "gametest.llmKeepMergesOnlyMatchingComponents",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "AI keep merges only identical item components, preserves distinct stacks and caller inputs, queues only the reply and never replays completed storage",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmKeepFullStorageWaitsWithoutChangingDecision",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "An accepted keep decision waits atomically when 256 slots cannot hold its whole envelope; persisted retry commits once after capacity is freed, preserving exact quantities and components without automatic return",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.features.escrow_snapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Nonempty original-player withReward escrow is saved with a real unclaimed same-NPC native reward and exact attachment components",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.escrow_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A distinct actual JVM restores nonempty escrow and the still-unclaimed reward without an early item return",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.escrow_claim",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native FTB claim in the new JVM delivers the exact original card, copper x3 and amethyst reward x5 to the original team once",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.escrow_repeat",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A repeated native claim changes no mailbox slot, context or queued delivery and the empty escrow and claimed flag are persisted",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.escrow_audit",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A third actual JVM observes the persisted claimed reward and empty original escrow; exact delivered items and repeated native claim prove no replay",
+      "phases": [
+        "client-escrow-rejoin"
+      ]
+    },
+    {
+      "id": "server.commands.console_and_missing_target",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real dispatcher matrix: four console rejects; absent name/offline bare UUID x givebinder/removedata/setcount/getcount x permission 0/1/2. Four name handler failures, four exact native UUID parser rejections, sixteen admin-gate rejections; inventory/cursor/tags/online-offline counts/SavedData/drops unchanged",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.binder_and_invalid_open",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real command dispatcher gives exactly one Contact binder and rejects unavailable task opens and unauthorized admin use",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.binder_full_inventory",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Self/admin binder commands with full inventories drop precisely one real binder each",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.remove_and_count_bounds",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Zero/negative count validation and self/global removedata preserve other-player isolation and remain deleted after SavedData reload",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.tag_controls",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual add/view/duplicate/remove/missing tag commands and completion suggestions match the real team data",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.prune_npcs",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Prune keeps task/reward recipients and removes only idle NPC configuration; disk reload independently confirms it",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.creation_overloads",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino invokes omitted/title/options/null creation overloads and rejects invalid types before creating objects",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.noop_edits",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Identical/null/omitted public edits preserve both live native objects and stored overrides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.factory_defaults",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Public postcard factory uses genuine normal/ender Contact items, default style, empty sender/tags and newline text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.saved_reload",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All six task/reward Saved edit APIs restore independent field changes after live objects are deliberately perturbed",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.public_api.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM restores exact native NBT and SavedData for all six Rhino edited objects without reseeding",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.task.parcel.ordinary_entry",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Parcel autofill starts through the actual ordinary non-editor task detail button",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.task.red_packet.ordinary_entry",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Red packet autofill starts through the actual ordinary non-editor task detail button",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.task.postcard.ordinary_entry",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Postcard autofill starts through the actual ordinary non-editor task detail button",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.fullWithRewardStorageWaitsForClaimWithoutEarlyReturn",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Full escrow preserves exact resolved withReward mail through reload; no early return, resumes after real claim frees capacity and returns new escrow only on a later claim",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.choiceInvalidRequestsDoNotPersistAndOfflineCardsWait",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Invalid selections leave no request; accepted original Contact card waits offline and source cancellation refunds it only once",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.stateEventReentrancyPreservesActorAndTeam",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Nested team mutations, throwing listener and actor restoration preserve exact event identity, members, state and sequence without read replay",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.graphChildKeysAndNativeInheritanceStayAtomic",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Cross-parent/type stable child keys reject atomically; native item false/true, omitted updates and DEFAULT inherit correctly",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmEscrowReturnsOnceForEveryContactReward",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Six actual native Contact reward claims return only matching NPC/player escrow once; choice first requires its real Contact card",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.tableDelegatedRewardReturnsOuterNpcEscrowOnce",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Successful delegated non-item table reward also returns outer NPC escrow once, with its exact child reward",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.features.verify_keep",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual postbox input stays in NPC keep storage and sends one Contact reply without returning the input",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_discard",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual postbox discard removes only its current input and sends one Contact reply with no legacy response",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.commands.getcount_actual",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real self/target setcount and getcount return actual 7/9, and non-admin mutation is rejected",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.commands.getcount_visible",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Player receives the translated exact self/target query counts over the real network",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.npcTriggerCountIsolatesPlayersAndRecipients",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Wrong-mail counts are per player/NPC; task-only and empty mails do not count, scripts may silently change the stash, thresholds and text placeholders use exact counts",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.collection.count_all_policies",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All four NPC remainder policies increment once per mail and mark the count for saving",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.npc.trigger_count",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rhino calls both setTriggerCount overloads with exact values; silent stash controls and NBT reload preserve count=9",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.player_permissions",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Player binder/open commands work at permission zero; admin getcount/setcount still require OP",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.persistence.npc_trigger_counts",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Same save in a fresh JVM retains self=7, target=9, Rhino=9 and actual NOW returned-mail count=1 without rewriting the fixture",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.binder.button_and_tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual quest sidebar binding-card button and translated title",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.binder.received",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Clicking the real sidebar button delivers exactly one card via the server payload",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.cancel_preserves_fields",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Cancel leaves count/item/NPC unchanged on the client",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.cancel_preserves_fields",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Cancel leaves count/item/NPC unchanged on the server",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Task style selector Cancel preserves config",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.card_face",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Task style selector row displays real Contact card face",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.task.selection",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Task style row click changes config and returns to editor",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reward style selector Cancel preserves config",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.card_face",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reward style selector row displays real Contact card face",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.style_selector.reward.selection",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reward style row click changes config and returns to editor",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.quest_text.live.global",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rhino globally edits title, subtitle and two description lines while the client panel is open",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.quest_text.live.saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rhino edits saved title/subtitle/description overrides online",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.quest_text.live.global_after_saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A later global edit updates a quest that already has saved text overrides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.quest_text.live.reset",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reset removes the saved override and reveals the latest global text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.quest_text.live.global",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Open player quest panel updates title/subtitle/two description lines without a manual reopen",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.quest_text.live.saved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Open player quest panel renders saved text updates",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.quest_text.live.global_after_saved",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Latest global text displays even after previous saved overrides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.quest_text.live.reset",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reset displays latest global translation instead of stale original text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.multiplayer.separate_process",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows client has no integrated server and uses TCP to a distinct dedicated-server JVM; Windows suites use native Windows JVMs on both sides",
+      "phases": [
+        "client-multiplayer",
+        "client-multiplayer-rejoin"
+      ]
+    },
+    {
+      "id": "client.windows.client-multiplayer",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Windows remote client completes all editor, five reward, team, script and visible UI assertions",
+      "phases": [
+        "client-multiplayer"
+      ]
+    },
+    {
+      "id": "client.windows.client-multiplayer-rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Windows client reconnects after a separate server restart and validates saved state",
+      "phases": [
+        "client-multiplayer-rejoin"
+      ]
+    },
+    {
+      "id": "gametest.queuedTeamExtensionRetainsExactSnapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Queued team payload preserves tags, locks, Long IDs and exact text during concurrent source updates",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.queuedTeamTagsRetainExactSnapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Tag payload encodes the original snapshot after the team changes",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.queuedQuestDescriptionRetainsExactSnapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "KubeJS description payload retains original list and unicode through the real codec",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.persistence.task_fields",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fresh-process item, Long count and NPC fields",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.progress",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fresh-process exact progress=3",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.tags",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fresh-process unlocked team tag",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.mutex",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real unfinished mutex task and visible/startable quest after login",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.native_editor_fields",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All native task/reward editor fields loaded from disk",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.persistence.native_editor_fields",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All native task/reward editor fields synchronized after restart",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.editor.task.parcel.cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native task editor Cancel",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.task.parcel.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native parcel editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.task.red_packet.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native red packet task editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.task.postcard.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native postcard task editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward.parcel.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native parcel reward editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward.red_packet.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native red packet reward editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward.postcard.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native postcard reward editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward.parcel_random.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native random table reward editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward.parcel_all_table.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native all table reward editor Done",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.quest.quest.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native quest tag/mutex editor Done",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.editor.task_fields_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual synchronized task fields",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.reward_fields_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual synchronized reward fields",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.quest_rules_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual synchronized tag/mutex fields",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.task_fields_saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real editor packets saved item/count/components/NPC/text/style",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.reward_fields_saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real editor packets saved all five reward types",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.quest_rules_saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real editor packets saved tag/mutex fields",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.editor_card_icons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual FTB button icons use Contact item models after native style and ender edits",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.editor_created_icons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native and newly created postcard tasks use matching Contact item models without a test-written icon",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.postcard_collected",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual team mailbox collection delivered Contact postcard",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.native_reader_open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual collected postcard use opens native Contact reader",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postcard.received_style_and_text",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual reader card-face and displayed replaced text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.npcConfigurationRoundTrip",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "KubeJS NPC SavedData round-trip",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.noTaskNpcAcceptsDelayedParcel",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "No-task delayed parcel queue",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.noTaskNpcAcceptsDelayedMailVariants",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "No-task delayed red packet/postcard queues",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.collectionStashRoundTrip",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "CollectionSavedData stash round-trip",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.savedDataUsesServerOverworld",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server-global SavedData identity",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.temporaryQuestGraphRegistersAllContactTypes",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Temporary three tasks and all Contact reward types",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.plugin.loaded",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "ContactQuests KubeJS binding loads",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.npc.no_task.immediate",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Immediate no-task NPC registration",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.npc.no_task.delayed",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Delayed no-task NPC registration",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.npc.no_task.auto_fill",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Auto-fill no-task NPC registration",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.mail.parcel.intercept",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real parcel reaches mailReceived and is intercepted",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.mail.postcard.intercept",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real postcard reaches mailReceived and is intercepted",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.mail.red_packet.intercept",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real red packet reaches mailReceived and is intercepted",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.mail.helpers",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "mailReceived helper accessors",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.replacers",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All five replacer registrations",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.npc.config.persistence",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All NPC config APIs including remove/clear",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.stash.persistence",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All stash and trigger APIs",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.item_factory",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Factories plus sendMail/sendParcel",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.quest.state_controls",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Open/force/block/reset quest controls",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.team_controls",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Team tags and invalid quest state controls",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.task_editing.valid",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Valid and SavedData edits for all task types",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.reward_editing.valid",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Valid and SavedData edits for all reward types",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.quest_text_editing.valid",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Quest text edits, reset, persistence and reload",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.override_reload",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Override loading and player synchronization",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.task.parcel_runtime",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Parcel task matching and delivery acceptance; completion progress follow-up",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.task.red_packet_runtime",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Red packet task matching and delivery acceptance; completion progress follow-up",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.task.postcard_runtime",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Postcard task matching and delivery acceptance; completion progress follow-up",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.reward.delivery_retry",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reward delivery, mailbox full and retry persistence",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.npc_config.auto_generation",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "NPC config auto-generated after temporary tasks",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.collection.error_solve",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Exact NOW/SAVE/WITHREWARDS/DISCARD stash/delivery quantities",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.team_binding.full_flow",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Team Binding Card and mailbox binding",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.team_binding.persistence",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Team mailbox binding persistence/reload",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.commands.fixed_results",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "ContactQuests commands and permission results",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.bootstrap",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client world bootstrap and GUI providers",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postbox.recipient_alias",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Recipient alias completion",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.postbox.mail_shapes",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Three real Contact mail shapes",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.ftb.quest_editor.full_graph",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Temporary quest, three tasks and all rewards through FTB editor UI",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.contact.parcel_autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "ParcelAutoFiller valid/wrong item behavior",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.contact.red_packet_autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "RedPacketAutoFiller fields and item behavior",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.contact.postcard_autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "PostcardAutoFiller text behavior",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.delayedParcelCreditsSubmittedQuantity",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "delayedParcelCreditsSubmittedQuantity",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.immediateAndDelayedParcelRespectExistingProgress",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "immediateAndDelayedParcelRespectExistingProgress",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.delayedRedPacketCountsContentsAndPostcardsCountOne",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "delayedRedPacketCountsContentsAndPostcardsCountOne",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.delayedQuantitySurvivesSaveAndLegacyIsConservative",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "delayedQuantitySurvivesSaveAndLegacyIsConservative",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.allFiveRewardsClaimOnceAndDeliverExactContents",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "allFiveRewardsClaimOnceAndDeliverExactContents",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.editedNpcRefreshesWithoutRestart",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "editedNpcRefreshesWithoutRestart",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.mixedParcelPreservesTaskAndNonTaskQuantities",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "mixedParcelPreservesTaskAndNonTaskQuantities",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.multipleTasksPreferLargestPercentageIncrease",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "multipleTasksPreferLargestPercentageIncrease",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.percentageIncreaseUsesTotalCountAndStableTies",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "percentageIncreaseUsesTotalCountAndStableTies",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.taskNpcAndScriptShareMixedMail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "taskNpcAndScriptShareMixedMail",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.tagDependencyAnyAndAllTruthTable",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "tagDependencyAnyAndAllTruthTable",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.stash.controls",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Script stash set/add/clear quantities",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.windows.client-smoke",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native JVM full client scenario",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.windows.client-parcel-autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native parcel autofill",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.windows.client-red-packet-autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native red packet autofill",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.windows.client-postcard-autofill",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native postcard autofill",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.delayedTaskKeepsSendingTeamAndRetriesLockedProgress",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Delayed quantity stays with sending team; locked team retries after save/load",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.offlineScriptMailSurvivesDueTimeAndReload",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Offline script mail remains pending when due and retains contents after reload",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.legacyDimensionStashMigratesOnlyOnce",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Legacy dimension stash migrates without duplicating amounts after reload",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.override_sync.client",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Saved quest texts and changed task fields reach the Windows client",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.client.ticks",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "KubeJS client tick script really executes",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.postbox.rejected_mail_preserved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Empty NPC parcel, unknown recipient and duplicate empty send cannot lose mail",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.mailbox.attachment.persistence",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Serialize/reload actual Contact mailbox attachment and block binding",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.log.persistence_and_network",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "No mailbox attachment serialization or game payload encode/decode failure in runtime log",
+      "phases": [
+        "server",
+        "client-smoke",
+        "client-rejoin",
+        "client-parcel-autofill",
+        "client-red-packet-autofill",
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.mailboxRejectsPersonalAndOtherTeamRebinding",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "mailboxRejectsPersonalAndOtherTeamRebinding",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.mailboxLegacyAliasesRepairWithoutDeletingContents",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "mailboxLegacyAliasesRepairWithoutDeletingContents",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.contactOwnerChangesAndTeamDisbandRefreshMarkers",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "contactOwnerChangesAndTeamDisbandRefreshMarkers",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.teammatesSubmitTogetherAndOutsidersStayIsolated",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "teammatesSubmitTogetherAndOutsidersStayIsolated",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.mailboxAccessUsesCurrentTeamAndRealOwner",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "mailboxAccessUsesCurrentTeamAndRealOwner",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.rewardUsesClaimingTeamAcrossMoveAndDimension",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "rewardUsesClaimingTeamAcrossMoveAndDimension",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.questTagsMutexDependenciesAndFlexibleModeEnforceRules",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "questTagsMutexDependenciesAndFlexibleModeEnforceRules",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.unlockItemsAffectOnlyCurrentTeamAndPersist",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "unlockItemsAffectOnlyCurrentTeamAndPersist",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.allNpcRemainderPoliciesKeepExactQuantities",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "allNpcRemainderPoliciesKeepExactQuantities",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.graph.create_query",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino graph API create_query",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.graph.edit_rules",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino graph API edit_rules",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.graph.task_reward",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino graph API task_reward",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.graph.move_delete",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino graph API move_delete",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.breakingEitherMailboxHalfClearsBindingBeforeReplacement",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Personal/party, upper/lower physical break, re-place, block replacement and mail retention",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.graph.validation_and_overrides",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Atomic numeric validation and old SavedData overrides cannot revert global graph edits",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.editor.all_five_saved",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual server graph receives exactly five reward types and deterministic table",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.quest_text.rendered",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real visible title/subtitle/description TextField components in current language",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.config.save_cancel_bounds",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real config GUI Cancel/Done and bounds",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.create_select_cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real tag selector creation, existing selection, exclusion and cancellation",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.persistence.prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Seed disk persistence fixture once in first native process",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.persistence.mailboxes",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Read-only second process live party/personal exclusive owner, positions and exact contents",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.break_replaced_unbound",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Personal/party broken replacements remain unbound after restart",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.persistence.graph_and_scripts",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Dynamic graph, deletion, progress, pending quantities, NPC, tags/mutex and scripts survive restart",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.persistence.markers",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reloaded server mailbox markers synchronized to client",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.persistence.graph_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Reloaded graph, exact progress and tags synchronized to client",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.persistence.visible_text",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual player-visible saved texts after second process login",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.windows.client-rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native Java new process rejoin saved test world",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "gametest.legacyDimensionRewardsMigrateOnceAndPersistCountdown",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Legacy reward dimensions import once; actual quantities and saved countdown are verified",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.editor.claims_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Six actual editor tasks completed with exact counts before button claims",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.rewards.five_buttons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All five real displayed reward buttons clicked only after observing claimable state",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.button_claim_delivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real claim packets persist five claimed flags and deliver apple=1/emerald=1/diamond=8/postcard=1",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.rewards.repeat_buttons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated real reward button clicks observe already-claimed state",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.repeated_claim_no_duplicate",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated clicks leave actual mailbox quantities unchanged",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.task.parcel.display_and_submit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real task item display and Submit button opens source Contact UI; subsequent autofill asserts exact result",
+      "phases": [
+        "client-parcel-autofill"
+      ]
+    },
+    {
+      "id": "client.task.red_packet.display_and_submit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real task item display and Submit button opens source Contact UI; subsequent autofill asserts exact result",
+      "phases": [
+        "client-red-packet-autofill"
+      ]
+    },
+    {
+      "id": "client.task.postcard.display_and_submit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real task item display and Submit button opens source Contact UI; subsequent autofill asserts exact result",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.commands.setcount_visible",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real translated target setcount message formats all three arguments with exact count=9",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.tags.ui_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ALL-tag quest with native dependency and completed mutex fixtures",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.tags.right_click.first",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client item-use packet unlocks only A and does not satisfy ALL",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.tags.right_click.second",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client item-use packet unlocks B; real availability respects dependencies and mutex",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.tags.right_click.repeated",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated client item use preserves tags and quest availability",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.unlock_notification.first",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Missing ALL tag produces no misleading quest notification and remains hidden",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.unlock_notification.second",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual translated discovery notification appears once for the newly available quest",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.unlock_notification.repeated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated unlock produces neither duplicate tag messages nor discovery notifications",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.unlock_link_clicked",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Minecraft handles the actual notification RUN_COMMAND style",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.unlock_link_opened",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real command and OpenQuest payload display the linked quest detail panel",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.mailbox.outsider_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Foreign team mailbox holds exactly 11 dirt before real outsider use",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "server.mailbox.outsider_denied",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real client outsider use preserves owner, marker and exact foreign mail count",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.mailbox.outsider_visible",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual foreign team marker and translated chat denial reach the outsider client",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "server.parcel.tag_conversion_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real one-tag and multiple-tag items with Long task count=3000000005",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.parcel.tag_conversion.single",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual single-tag editor packet preserves Long quantity, NPC and tag matching",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.parcel.tag_conversion.multiple",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual multiple-tag editor packet preserves Long quantity, NPC and custom title",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.parcel.tag_conversion.single",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native parcel task right-click converts the only tag without truncating count",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.parcel.tag_conversion.multiple_cancel",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native multiple-tag Cancel returns and preserves all task fields",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.parcel.tag_conversion.multiple",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual multiple-tag row selection returns and preserves quantity and title",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.localization.en_us",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every bundled English key formats correctly; native config, 3 task/5 reward groups and quest options have localized labels",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.localization.zh_cn",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every bundled Chinese key formats correctly; native config, 3 task/5 reward groups and quest options have localized labels",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tooltips.wrap.en_us",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "English native task/reward and submission tooltips fit the viewport; long styled links keep all text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tooltips.wrap.zh_cn",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Chinese native task/reward and submission tooltips fit the viewport; long styled links keep all text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.mailbox.long_name",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native FTB DISPLAY_NAME is temporarily changed and synchronized for the explicit long-name UI boundary",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "server.mailbox.short_name",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The mailbox team display name is restored to its short normal name after the long-name UI boundary",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "kubejs.public_api.description_rejection_atomic",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino global and saved description calls reject wrong scalar/member types on an existing quest without mutating native text, graph, overrides or disk",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.mailbox.outsider_chat_wrap",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual server denial is a non-overlay chat message and wraps the entire long foreign team name",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.dependencies_absent",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "KubeJS and Rhino mods and representative classes are absent from the actual runtime",
+      "phases": [
+        "dedicated-no-kubejs",
+        "dedicated-no-kubejs-restart"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.dependencies_absent",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The actual Windows client has neither KubeJS nor Rhino classes",
+      "phases": [
+        "client-no-kubejs",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native task/reward/editor graphs and exclusively bound non-personal party mailbox are prepared without scripts",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.mixed_mail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real mixed Contact envelope credits diamond=2, stores exactly dirt=3 once, and counts one wrong-mail batch",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.mail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact send routes consume accepted envelopes and complete exact task progress [2,2,1]",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.claim",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Five actual rewards claimed twice deliver apple=2, emerald=3, diamond=8 and one Contact postcard",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM reads task quantities, claim states, party-only mailbox, count and edited rules without reseeding",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.mail",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client sees exact [2,2,1] progress and five unclaimed rewards",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.claim",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client sees all five claimed rewards",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client receives persisted [2,2,1] progress and five claim states after separate server restart",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.missing",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce missing; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.unlocked",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce unlocked; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.mutex",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce mutex; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.reset",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce reset; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.missing",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce missing; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.unlocked",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce unlocked; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.mutex",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce mutex; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.reset",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce reset; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs",
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.npc_response",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native SAVE sends exactly one real Contact acknowledgement postcard for one mixed-mail remainder batch",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_used.first",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual right-click input is a styled Contact postcard with exact unlock tags",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_reader.first",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Contact item use opens the native received postcard reader",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_preserved.first",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server item use preserves the postcard count and all components",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_used.second",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual right-click input is a styled Contact postcard with exact unlock tags",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_reader.second",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Contact item use opens the native received postcard reader",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_preserved.second",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server item use preserves the postcard count and all components",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_used.repeated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual right-click input is a styled Contact postcard with exact unlock tags",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_reader.repeated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Contact item use opens the native received postcard reader",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.tags.contact_postcard_preserved.repeated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server item use preserves the postcard count and all components",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.choiceRequiresRealPostcardAndSelectedDelivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact postcard, exact request, precise chosen quantity, native FTB claim and duplicate rejection",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.choicePersistsIdentityAndRejectsStaleRequest",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Persistent selection token, original player/team and source completion/reward validation",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.choiceTemplatesUseValidatedWeights",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Validated weighted templates, disabled zero weight and filled goals/reward/request",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.nativeStateEventsOnlyFollowMutations",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Tag, real mutex and script block events from mutations, safe identity and no getter/disk-load replay",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.graphCreationDefaultsAndBundleValidation",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Omitted/null/blank options preserve defaults and invalid bundle leaves no objects",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.everyPinnedTypeCreatesWithFactoryDefaults",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Empty creation matches each pinned native and Contact task/reward factory and records default NBT",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.returnedPostcardsKeepComponentsInPersistentDelivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Refunded real Contact card/components/delay and sender-preservation survive persistent delivery; normal rewards retain original semantics",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.inlineTitlesPersistWithoutOrphanTranslations",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Invalid bundle leaves no orphan translations; object-local inline table/option titles and filename persist independently",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.npcLlmMockContextAndToolAuthorization",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fixed mock persona/model/reasoning, isolated persistent context and double-authorized idempotent graph tool",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmWithRewardsEscrowReturnsOnMatchingNativeClaimOnce",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "AI withReward escrow waits for the matching Contact quest claim, returns in the same Contact delivery once and remains isolated to the original team/player",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmWithRewardsEscrowSurvivesSavedDataRoundTrip",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Separate player-bound AI escrow stacks survive SavedData reload without merging identities",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.inlineNestedBlanksUseNativeDefaults",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Nested null/blank crate, drops and table entries match native defaults; zero/false stay explicit and invalid fields leave no objects",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.inlineIdsRejectConflictsBeforeGraphMutation",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Stable own inline IDs survive upsert/update; duplicate, parent, foreign table and bundle collisions are rejected without graph changes",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.features.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real six mail rewards, original weighted table, real postcard and configured mock NPC",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.selected",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual native selection sends a server request and returns dedicated recipient and filled text",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.verify_choice",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact postcard through postbox marks native claim and delivers selected seven diamonds only",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.verify_repeat",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated choice card remains intact and cannot duplicate delivery",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.verify_llm",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Two asynchronous fixed mock turns retain isolated context/model/persona, authorize one graph publication and never call old NPC/script reactions",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.verify_with_rewards",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The fixed mock withReward decision escrows the real Contact postcard until its matching native quest reward and returns it in that delivery once",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.verify_fail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Mock provider failure preserves real mail, no fabricated NPC response or legacy reaction",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.pending_failure_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A failed provider request remains a player-bound Contact envelope with its retry time across a real new JVM, without fabricating completion",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.snapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New choice and NPC data saved for native process restart",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.hidden",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All six actual FTB reward buttons hide custom title/icon, tooltip, quantity/probability and ingredient contents",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.table_editor",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "FTB native controls expose hide/template/option labels and native content animation and 25%/75% tooltip",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.choice_selection",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real FTB click opens choice screen; B selected through actual button",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.choice_request",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server postcard response includes selected option/token and dedicated recipient",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.choice_written",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact editor displays exact filled text and submits native Done button",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.choice_claim_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native claimed state synchronizes after actual postcard mail",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native restart restores pending token/template, hidden six rewards/table, isolated NPC history/stash/published keys without replay",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.features.hidden_rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Sealed reward titles/icons/tooltips and ingredient protections survive fresh-client reconnect",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.features.table_animation",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Both native FTB table reward buttons actually draw apple and diamond icons across successive Windows frames",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.features.events",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Tag grant, native complete/reset and independent script block transition once; reads and reload do not replay",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.llmToolPlanSurvivesRestartWithoutReplay",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Durable tool plan/results survive SavedData reload and retain the idempotency barrier",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmLookupAndInvalidConfigStayConversationScoped",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Invalid provider replacement preserves active config; get_quest rejects foreign player/team conversations and unknown keys",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmProviderConfigRejectsInvalidSettingsAtomically",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "HTTP endpoint, provider limits/tools, NPC scope/persona/history/tool configuration rejects atomically while preserving active configuration and accepts explicit local loopback",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.features.creation_defaults",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Rhino omitted/null/blank options keep native defaults and old calls retain stable IDs",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.features.creation_bundle",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Rhino creates full native chapter/quest settings and task/reward configs including hidden choice table",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.features.atomic_validation",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Invalid full graph input leaves no objects and sparse updates preserve unrelated values",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "kubejs.events.native_and_script",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Rhino event subscribers distinguish Tag, native mutex completion/reset and script block without read/load replay",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.events.physical.first",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact right-click Tag grant has safe quest strings, original team/actor and exact event count: first",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.events.physical.second",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact right-click Tag grant has safe quest strings, original team/actor and exact event count: second",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.events.physical.repeated",
+      "scope": "kubejs",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact right-click Tag grant has safe quest strings, original team/actor and exact event count: repeated",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.choiceAcceptedCardPersistsAndRefundsChangedSource",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Accepted real Contact postcard retains components/count/delay across restart; an edited native reward table refunds once to the original team without a reward",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.features.hidden_delivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Hidden direct/red-packet/postcard/random/All rewards retain actual exact delivery and duplicate claim protection",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "gametest.choicePreCallbackCannotDuplicateOrGrantChangedSource",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Pre reentry cannot duplicate choice or skip FTB marker; editing source in callback cannot grant stale reward",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.nativeCreationFieldsKeepFluidQuantityAndOnlyOne",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native fluid amount and only_one creation survive NBT; explicit empty icon clears previous icon",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "client.features.creation",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Windows native quest text, controls and child objects show all Rhino creation settings",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.features.creation_rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native client reconnected and receives the full persisted creation graph with actual editor/text controls",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.creation_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New native JVM restores every creation NBT field and children without reseeding",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.accepted_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Accepted real Contact card, sender components, token and delay survive a new JVM and grant the chosen contents once to the original team",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.tool_journal_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Completed tool result is not replayed; unfinished authorized journal publishes one native quest, retains actual mail and delivers exactly one Contact reply with the complete tool results through restart",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "gametest.httpNpcReplyPreservesRequestSettingsAndHistory",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Production HTTP transport sends exact NPC persona/model/reasoning/history and accepts only provider-authored reply plus mandatory item policy, including one single-quoted JSON wrapper",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.httpNpcToolsCarryExactResultsIntoFinalResponse",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real HTTP tool plan, restricted schemas and exact follow-up results; final tool recursion rejected",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.httpNpcMalformedOutputAndLimitsFailClosed",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Malformed provider JSON, missing fields, excessive cards/tools/body and invalid arguments fail closed",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.httpNpcFailuresDoNotBecomeNpcReactions",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Non-2xx provider responses and absent credentials cannot become NPC replies or dispose pending items",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.httpNpcReactionRequiresStringFields",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "NPC reply and policy JSON fields require strings instead of Gson coercion",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmTaskReceiptsUseActualAcceptedAndRemainingMail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual parcel/red packet/postcard tasks produce accurate LLM receipts and retained attachments; validated direct submit",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmBackpressureReturnsExactUnacceptedEnvelope",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Conversation/global capacity returns exact physical envelope once, preserving sender and components",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.graphRejectedUpdatesLeaveNativeStateUnchanged",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Dependency cycles, self references, invalid display/native location/chapter updates leave live objects unchanged",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.hidden_choice",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.visible_choice",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.received",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.instant",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.animated_partial",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.overflow_instant",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.overflow_instant",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.overflow_animated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.overflow_animated",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.autofill.postcard.overflow_narrow",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.overflow_narrow",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact lines and player font stay within the loaded card bounds; rejected overflow preserves the original draft and actual card",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.finish",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM restores exact real Contact card sequence, hidden components and full conversation from vanilla saved inventory",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.postcard.letters.reader",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every actual delivered long-reply card opens via native item use and fits native Font/bounds; the concatenated reader text equals the complete NPC reply",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.letters.reader_rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every persisted actual long-reply card is readable after a new JVM, fits native Font/bounds and reconstructs the complete response",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.commands.tags_remove_no_team_completion",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The real command dispatcher resolves a player with no FTB team and completes tag-remove suggestions with a normal empty future without changing the control team",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.templates.all_fit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All eight bundled Carbon natural-letter templates fit the native default postcard with real player font and filled placeholders",
+      "phases": [
+        "client-postcard-autofill"
+      ]
+    },
+    {
+      "id": "gametest.npcLongReplyPreservesExactTextAndDefaultStyle",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Complete Unicode NPC reply splits into bounded real cards, preserves identical fragment order/components and keeps technical identity out of native names/lore/tooltips",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.npcPostcardLayoutRespectsNativeWrapBoundaries",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Complete Unicode NPC reply splits into bounded real cards, preserves identical fragment order/components and keeps technical identity out of native names/lore/tooltips",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.npcRepeatedFragmentsKeepDeliveryOrderAndHiddenIdentity",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Complete Unicode NPC reply splits into bounded real cards, preserves identical fragment order/components and keeps technical identity out of native names/lore/tooltips",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.npcFragmentMetadataRejectsMalformedMarkers",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Complete Unicode NPC reply splits into bounded real cards, preserves identical fragment order/components and keeps technical identity out of native names/lore/tooltips",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.reload.prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.barrier",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.overrides_reapplied",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.indices_and_npc",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.replacers_once",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.state_unchanged",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "server.reload.complete",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real player /reload, new server resources/commands and native tags/sync barrier; disturbed native saved overrides/index/NPC/replacers restore exactly without state events",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.long_spaced",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long English team name: full styled text in native automatic Jade overlay, all element and screen bounds",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.long_unbroken",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Unbroken long name splits by actual font width without dropping suffix/style",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.cjk",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Continuous Chinese name splits without losing characters/style in the real native overlay",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.short",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Normal mailbox overlay is exactly Team: CQ Mail Team, on one line",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.unknown",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Unknown mailbox team displays Team: Unknown, no visible technical UUID",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.unbound",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Unbound mailbox adds no team information while native block title and icon remain",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.narrow_large_scale",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual 640x480 window, GUI scale2 and Jade scale2: all native overlay elements fit the screen",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Original native FTB name, mailbox data, window/view and Jade settings restore after boundary checks",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.jade.mailbox.native_overlay",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Seven real automatic Jade overlays rendered on distinct ticks with exact text/geometry, screenshots only as evidence",
+      "phases": [
+        "client-smoke",
+        "client-jade-mailbox"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_multitick",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle parcel_multitick; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.red_packet_multitick",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle red_packet_multitick; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.wrapping_multitick",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle wrapping_multitick; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_reopen_pickup",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle parcel_reopen_pickup; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_reopen_deposit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle parcel_reopen_deposit; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.red_packet_reopen_pickup",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle red_packet_reopen_pickup; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.red_packet_reopen_deposit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle red_packet_reopen_deposit; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.postcard_reopen",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle postcard_reopen; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_shared_prefilled",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle parcel_shared_prefilled; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.postcard_intervention",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real ordinary TaskButton and Submit lifecycle postcard_intervention; per-tick native client/server contents, cursor/inventory conservation, cancellation and original-state restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.red_packet_empty",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Unrestricted item type task opens real TaskButton/Submit, writes blessing without choosing materials, and native server Seal persists an empty Contact red packet; exact inventory/cursor conservation, no claim of delivery progress",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.custom_id_autofocus",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino create/update chapter and quest custom IDs; native same-chapter autofocus resolves to the actual quest at 6,-4",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.presets",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Registered native visual presets: inherited circle/1.25 and explicit square/1.75",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.icon_components",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino Map icons preserve gold/bold name and exact custom data; native count normalizes to one",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.task_dependency",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino Task dependency retains native type, ID and owning quest",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.chapter_dependency",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino Chapter dependency retains native type and ID",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.task_cycle_atomic",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino Task dependency cycle rejects without changes to graph, index, dependants, translations, overrides or disk",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.chapter_cycle_atomic",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Rhino Chapter dependency cycle rejects without changes to graph, index, dependants, translations, overrides or disk",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.description_saved_clear",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Saved empty description hides nonempty native description while preserving native translations and other overrides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.description_global_clear",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Global empty description clears native translations and only removes description overrides",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "kubejs.graph_options.persisted",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native SNBT, locale files and compressed world overrides equal runtime; exact state captured for a new JVM",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "server.graph_options.rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fresh JVM restores exact options, dependencies, component icons, presets and both empty-description semantics without reseeding",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.graph_options.first.fields",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native ClientQuestFile fields, dependencies, visual presets and exact empty descriptions",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.graph_options.first.chapter_autofocus",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual chapter button click and rendered autofocus at 6,-4; native chapter title and component icon",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.graph_options.first.quest_buttons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual rendered explicit square/1.75 and inherited circle/1.25 QuestButtons, sizes, titles and exact icon components",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.graph_options.first.rendered",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Render.Post frames with screenshot and geometry; graph unchanged after real navigation",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.graph_options.rejoin.fields",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native ClientQuestFile fields, dependencies, visual presets and exact empty descriptions",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.graph_options.rejoin.chapter_autofocus",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual chapter button click and rendered autofocus at 6,-4; native chapter title and component icon",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.graph_options.rejoin.quest_buttons",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual rendered explicit square/1.75 and inherited circle/1.25 QuestButtons, sizes, titles and exact icon components",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.graph_options.rejoin.rendered",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Render.Post frames with screenshot and geometry; graph unchanged after real navigation",
+      "phases": [
+        "client-rejoin"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_close_pickup",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ESC during parcel_close_pickup: no reopening, old filler idle within two ticks and unchanged closed menu/inventory/progress for 24 ticks; native server conservation",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.red_packet_close_deposit",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual ESC during red_packet_close_deposit: no reopening, old filler idle within two ticks and unchanged closed menu/inventory/progress for 24 ticks; native server conservation",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_shared_send",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "WrappingPaper autofill for shared 3+5 parcel tasks followed by real buttonPack, PostboxScreen query/send, exact 3/3 and 3/5 task allocation and clean restoration",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "client.autofill.lifecycle.parcel_midflight_mutation",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Mid-flight task item mutation stops ParcelAutoFiller cleanly at 4 deposited items, returns carried remainder to slot 9 and avoids cursor leakage or extra deposits",
+      "phases": [
+        "client-smoke",
+        "client-autofill-lifecycle"
+      ]
+    },
+    {
+      "id": "gametest.teamRewardMultiplierAndOversizedStackSplitting",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Team reward multiplier across ParcelReward, PostcardReward, RedPacketReward, ParcelRandomReward and ParcelAllTableReward plus >64 chunked stack splitting",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.rewardPlaceholdersResolveTeamSizeTeamNameAndPlayer",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "PostcardReward and RedPacketReward resolve <team_size>, <team_name> and <player_name> accurately during real claim delivery",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.wrongMailDiscardWithRewardsThresholdsAndStyles",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Wrong-mail DISCARD placeholders, WITHREWARDS multi-threshold trigger count without off-by-one, empty-stash guard, and StyleType.SAME incoming-card style copying",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.llmNpcDeliveryDelayAndNonSpoilerVisibility",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "LLM NPC obeys configured deliveryTime and enableDeliveryTime override, hides from Postbox suggestions until quest unlock/active chat unless autoFill=true, and still resolves exact full-name sends",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.postcardExactStyleAndRedPacketEmptyOrTrimmedBlessing",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "PostcardTask requires exact normalized style equality while RedPacketTask rejects empty red packets, trims blessings and handles null tempContext safely",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.localeChoiceTemplatesReloadAndPartyPlayerNameIsolation",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "ChoiceTemplateConfig locale selection, TagsUpdatedEvent reload of ChoiceTemplateConfig and NpcLlmConfig, and per-player <player_name> isolation within shared FTB party TeamData",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "gametest.parcelRandomOnlyOneAndOccupiedMailboxTeleportLink",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "ParcelRandomReward only_one inventory filtering across claims and TeamBindingItem OP teleport ClickEvent on occupied mailbox conflict",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.prepare",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Place temporary test mailbox and verify viewer team context for MailboxGlobalRenderer checks",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.unmarked",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Unmarked mailbox is tracked by MailboxGlobalRenderer without rendering a 3D floating card",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.set_own_team",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Synchronize viewer team marker onto temporary mailbox from integrated server",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_own_team",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "MailboxGlobalRenderer renders floating 3D card for matching viewer team",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.set_solo_marker",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Synchronize solo player UUID marker onto temporary mailbox",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_solo_marker",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Solo-marked mailbox renders only for matching solo viewer UUID and stays hidden from non-matching viewer teams",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.set_foreign",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Synchronize foreign team UUID marker onto temporary mailbox",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_foreign",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "MailboxGlobalRenderer hides foreign-team mailbox from viewer",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.move_far",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Move viewer beyond 64 blocks from marked mailbox",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_far",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "MailboxGlobalRenderer culls 3D icon beyond 64-block render distance",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.move_near",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Return viewer within 64 blocks of marked mailbox",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_near_and_destroy",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Mailbox 3D icon reappears in range and temporary mailbox block is restored",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.mailbox_renderer.verify_removed",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Destroyed mailbox block entity is untracked cleanly from MailboxGlobalRenderer",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.empty_task_toast",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Clicking a ContactTask with empty valid items displays CustomToast warning",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.binder_open",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Open QuestScreen and record initial TeamBindingCard count",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.binder_click",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Verify tooltip and click GetBinderButton via rendered screen coordinates",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.binder_verify",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Verify GetBinderButton packet grants one TeamBindingCard and restore server inventory",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.binder_restored",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Verify synchronized client inventory restoration after binder test",
+      "phases": [
+        "client-smoke"
+      ]
+    },
+    {
+      "id": "client.additional_ui.ui_completeness.submit_tooltips_and_jei",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Verify ValidParcel/RedPacket/PostcardItemsScreen submit WidgetType and tooltips, JEI ingredient hover extraction, reward hideContents guard and JEI showRecipes",
+      "phases": [
+        "client-smoke"
+      ]
+    }
+  ]
+}

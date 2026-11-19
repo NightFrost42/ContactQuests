@@ -96,7 +96,7 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
             !it.isEmpty && it.item != Items.AIR && it.count > 0
         }.toMutableList()
 
-        if (validItems.isEmpty()) {
+        if (validItems.isEmpty() && !allowsEmptyDisplayItems()) {
             Minecraft.getInstance().toasts.addToast(
                 CustomToast(
                     Component.translatable("contactquest.task.no_valid_items"),
@@ -110,6 +110,8 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
     }
 
     abstract fun getValidDisplayItems(): MutableList<ItemStack>
+
+    protected open fun allowsEmptyDisplayItems(): Boolean = false
 
     @OnlyIn(Dist.CLIENT)
     abstract fun openTaskGui(validItems: MutableList<ItemStack>)

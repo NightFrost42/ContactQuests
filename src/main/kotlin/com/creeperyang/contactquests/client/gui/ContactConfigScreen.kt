@@ -36,7 +36,7 @@ class ContactConfigScreen(private val parent: Screen) : Screen(Component.transla
             .bounds(listLeft, listTop + step - 12, 200, 10).build().apply { active = false })
 
         this.autoFillSpeedBox =
-            EditBox(this.font, listLeft, listTop + step, 200, 20, Component.literal("Auto Fill Speed"))
+            EditBox(this.font, listLeft, listTop + step, 200, 20, Component.translatable("contactquests.config.auto_fill_speed"))
         this.autoFillSpeedBox.value = ContactConfig.autoFillSpeed.get().toString()
         this.autoFillSpeedBox.setFilter { it.all { char -> char.isDigit() } }
         this.addRenderableWidget(autoFillSpeedBox)
@@ -45,7 +45,7 @@ class ContactConfigScreen(private val parent: Screen) : Screen(Component.transla
             .bounds(listLeft, listTop + step * 2 - 12, 200, 10).build().apply { active = false })
 
         this.retryIntervalBox =
-            EditBox(this.font, listLeft, listTop + step * 2, 200, 20, Component.literal("Retry Interval"))
+            EditBox(this.font, listLeft, listTop + step * 2, 200, 20, Component.translatable("contactquests.config.retry_interval"))
         this.retryIntervalBox.value = ContactConfig.retryInterval.get().toString()
         this.retryIntervalBox.setFilter { it.all { char -> char.isDigit() } }
         this.addRenderableWidget(retryIntervalBox)

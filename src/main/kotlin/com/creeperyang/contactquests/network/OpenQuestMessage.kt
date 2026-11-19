@@ -1,10 +1,12 @@
 package com.creeperyang.contactquests.network
 
-import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
+import net.neoforged.api.distmarker.Dist
+import net.neoforged.api.distmarker.OnlyIn
+import net.neoforged.fml.loading.FMLEnvironment
 import net.neoforged.neoforge.network.handling.IPayloadContext
 
 class OpenQuestMessage(val id: Long) : CustomPacketPayload {
@@ -26,7 +28,16 @@ class OpenQuestMessage(val id: Long) : CustomPacketPayload {
 
     fun handle(context: IPayloadContext) {
         context.enqueueWork {
-            ClientQuestFile.openBookToQuestObject(id)
+            if (FMLEnvironment.dist.isClient) {
+                ClientHandler.open(id)
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private object ClientHandler {
+        fun open(id: Long) {
+            dev.ftb.mods.ftbquests.client.ClientQuestFile.openBookToQuestObject(id)
         }
     }
 }

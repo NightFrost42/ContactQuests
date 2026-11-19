@@ -3,6 +3,7 @@ package com.creeperyang.contactquests.quest.reward
 import com.creeperyang.contactquests.mixin.ItemRewardAccessor
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.icon.Icon
+import dev.ftb.mods.ftblibrary.icon.IconAnimation
 import dev.ftb.mods.ftblibrary.icon.Icons
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag
 import dev.ftb.mods.ftblibrary.ui.Widget
@@ -36,28 +37,33 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
 
     override fun getType(): RewardType = RewardRegistry.PARCEL_RANDOM
 
-    override fun claim(player: ServerPlayer, notify: Boolean) {
-        val currentTable = table ?: return
+    override fun claim(player: ServerPlayer, notify: Boolean): Boolean {
+        val currentTable = table ?: return false
+        if (currentTable.weightedRewards.any { !it.weight.isFinite() || it.weight < 0f }
+            || !currentTable.getTotalWeight(false).isFinite()) return false
 
         val rewards = currentTable.generateWeightedRandomRewards(player.random, 1, false)
 
+        var granted = false
         rewards.forEach { weightedReward ->
-            handleReward(player, weightedReward.reward, notify)
+            granted = handleReward(player, weightedReward.reward, notify) || granted
         }
+        return granted
     }
 
-    protected fun handleReward(player: ServerPlayer, reward: Reward, notify: Boolean) {
-        if (reward is ItemReward) {
+    protected fun handleReward(player: ServerPlayer, reward: Reward, notify: Boolean): Boolean {
+        return if (reward is ItemReward) {
             val stack = reward.item.copy()
+            if ((reward as ItemRewardAccessor).`contactQuests$isOnlyOne`() && player.inventory.contains(stack)) return false
 
-            val rBonus = (reward as ItemRewardAccessor).`contactquests$getRandomBonus`()
+            val rBonus = (reward as ItemRewardAccessor).`contactQuests$getRandomBonus`()
             val bonus = player.level().random.nextInt(rBonus + 1)
 
             stack.count = calculateMultipliedCount(reward.count + bonus, player)
 
             distributeItem(player, stack)
         } else {
-            reward.claim(player, notify)
+            reward.claim(player, notify).also { if (it) returnStoredItems(player) }
         }
     }
 
@@ -122,21 +128,27 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): Component {
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
         return table?.getTitleOrElse(super.getAltTitle()) ?: super.getAltTitle()
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
-        return table?.icon ?: Icons.DICE
+        if (isContentsHiddenForViewer()) return sealedIcon()
+        val rewards = table?.weightedRewards ?: return Icons.DICE
+        return if (rewards.isEmpty()) Icons.DICE
+        else IconAnimation.fromList(rewards.map { it.reward.icon }, false)
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun addMouseOverText(list: TooltipList) {
+        if (isContentsHiddenForViewer()) return
         table?.addMouseOverText(list, true, false)
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
+        if (isContentsHiddenForViewer()) return Optional.empty()
         val t = table
         return if (t != null && t.lootCrate != null) {
             PositionedIngredient.of(t.lootCrate!!.createStack(), widget)

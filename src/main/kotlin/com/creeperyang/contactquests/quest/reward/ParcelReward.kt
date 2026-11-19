@@ -26,7 +26,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     override fun getType(): RewardType = RewardRegistry.PARCEL
 
-    override fun claim(player: ServerPlayer, notify: Boolean) {
+    override fun claim(player: ServerPlayer, notify: Boolean): Boolean {
         var actualCount = count + player.level().random.nextInt(randomBonus + 1)
 
         actualCount = calculateMultipliedCount(actualCount, player)
@@ -34,7 +34,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         val stackToSend = item.copy()
         stackToSend.count = actualCount
 
-        distributeItem(player, stackToSend)
+        return distributeItem(player, stackToSend)
     }
 
     override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
@@ -83,6 +83,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): MutableComponent {
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
         return if (randomBonus > 0) {
             Component.literal("$count-${count + randomBonus}x ").append(item.hoverName)
         } else if (count > 1) {
@@ -94,11 +95,13 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
+        if (isContentsHiddenForViewer()) return sealedIcon()
         return if (item.isEmpty) super.getAltIcon() else ItemIcon.getItemIcon(item.copy().also { it.count = 1 })
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
+        if (isContentsHiddenForViewer()) return Optional.empty()
         return PositionedIngredient.of(item, widget, true)
     }
 }

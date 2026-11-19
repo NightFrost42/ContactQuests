@@ -2,10 +2,11 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.ContactQuests;
 import com.creeperyang.contactquests.config.TagConfig;
-import com.creeperyang.contactquests.utils.DependencyMode;
-import com.creeperyang.contactquests.utils.IQuestExtension;
-import com.creeperyang.contactquests.utils.ITeamDataExtension;
-import com.creeperyang.contactquests.utils.MutexMode;
+import com.creeperyang.contactquests.bridge.IInlineQuestTextOwner;
+import com.creeperyang.contactquests.bridge.IQuestExtension;
+import com.creeperyang.contactquests.bridge.ITeamDataExtension;
+import com.creeperyang.contactquests.quest.DependencyMode;
+import com.creeperyang.contactquests.quest.MutexMode;
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftbquests.quest.*;
 import dev.ftb.mods.ftbquests.quest.task.Task;
@@ -30,8 +31,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.*;
 import java.util.function.Predicate;
 
+/** 为 FTB Quest 扩展前置 Tag 校验、互斥任务锁定、脚本强制开关，以及按存档隔离的标题/描述动态覆写能力。 */
 @Mixin(Quest.class)
-public abstract class QuestMixin extends QuestObject implements IQuestExtension {
+public abstract class QuestMixin extends QuestObject implements IQuestExtension, IInlineQuestTextOwner {
+
+    @Unique private boolean contactQuests$localInlineText;
+
+    @Override public boolean contactQuests$usesLocalInlineText() { return contactQuests$localInlineText; }
+    @Override public void contactQuests$setLocalInlineText(boolean enabled) { contactQuests$localInlineText = enabled; }
 
     @Unique
     private final List<String> contactQuests$mutexGuids = new ArrayList<>();
@@ -46,6 +53,10 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private boolean contactQuests$hideWithoutTags = false;
     @Shadow(remap = false)
     private Chapter chapter;
+    @Shadow(remap = false)
+    private int minRequiredDependencies;
+    @Shadow(remap = false)
+    private int repeatCooldown;
     @Unique
     private MutexMode contactQuests$mutexMode = MutexMode.ANY;
     @Unique
@@ -106,7 +117,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
         boolean met;
         if (contactQuests$tagMode == DependencyMode.ANY) {
-            met = contactQuests$requiredTags.stream().anyMatch(ext::contactQuests$hasTag);
+            // 两条分支均返回“标签条件是否拦截当前任务”；返回 true 时调用方会将其视作依赖未满足。
+            met = !contactQuests$requiredTags.stream().anyMatch(ext::contactQuests$hasTag);
         } else {
             met = !contactQuests$requiredTags.stream().allMatch(ext::contactQuests$hasTag);
         }
@@ -199,6 +211,14 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private void injectIsVisible(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.FALSE.equals(cir.getReturnValue())) return;
 
+        if (data instanceof ITeamDataExtension ext) {
+            if (ext.contactQuests$isQuestForced(this.id)) return;
+            if (contactQuests$hideIfLocked && ext.contactQuests$isQuestBlocked(this.id)) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
+
         if (contactQuests$hideIfLocked && contactQuests$internal$checkMutexLocked(data)) {
             cir.setReturnValue(false);
             return;
@@ -282,6 +302,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "writeData", at = @At("TAIL"), remap = false)
     private void writeTagsNBT(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
+        // 固定版本（2101.1.38/39）原生 writer 在落盘前会把该编辑整数字段强转为 byte，此处补写完整 int 值以保留设置。
+        if (minRequiredDependencies > 0) nbt.putInt("min_required_dependencies", minRequiredDependencies);
         if (!contactQuests$requiredTags.isEmpty()) {
             ListTag list = new ListTag();
             contactQuests$requiredTags.forEach(t -> list.add(StringTag.valueOf(t)));
@@ -344,6 +366,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         buffer.writeEnum(contactQuests$mutexMode);
         buffer.writeVarInt(contactQuests$mutexNum);
         buffer.writeBoolean(contactQuests$hideIfLocked);
+        // 即便当前原生条件字段未启用，同步网络时仍保留作者配置好的 repeatCooldown 数值。
+        buffer.writeInt(repeatCooldown);
     }
 
     @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
@@ -360,5 +384,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         contactQuests$mutexMode = buffer.readEnum(MutexMode.class);
         contactQuests$mutexNum = buffer.readVarInt();
         contactQuests$hideIfLocked = buffer.readBoolean();
+        repeatCooldown = buffer.readInt();
     }
 }

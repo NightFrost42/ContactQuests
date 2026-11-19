@@ -153,6 +153,7 @@ object NpcConfigManager {
     }
 
     fun getErrorSolve(name: String, limit: Int): ErrorSolveData? {
+        if (com.creeperyang.contactquests.llm.NpcLlmConfig.npc(name) != null) return null
         val data = getNpcData(name)
         return data.errorSolve
             .filter { it.count <= limit }

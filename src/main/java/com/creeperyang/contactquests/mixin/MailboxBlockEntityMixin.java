@@ -1,10 +1,12 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.client.renderer.MailboxGlobalRenderer;
-import com.creeperyang.contactquests.utils.IMailboxTeamAccessor;
+import com.creeperyang.contactquests.bridge.IMailboxTeamAccessor;
+import com.creeperyang.contactquests.mailbox.TeamMailboxBinding;
 import com.flechazo.contact.common.tileentity.MailboxBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.HolderLookup;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.Packet;
@@ -24,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
+/** 为 Contact 邮箱方块实体附加队伍 UUID 绑定标记并同步至客户端及全局渲染器。 */
 @Mixin(MailboxBlockEntity.class)
 public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMailboxTeamAccessor {
 
@@ -40,13 +43,13 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
 
 
     @Override
-    public void contactquests$setTeamId(@Nullable UUID id) {
+    public void contactQuests$setTeamId(@Nullable UUID id) {
         this.contactQuestsTeamId = id;
     }
 
     @Override
     @Nullable
-    public UUID contactquests$getTeamId() {
+    public UUID contactQuests$getTeamId() {
         return this.contactQuestsTeamId;
     }
 
@@ -55,6 +58,10 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
         super.onLoad();
         if (this.level != null && this.level.isClientSide) {
             MailboxGlobalRenderer.INSTANCE.track((MailboxBlockEntity) (Object) this);
+        } else if (this.level instanceof ServerLevel serverLevel) {
+            // 队伍可能在区块未加载期间被解散，延迟 1 tick 等团队数据就绪后重新校对归属标记。
+            serverLevel.getServer().tell(new net.minecraft.server.TickTask(serverLevel.getServer().getTickCount() + 1,
+                    () -> TeamMailboxBinding.refresh(serverLevel, this.worldPosition)));
         }
     }
 
@@ -118,17 +125,4 @@ public abstract class MailboxBlockEntityMixin extends BlockEntity implements IMa
         }
     }
 
-    @Inject(method = "saveAdditional", at = @At("TAIL"), remap = false)
-    private void injectSaveAdditional(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
-        if (this.contactQuestsTeamId != null) {
-            nbt.putUUID(TEAM_ID_NBT_KEY, this.contactQuestsTeamId);
-        }
-    }
-
-    @Inject(method = "loadAdditional", at = @At("TAIL"), remap = false)
-    private void injectLoadAdditional(CompoundTag nbt, HolderLookup.Provider provider, CallbackInfo ci) {
-        if (nbt.hasUUID(TEAM_ID_NBT_KEY)) {
-            this.contactQuestsTeamId = nbt.getUUID(TEAM_ID_NBT_KEY);
-        }
-    }
 }

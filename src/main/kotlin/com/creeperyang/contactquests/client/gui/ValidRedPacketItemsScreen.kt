@@ -23,7 +23,11 @@ class ValidRedPacketItemsScreen(task: RedPacketTask, validItems: MutableList<Ite
 
     override fun addSubmitTooltip(list: TooltipList, hasValidSlot: Boolean) {
         val player = Minecraft.getInstance().player ?: return
-        val hasQuestItem = player.inventory.items.any { !it.isEmpty && task.checkContent(it) }
+        val hasQuestItem = task.itemStack.isEmpty || player.inventory.items.any { !it.isEmpty && task.checkContent(it) }
+
+        if (task.itemStack.isEmpty) {
+            list.add(Component.translatable("contactquest.gui.any_item_requirement", task.count).withStyle(ChatFormatting.GRAY))
+        }
 
         if (hasValidSlot && hasQuestItem) {
             list.add(Component.translatable("contactquest.gui.put_in_redpacket").withStyle(ChatFormatting.GRAY))
@@ -33,7 +37,8 @@ class ValidRedPacketItemsScreen(task: RedPacketTask, validItems: MutableList<Ite
                 list.add(Component.literal("- ").append(Component.translatable("item.contact.red_packet_envelope")).withStyle(ChatFormatting.DARK_RED))
             }
             if (!hasQuestItem) {
-                list.add(Component.literal("- ").append("${task.count}x ").append(task.itemStack.hoverName).withStyle(ChatFormatting.DARK_RED))
+                list.add(Component.translatable("contactquest.gui.item_requirement", task.count, task.itemStack.hoverName)
+                    .withStyle(ChatFormatting.DARK_RED))
             }
         }
     }

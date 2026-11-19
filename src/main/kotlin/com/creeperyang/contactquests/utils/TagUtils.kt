@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.utils
 
+import com.creeperyang.contactquests.bridge.IQuestExtension
 import com.creeperyang.contactquests.quest.reward.ParcelRewardBase
 import dev.ftb.mods.ftbquests.quest.BaseQuestFile
 
@@ -10,8 +11,9 @@ object TagUtils {
 
         file.allChapters.forEach { chapter ->
             chapter.quests.forEach { quest ->
-                if (quest is IQuestExtension) {
-                    tags.addAll((quest as IQuestExtension).`contactQuests$getRequiredTags`())
+                val extension = (quest as Any) as? IQuestExtension
+                if (extension != null) {
+                    tags.addAll(extension.`contactQuests$getRequiredTags`())
                 }
 
                 quest.rewards.forEach { reward ->

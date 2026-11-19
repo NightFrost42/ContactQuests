@@ -2,8 +2,12 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.network.SyncTeamExtensionMessage;
 import com.creeperyang.contactquests.network.SyncTeamTagsMessage;
-import com.creeperyang.contactquests.utils.IQuestExtension;
-import com.creeperyang.contactquests.utils.ITeamDataExtension;
+import com.creeperyang.contactquests.bridge.IQuestExtension;
+import com.creeperyang.contactquests.bridge.ITeamDataExtension;
+import com.creeperyang.contactquests.quest.QuestStateEvents;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import dev.ftb.mods.ftbquests.quest.task.Task;
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftbquests.quest.Quest;
 import dev.ftb.mods.ftbquests.quest.TeamData;
@@ -22,6 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 
+/** 为 FTB TeamData 挂载解锁 Tag、强制开放/屏蔽任务、明信片/红包动态文案缓存及弹性章节校验规则。 */
 @Mixin(TeamData.class)
 public class TeamDataMixin implements ITeamDataExtension {
 
@@ -43,10 +48,13 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$unlockTag(String tag) {
-        if (contactQuests$unlockedTags.add(tag)) {
-            return contactQuests$operationTag();
-        }
-        return false;
+        if (tag == null || tag.isBlank() || tag.length() > 128) return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "tag_grant", tag);
+        try {
+            if (contactQuests$unlockedTags.add(tag)) return contactQuests$operationTag();
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Unique
@@ -69,10 +77,12 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$removeTag(String tag) {
-        if (contactQuests$unlockedTags.remove(tag)) {
-            return contactQuests$operationTag();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "tag_remove", tag);
+        try {
+            if (contactQuests$unlockedTags.remove(tag)) return contactQuests$operationTag();
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
@@ -84,11 +94,15 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$forceQuest(long questId) {
-        if (contactQuests$forcedQuests.add(questId)) {
-            contactQuests$blockedQuests.remove(questId);
-            return contactQuests$operationSync();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_force");
+        try {
+            if (contactQuests$forcedQuests.add(questId)) {
+                contactQuests$blockedQuests.remove(questId);
+                return contactQuests$operationSync();
+            }
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
@@ -109,20 +123,39 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$blockQuest(long questId) {
-        if (contactQuests$blockedQuests.add(questId)) {
-            contactQuests$forcedQuests.remove(questId);
-            return contactQuests$operationSync();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_block");
+        try {
+            if (contactQuests$blockedQuests.add(questId)) {
+                contactQuests$forcedQuests.remove(questId);
+                return contactQuests$operationSync();
+            }
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
     @Unique
     public boolean contactQuests$unblockQuest(long questId) {
-        if (contactQuests$blockedQuests.remove(questId)) {
-            return contactQuests$operationSync();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_unblock");
+        try {
+            if (contactQuests$blockedQuests.remove(questId)) return contactQuests$operationSync();
+            return false;
+        } finally { QuestStateEvents.end(self); }
+    }
+
+    @WrapMethod(method = "setCompleted", remap = false)
+    private boolean completionMutation(long id, Date date, Operation<Boolean> original) {
+        QuestStateEvents.begin((TeamData) (Object) this, date == null ? "native_reset" : "native_complete");
+        try { return original.call(id, date); }
+        finally { QuestStateEvents.end((TeamData) (Object) this); }
+    }
+    @WrapMethod(method = "setProgress", remap = false)
+    private void taskMutation(Task task, long progress, Operation<Void> original) {
+        QuestStateEvents.begin((TeamData) (Object) this, progress == 0 ? "native_reset" : "native_progress");
+        try { original.call(task, progress); }
+        finally { QuestStateEvents.end((TeamData) (Object) this); }
     }
 
     @Override
@@ -268,8 +301,25 @@ public class TeamDataMixin implements ITeamDataExtension {
         }
     }
 
+    @Inject(method = "canStartTasks(Ldev/ftb/mods/ftbquests/quest/Quest;Z)Z", at = @At("RETURN"), cancellable = true, remap = false)
+    private void checkContactRulesInFlexibleChapters(Quest quest, boolean checkProgressionMode, CallbackInfoReturnable<Boolean> cir) {
+        // FTB 的 FLEXIBLE（自由）章节进度模式会跳过原生前置依赖检查，但显式的 Contact 互斥锁定与 Tag 前置在提交时依然必须生效。
+        if (!Boolean.TRUE.equals(cir.getReturnValue()) || contactQuests$isQuestForced(quest.id)) return;
+        if (contactQuests$isQuestBlocked(quest.id)
+                || (Object) quest instanceof IQuestExtension ext
+                && (ext.contactQuests$isLockedByMutex((TeamData) (Object) this)
+                || ext.contactQuests$areTagsMet((TeamData) (Object) this))) {
+            cir.setReturnValue(false);
+        }
+    }
+
     @Inject(method = "getCannotStartReason", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetCannotStartReason(Quest quest, CallbackInfoReturnable<Component> cir) {
+        if (contactQuests$isQuestBlocked(quest.id)) {
+            cir.setReturnValue(Component.translatable("contactquests.quest.locked.script").withStyle(ChatFormatting.RED));
+            return;
+        }
+        if (contactQuests$isQuestForced(quest.id)) return;
         Object questObj = quest;
         if (questObj instanceof IQuestExtension ext) {
             if (ext.contactQuests$isLockedByMutex((TeamData) (Object) this)) {
@@ -277,10 +327,12 @@ public class TeamDataMixin implements ITeamDataExtension {
                 String tagsStr = String.join(", ", mutexTasks);
                 cir.setReturnValue(Component.translatable("contactquests.quest.locked.mutex_tasks", tagsStr)
                         .withStyle(ChatFormatting.RED));
+                return;
             }
 
             if (ext.contactQuests$areTagsMet((TeamData) (Object) this)) {
-                List<String> missingTags = ext.contactQuests$getRequiredTags();
+                List<String> missingTags = ext.contactQuests$getRequiredTags().stream()
+                        .filter(tag -> !contactQuests$hasTag(tag)).toList();
                 String tagsStr = String.join(", ", missingTags);
                 cir.setReturnValue(Component.translatable("contactquests.quest.locked.missing_tags", tagsStr)
                         .withStyle(ChatFormatting.RED));

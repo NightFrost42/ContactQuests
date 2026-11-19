@@ -1,0 +1,12 @@
+{
+  "id": "client.escrow.third_process_audit",
+  "steps": [
+    {"action": "wait_ticks", "ticks": 40},
+    {"action": "open_world", "world": "ContactQuestsTest"},
+    {"action": "wait_for_level"},
+    {"action": "wait_ticks", "ticks": 40},
+    {"action": "features", "phase": "escrow_audit"},
+    {"action": "wait_for_server_case", "id": "server.features.escrow_audit", "timeout_seconds": 30},
+    {"action": "finish"}
+  ]
+}

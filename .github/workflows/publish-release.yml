@@ -1,0 +1,284 @@
+name: Build & Publish Release
+
+on:
+  push:
+    tags:
+      - '[0-9]*-1.21.1'
+      - 'v[0-9]*-1.21.1'
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Git tag or GitHub Release tag (e.g. 2.1.6-1.21.1)
+        required: true
+        type: string
+      platform:
+        description: Platform to publish or retry
+        type: choice
+        default: all
+        options: [all, github, modrinth, curseforge, both]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publish-${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      version-type: ${{ steps.release.outputs.version-type }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      skip-duplicate: ${{ steps.dedup.outputs.skip }}
+    steps:
+      - name: Check duplicate automatic trigger
+        id: dedup
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+          skip = False
+          if os.environ["EVENT_NAME"] in ("push", "release"):
+              headers = {
+                  "Authorization": "Bearer " + os.environ["GH_TOKEN"],
+                  "Accept": "application/vnd.github+json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+                  "User-Agent": "ContactQuests-release-workflow",
+              }
+              repo = os.environ["REPO"]
+              tag = urllib.parse.quote(os.environ["RELEASE_TAG"], safe="")
+              try:
+                  rel_req = urllib.request.Request(
+                      f"https://api.github.com/repos/{repo}/releases/tags/{tag}",
+                      headers=headers,
+                  )
+                  with urllib.request.urlopen(rel_req, timeout=20) as rel_resp:
+                      assets = json.load(rel_resp).get("assets", [])
+                  has_jar = any(a.get("name", "").endswith(".jar") for a in assets)
+                  if has_jar:
+                      runs_req = urllib.request.Request(
+                          f"https://api.github.com/repos/{repo}/actions/workflows/publish-release.yml/runs?per_page=20",
+                          headers=headers,
+                      )
+                      with urllib.request.urlopen(runs_req, timeout=20) as runs_resp:
+                          runs = json.load(runs_resp).get("workflow_runs", [])
+                      current_id = int(os.environ["RUN_ID"])
+                      head_sha = os.environ["HEAD_SHA"]
+                      skip = any(
+                          r.get("id") != current_id
+                          and r.get("head_sha") == head_sha
+                          and r.get("event") in ("push", "release")
+                          and r.get("status") == "completed"
+                          and r.get("conclusion") == "success"
+                          for r in runs
+                      )
+              except Exception as exc:
+                  print(f"Dedup query skipped: {exc}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"skip={'true' if skip else 'false'}\n")
+          print(f"skip-duplicate={skip}")
+          PY
+      - uses: actions/checkout@v4
+        if: steps.dedup.outputs.skip != 'true'
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+          persist-credentials: false
+      - name: Normalize gradlew line endings
+        if: steps.dedup.outputs.skip != 'true'
+        run: |
+          sed -i 's/\r$//' gradlew
+          chmod +x gradlew
+      - uses: actions/setup-java@v4
+        if: steps.dedup.outputs.skip != 'true'
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        if: steps.dedup.outputs.skip != 'true'
+      - name: Validate release version and resolve notes
+        id: release
+        if: steps.dedup.outputs.skip != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag || github.ref_name }}
+        run: python3 .github/scripts/prepare-release.py
+      - name: Build production mod
+        if: steps.dedup.outputs.skip != 'true'
+        run: bash gradlew --no-daemon --no-configuration-cache build
+      - name: Test release validation rules
+        if: steps.dedup.outputs.skip != 'true'
+        run: python3 tests/release/test-release.py
+      - name: Verify GameTests and KubeJS graph
+        if: steps.dedup.outputs.skip != 'true'
+        run: python3 tests/runner/run-tests.py server --run-id release-server
+      - name: Verify production jar
+        if: steps.dedup.outputs.skip != 'true'
+        run: python3 .github/scripts/verify-release-jar.py
+      - uses: actions/upload-artifact@v4
+        if: steps.dedup.outputs.skip != 'true'
+        with:
+          name: release-dist
+          path: release-dist/
+          if-no-files-found: error
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.dedup.outputs.skip != 'true'
+        with:
+          name: release-verification
+          path: |
+            test-results/release-server/
+            run-test-release-server/logs/
+          if-no-files-found: ignore
+
+  github-release:
+    needs: build
+    if: needs.build.outputs.skip-duplicate != 'true' && (github.event_name == 'push' || github.event_name == 'release' || inputs.platform == 'all' || inputs.platform == 'github')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: release-dist
+      - name: Create or update GitHub Release and attach assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ needs.build.outputs.tag }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          JAR="release-dist/contactquests-${VERSION}.jar"
+          SUMS="release-dist/SHA256SUMS"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$JAR" "$SUMS" --clobber
+            BODY="$(gh release view "$TAG" --json body -q '.body')"
+            if [ -z "$(printf '%s' "$BODY" | tr -d '[:space:]')" ]; then
+              gh release edit "$TAG" --notes-file release-dist/CHANGELOG.md
+            fi
+          else
+            ARGS=(--verify-tag --title "ContactQuests ${VERSION}" --notes-file release-dist/CHANGELOG.md)
+            if [ "$PRERELEASE" = "true" ]; then
+              ARGS+=(--prerelease)
+            fi
+            gh release create "$TAG" "$JAR" "$SUMS" "${ARGS[@]}"
+          fi
+
+  modrinth:
+    needs: [build, github-release]
+    if: ${{ always() && needs.build.result == 'success' && needs.build.outputs.skip-duplicate != 'true' && (needs.github-release.result == 'success' || needs.github-release.result == 'skipped') && (github.event_name == 'push' || github.event_name == 'release' || inputs.platform == 'all' || inputs.platform == 'both' || inputs.platform == 'modrinth') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: release-dist
+      - name: Check Modrinth token and existing version
+        id: check
+        env:
+          TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          test -n "$TOKEN" || { echo 'Configure MODRINTH_TOKEN in repository secrets (Settings -> Secrets and variables -> Actions)'; exit 1; }
+          python3 - <<'PY'
+          import json, os, urllib.request
+          version = os.environ["VERSION"]
+          exists = False
+          req = urllib.request.Request(
+              "https://api.modrinth.com/v2/project/Kv1T6Imo/version",
+              headers={"User-Agent": "ContactQuests-release-workflow"}
+          )
+          try:
+              with urllib.request.urlopen(req, timeout=20) as resp:
+                  versions = json.load(resp)
+              exists = any(v.get("version_number") == version for v in versions)
+          except Exception as exc:
+              print(f"Modrinth version check skipped: {exc}")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
+              out.write(f"exists={'true' if exists else 'false'}\n")
+          print(f"modrinth-version-exists={exists}")
+          PY
+      - name: Publish to Modrinth
+        if: steps.check.outputs.exists != 'true'
+        uses: Kira-NT/mc-publish@c23376546a97f5ba7984e94445da359459b14419 # v3.3.2
+        with:
+          modrinth-id: Kv1T6Imo
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: release-dist/contactquests-${{ needs.build.outputs.version }}.jar
+          name: ContactQuests ${{ needs.build.outputs.version }}
+          version: ${{ needs.build.outputs.version }}
+          version-type: ${{ needs.build.outputs.version-type }}
+          changelog-file: release-dist/CHANGELOG.md
+          loaders: neoforge
+          game-versions: '1.21.1'
+          java: '21'
+          modrinth-dependencies: |
+            1Oyfrkxg(required)
+            ordsPcFz(required)
+            7ODqOXka(required)
+            lhGA9TYQ(required)
+            umyGl7zF(optional)
+            nvQzSEkH(optional)
+            u6dRKJwZ(optional)
+          retry-attempts: 1
+          fail-mode: fail
+
+  curseforge:
+    needs: [build, github-release]
+    if: ${{ always() && needs.build.result == 'success' && needs.build.outputs.skip-duplicate != 'true' && (needs.github-release.result == 'success' || needs.github-release.result == 'skipped') && (github.event_name == 'push' || github.event_name == 'release' || inputs.platform == 'all' || inputs.platform == 'both' || inputs.platform == 'curseforge') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: release-dist
+      - name: Check CurseForge configuration
+        env:
+          TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID || '1416524' }}
+        run: |
+          test -n "$TOKEN" || { echo 'Configure CURSEFORGE_TOKEN in repository secrets (Settings -> Secrets and variables -> Actions)'; exit 1; }
+          [[ "$PROJECT_ID" =~ ^[1-9][0-9]*$ ]] || { echo 'Configure numeric CURSEFORGE_PROJECT_ID in repository variables'; exit 1; }
+      - name: Publish to CurseForge
+        uses: Kira-NT/mc-publish@c23376546a97f5ba7984e94445da359459b14419 # v3.3.2
+        with:
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID || '1416524' }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          files: release-dist/contactquests-${{ needs.build.outputs.version }}.jar
+          name: ContactQuests ${{ needs.build.outputs.version }}
+          version: ${{ needs.build.outputs.version }}
+          version-type: ${{ needs.build.outputs.version-type }}
+          changelog-file: release-dist/CHANGELOG.md
+          loaders: neoforge
+          game-versions: '1.21.1'
+          java: '21'
+          curseforge-dependencies: |
+            contact-love-rekindled(required)
+            kotlin-for-forge(required)
+            oelib(required)
+            ftb-quests-forge(required)
+            ftb-library-forge(required)
+            ftb-teams-forge(required)
+            architectury-api(required)
+            kubejs(optional)
+            jade(optional)
+            jei(optional)
+          retry-attempts: 1
+          fail-mode: fail

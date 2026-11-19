@@ -1,24 +1,24 @@
 package com.creeperyang.contactquests.network
 
-import com.creeperyang.contactquests.registry.ModItems
-import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.item.ItemStack
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent
-import net.neoforged.neoforge.network.handling.IPayloadContext
 
+/** 注册模组在客户端与服务端之间通信的全部自定义网络消息包。 */
 object NetworkHandler {
 
     fun register(event: RegisterPayloadHandlersEvent) {
         val registrar = event.registrar("contactquests")
-            .versioned("1.0.0")
+            .versioned("1.3.0")
+
+        registrar.playToServer(RequestChoiceMessage.TYPE, RequestChoiceMessage.STREAM_CODEC, RequestChoiceMessage::handle)
+        registrar.playToServer(PrepareChoicePostcardMessage.TYPE, PrepareChoicePostcardMessage.STREAM_CODEC, PrepareChoicePostcardMessage::handle)
+        registrar.playToClient(ChoicePostcardMessage.TYPE, ChoicePostcardMessage.STREAM_CODEC, ChoicePostcardMessage::handle)
 
         registrar.playToServer(
-            RequestBinderPayload.TYPE,
-            RequestBinderPayload.STREAM_CODEC,
-            ::handleRequestBinder
-        )
+            RequestBinderMessage.TYPE,
+            RequestBinderMessage.STREAM_CODEC
+        ) { _, context -> RequestBinderMessage.handle(context) }
 
-        registrar.playBidirectional(
+        registrar.playToClient(
             OpenQuestMessage.TYPE,
             OpenQuestMessage.STREAM_CODEC,
             OpenQuestMessage::handle
@@ -41,18 +41,5 @@ object NetworkHandler {
             SyncQuestTextMessage.STREAM_CODEC,
             SyncQuestTextMessage::handle
         )
-    }
-
-    private fun handleRequestBinder(payload: RequestBinderPayload, context: IPayloadContext) {
-        context.enqueueWork {
-            val player = context.player()
-            if (player is ServerPlayer) {
-                val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
-
-                if (!player.inventory.add(itemStack)) {
-                    player.drop(itemStack, false)
-                }
-            }
-        }
     }
 }

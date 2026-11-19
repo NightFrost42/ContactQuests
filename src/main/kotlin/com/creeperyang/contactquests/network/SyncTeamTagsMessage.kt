@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.network
 
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.core.UUIDUtil
 import net.minecraft.network.RegistryFriendlyByteBuf
@@ -11,7 +11,8 @@ import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
 import java.util.*
 
-class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) : CustomPacketPayload {
+class SyncTeamTagsMessage(val teamId: UUID, tags: Set<String>) : CustomPacketPayload {
+    val tags: Set<String> = Collections.unmodifiableSet(HashSet(tags))
 
     companion object {
         val ID: ResourceLocation = ResourceLocation.fromNamespaceAndPath("contactquests", "sync_team_tags")

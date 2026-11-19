@@ -8,6 +8,8 @@ import dev.ftb.mods.ftblibrary.ui.misc.CompactGridLayout
 import dev.ftb.mods.ftblibrary.util.client.PositionedIngredient
 import dev.ftb.mods.ftbquests.FTBQuests
 import dev.ftb.mods.ftbquests.quest.task.Task
+import dev.ftb.mods.ftbquests.integration.RecipeModHelper
+import net.neoforged.fml.ModList
 import net.minecraft.client.gui.GuiGraphics
 import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
@@ -24,15 +26,22 @@ abstract class BaseGridTaskScreen<T : Task>(
     override fun createMainPanel(): Panel {
         return object : Panel(this) {
             override fun addWidgets() {
+                if (validItems.isEmpty()) {
+                    add(TextField(this).apply { setText(Component.translatable("contactquest.gui.any_item_type")) })
+                }
                 for (validItem in validItems) {
                     add(ValidItemButton(this, validItem))
                 }
             }
 
             override fun alignWidgets() {
-                align(CompactGridLayout(36))
-
-                setHeight(min(160, contentHeight))
+                if (validItems.isEmpty()) {
+                    widgets.first().setPosAndSize(6, 8, width - 12, 20)
+                    setHeight(36)
+                } else {
+                    align(CompactGridLayout(36))
+                    setHeight(min(160, contentHeight))
+                }
 
                 parent.setHeight(height + 53)
 
@@ -54,7 +63,13 @@ abstract class BaseGridTaskScreen<T : Task>(
     }
 
     private class ValidItemButton(panel: Panel, val stack: ItemStack) : Button(panel, Component.empty(), ItemIcon.getItemIcon(stack)) {
-        override fun onClicked(button: MouseButton?) = FTBQuests.getRecipeModHelper().showRecipes(stack)
+        override fun onClicked(button: MouseButton?) {
+            val helper = FTBQuests.getRecipeModHelper()
+            if (helper !is RecipeModHelper.NoOp) helper.showRecipes(stack)
+            else if (ModList.get().isLoaded("jei")) {
+                com.creeperyang.contactquests.compat.jei.ContactQuestsJeiPlugin.showRecipes(stack)
+            }
+        }
 
         override fun getIngredientUnderMouse(): Optional<PositionedIngredient> {
             return PositionedIngredient.of(stack, this, true)

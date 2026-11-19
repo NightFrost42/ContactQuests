@@ -1,0 +1,1193 @@
+{
+  "id": "client.no_kubejs.actual_artifact",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "assert_no_kubejs"
+    },
+    {
+      "action": "assert_no_jei"
+    },
+    {
+      "action": "assert_gui_providers"
+    },
+    {
+      "action": "no_kubejs",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.prepare"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_jei.dependencies_absent"
+    },
+    {
+      "action": "no_jei_recipe",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 5
+    },
+    {
+      "action": "no_jei_recipe",
+      "phase": "click"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 6
+    },
+    {
+      "action": "no_jei_recipe",
+      "phase": "verify"
+    },
+    {
+      "action": "open_no_kubejs_editor"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "edit_ui_object",
+      "kind": "quest",
+      "values": {
+        "required_tags": [
+          "CQEditorRequiredTag"
+        ],
+        "mode": "ANY",
+        "hide_without_tags": true,
+        "mutex_refs": [
+          "unfinished"
+        ],
+        "mutex_mode": "NUMBER",
+        "mutex_count": 1,
+        "hide_if_locked": true
+      }
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "editor_rules",
+      "phase": "missing"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.editor.rules_effect.missing"
+    },
+    {
+      "action": "open_editor_rule_effect"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "assert_editor_rule_effect",
+      "phase": "missing"
+    },
+    {
+      "action": "screenshot",
+      "name": "native-editor-rules-missing"
+    },
+    {
+      "action": "editor_rules",
+      "phase": "unlocked"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.editor.rules_effect.unlocked"
+    },
+    {
+      "action": "open_editor_rule_effect"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "assert_editor_rule_effect",
+      "phase": "unlocked"
+    },
+    {
+      "action": "screenshot",
+      "name": "native-editor-rules-unlocked"
+    },
+    {
+      "action": "editor_rules",
+      "phase": "mutex"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.editor.rules_effect.mutex"
+    },
+    {
+      "action": "open_editor_rule_effect"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "assert_editor_rule_effect",
+      "phase": "mutex"
+    },
+    {
+      "action": "screenshot",
+      "name": "native-editor-rules-mutex"
+    },
+    {
+      "action": "editor_rules",
+      "phase": "reset"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.editor.rules_effect.reset"
+    },
+    {
+      "action": "open_editor_rule_effect"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "assert_editor_rule_effect",
+      "phase": "reset"
+    },
+    {
+      "action": "screenshot",
+      "name": "native-editor-rules-reset"
+    },
+    {
+      "action": "no_kubejs",
+      "phase": "mail"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.mixed_mail"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.mail"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.npc_response"
+    },
+    {
+      "action": "assert_no_kubejs_progress",
+      "phase": "mail"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "no-kubejs-task-progress"
+    },
+    {
+      "action": "no_kubejs",
+      "phase": "claim"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.claim"
+    },
+    {
+      "action": "assert_no_kubejs_progress",
+      "phase": "claim"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "no-kubejs-five-claims"
+    },
+    {
+      "action": "close_screen"
+    },
+    {
+      "action": "postcard_letters",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.postcard.letters.prepare",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQTravelLetters"
+    },
+    {
+      "action": "query_recipient_server",
+      "value": "CQTravelLetters"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_recipient",
+      "value": "CQTravelLetters"
+    },
+    {
+      "action": "select_first_recipient"
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "postcard_letters",
+      "phase": "verify"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.postcard.letters.verify",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "postcard_letters_ui"
+    },
+    {
+      "action": "postcard_letters",
+      "phase": "finish"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.postcard.letters.finish",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "close_screen"
+    },
+    {
+      "action": "features",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.prepare"
+    },
+    {
+      "action": "features",
+      "phase": "verify_events"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.events"
+    },
+    {
+      "action": "features_ui",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features_ui",
+      "phase": "hidden"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features",
+      "phase": "edit_mode"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "features_ui",
+      "phase": "editor"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 65
+    },
+    {
+      "action": "features_ui",
+      "phase": "animation"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features",
+      "phase": "player_mode"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "features_ui",
+      "phase": "choose"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "features",
+      "phase": "selected"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.selected"
+    },
+    {
+      "action": "features_ui",
+      "phase": "request"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 80
+    },
+    {
+      "action": "features_ui",
+      "phase": "write"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "features_ui",
+      "phase": "written_card"
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features_ui",
+      "phase": "recipient"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "features",
+      "phase": "verify_choice"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.verify_choice"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.choice_card"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.choice_stationery"
+    },
+    {
+      "action": "features_ui",
+      "phase": "sync"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features",
+      "phase": "verify_repeat"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.verify_repeat"
+    },
+    {
+      "action": "features",
+      "phase": "claim_hidden"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.hidden_delivery"
+    },
+    {
+      "action": "features",
+      "phase": "prepare_visible_choice"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.visible_choice_prepared"
+    },
+    {
+      "action": "features_ui",
+      "phase": "visible_choose"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "features",
+      "phase": "visible_selected"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features_ui",
+      "phase": "visible_request"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "features_ui",
+      "phase": "visible_write"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 15
+    },
+    {
+      "action": "features_ui",
+      "phase": "recipient"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "features",
+      "phase": "verify_visible_choice"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.visible_choice_delivery"
+    },
+    {
+      "action": "features_ui",
+      "phase": "visible_sync"
+    },
+    {
+      "action": "features",
+      "phase": "llm_first"
+    },
+    {
+      "action": "features_seed_mail",
+      "text": "CQ_MOCK_PUBLISH"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQFeatureLLM"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 80
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "features",
+      "phase": "verify_keep"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.features.verify_keep",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "features",
+      "phase": "llm_second"
+    },
+    {
+      "action": "features_seed_mail",
+      "text": "CQ_MOCK_RETURN"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQFeatureLLM"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 80
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 60
+    },
+    {
+      "action": "features",
+      "phase": "verify_llm"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.verify_llm"
+    },
+    {
+      "action": "features_seed_mail",
+      "text": "CQ_MOCK_WITH_REWARDS"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQFeatureLLM"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "features",
+      "phase": "verify_with_rewards"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.features.verify_with_rewards",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "features_seed_mail",
+      "text": "CQ_MOCK_DISCARD"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQFeatureLLM"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "features",
+      "phase": "verify_discard"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.features.verify_discard",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "features",
+      "phase": "llm_fail"
+    },
+    {
+      "action": "features_seed_mail",
+      "text": "CQ_MOCK_FAIL"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "open_real_postbox"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "value": "CQFeatureLLM"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "click_send"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 60
+    },
+    {
+      "action": "features",
+      "phase": "verify_fail"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.verify_fail"
+    },
+    {
+      "action": "features",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 25
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.snapshot"
+    },
+    {
+      "action": "close_screen"
+    },
+    {
+      "action": "close_screen",
+      "requires_real_llm": true
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.prepare",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "publish"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "open_real_postbox",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "requires_real_llm": true,
+      "type": "parcel"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "query_recipient_server",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "assert_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "select_first_recipient",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "click_send",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "force_send",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.publish",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.reward_claimed",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "return"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "open_real_postbox",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "requires_real_llm": true,
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "query_recipient_server",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "assert_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "select_first_recipient",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "click_send",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "force_send",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.return",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "llm_live_ui",
+      "requires_real_llm": true,
+      "phase": "graph"
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "collect"
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.collected",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "llm_live_ui",
+      "requires_real_llm": true,
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "llm_live_ui",
+      "requires_real_llm": true,
+      "phase": "reader"
+    },
+    {
+      "action": "close_screen",
+      "requires_real_llm": true
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "finish"
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.snapshot",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "finish"
+    }
+  ]
+}

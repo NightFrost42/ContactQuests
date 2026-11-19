@@ -1,0 +1,136 @@
+{
+  "scenarios": [
+    {
+      "id": "server.llm_live.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Explicit loopback provider configuration and isolated original team mailbox",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.publish",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Magpie publishes the native quest, selects withReward, and returns exact mixed Contact attachments in the same claimed native reward delivery once",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.return",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real second request recalls an unpredictable earlier token and tool ID, returning exact original mixed mail",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.reward_claimed",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual Magpie withReward escrow joined its published native reward in the same Contact delivery and was cleared once on the real FTB claim",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.collected",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual live provider mailbox reply is collected for native reader assertions",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.snapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real context/graph persisted for another process; original reward mailbox restored",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.llm_live.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM restores exact real provider context and scoped publication without replay",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.llm_live.restart",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real post-restart HTTP get_quest/follow-up recalls the previous token and ID and discards only current mail",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.llm_live.restored",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Original mailbox restored after real post-restart conversation",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.llm_live.graph",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows native client receives the exact model-published graph",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.llm_live.reader",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Exact actual real model reply displays in native Contact postcard reader",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.live_llm",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The actual live-provider reply fits all native Contact reader lines using the loaded Windows font",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    }
+  ]
+}

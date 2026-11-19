@@ -11,6 +11,7 @@ import net.neoforged.api.distmarker.OnlyIn
 import net.neoforged.fml.ModLoadingContext
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory
+import net.neoforged.neoforge.client.event.ScreenEvent
 import net.neoforged.neoforge.common.NeoForge
 import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
 
@@ -31,6 +32,11 @@ object ContactQuestsClient {
         NeoForge.EVENT_BUS.register(ParcelAutoFiller)
         NeoForge.EVENT_BUS.register(RedPacketAutoFiller)
         NeoForge.EVENT_BUS.register(PostcardAutoFiller)
+        NeoForge.EVENT_BUS.addListener<ScreenEvent.Closing> { event ->
+            ParcelAutoFiller.onScreenClosed(event.screen)
+            RedPacketAutoFiller.onScreenClosed(event.screen)
+            PostcardAutoFiller.onScreenClosed(event.screen)
+        }
         NeoForge.EVENT_BUS.register(MailboxGlobalRenderer)
     }
 

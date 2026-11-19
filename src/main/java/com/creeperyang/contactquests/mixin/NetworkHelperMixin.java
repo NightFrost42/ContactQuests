@@ -9,6 +9,7 @@ import com.flechazo.contact.common.item.RedPacketItem;
 import com.flechazo.contact.common.screenhandler.PostboxScreenHandler;
 import com.flechazo.contact.helper.NetworkHelper;
 import com.flechazo.contact.network.ActionMessage;
+import com.flechazo.contact.platform.PlatformHelper;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.server.level.ServerPlayer;
@@ -24,6 +25,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.*;
 
+/** 拦截 Contact 发信网络处理与收件人列表包，将 NPC/自定义收件目标路由到任务队列并安全注入自动补全列表。 */
 @Mixin(NetworkHelper.class)
 public class NetworkHelperMixin {
 
@@ -34,8 +36,12 @@ public class NetworkHelperMixin {
         }
 
         ItemStack stackInSlot = container.parcel.getItem(0);
-        if (stackInSlot.isEmpty()) return;
+        if (stackInSlot.isEmpty()) {
+            ci.cancel();
+            return;
+        }
 
+        DataManager.INSTANCE.ensureTargetsFresh();
 
         String finalRecipientKey = findKeyIgnoreCase(recipientName, player);
 
@@ -43,23 +49,39 @@ public class NetworkHelperMixin {
             finalRecipientKey = recipientName;
         }
 
-        if (DataManager.INSTANCE.getAvailableTargets(player).containsKey(finalRecipientKey)) {
-//            boolean taskMatched = false;
+        if (com.creeperyang.contactquests.data.ChoiceRewardSavedData.hasChoiceMarker(stackInSlot)
+                || DataManager.INSTANCE.isChoiceAddress(finalRecipientKey)) {
+            var remainder = DataManager.INSTANCE.receiveChoiceCard(player, stackInSlot, finalRecipientKey);
+            if (remainder.getCount() < stackInSlot.getCount()) {
+                container.parcel.setItem(0, remainder);
+                new ActionMessage(1, "").sendTo(player);
+            }
+            ci.cancel();
+            return;
+        }
+
+        if (DataManager.INSTANCE.acceptsNpcMail(player, finalRecipientKey)) {
+            boolean accepted = false;
 
             if (stackInSlot.getItem() instanceof PostcardItem) {
-                DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey);//                    taskMatched = true;
+                accepted = DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey);
             } else if (stackInSlot.getItem() instanceof RedPacketItem) {
-                DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey);//                    taskMatched = true;
+                accepted = DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey);
             } else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
                 ItemContainerContents contents = stackInSlot.getOrDefault(DataComponents.CONTAINER, ItemContainerContents.EMPTY);
-                DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey);//                    taskMatched = true;
+                accepted = DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, contents, finalRecipientKey);
             } else {
                 ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
             }
 
-            container.parcel.setItem(0, ItemStack.EMPTY);
-            ActionMessage msg = new ActionMessage(1, "");
-            msg.sendTo(player);
+            if (accepted) {
+                container.parcel.setItem(0, ItemStack.EMPTY);
+                ActionMessage msg = new ActionMessage(1, "");
+                msg.sendTo(player);
+            }
+            ci.cancel();
+        } else if (PlatformHelper.getNameToUUID().get(recipientName) == null) {
+            // 原生 Contact 路径对未知收件人会排队写入 null UUID，进而导致整个邮箱附加数据保存失败，此处直接拦截。
             ci.cancel();
         }
 
@@ -72,8 +94,10 @@ public class NetworkHelperMixin {
         allKeys.addAll(DataManager.parcelReceiver.keySet());
         allKeys.addAll(DataManager.redPacketReceiver.keySet());
         allKeys.addAll(DataManager.postcardReceiver.keySet());
+        allKeys.addAll(DataManager.rewardSenders);
 
         allKeys.addAll(DataManager.INSTANCE.getAvailableTargets(player).keySet());
+        allKeys.addAll(DataManager.INSTANCE.getHiddenTargets(player).keySet());
 
         for (String key : allKeys) {
             if (key.equalsIgnoreCase(inputName)) {
@@ -89,7 +113,8 @@ public class NetworkHelperMixin {
             at = @At(
                     value = "FIELD",
                     target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
-                    opcode = Opcodes.GETFIELD
+                    opcode = Opcodes.GETFIELD,
+                    ordinal = 2
             ),
             slice = @Slice(
                     from = @At(
@@ -110,6 +135,8 @@ public class NetworkHelperMixin {
             @Local(ordinal = 0) List<String> names,
             @Local(ordinal = 1) List<Integer> ticks
     ) {
+        // 前两次列表读取处于玩家名遍历循环内部；必须等循环结束后再插入 NPC 目标，避免并发修改异常。
+        DataManager.INSTANCE.ensureTargetsFresh();
         List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
 
         insertAndTrim(names, ticks, matches);

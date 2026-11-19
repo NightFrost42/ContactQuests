@@ -3,7 +3,7 @@ plugins {
     id 'maven-publish'
     id 'idea'
     id 'net.neoforged.moddev' version '2.0.119'
-    id 'org.jetbrains.kotlin.jvm' version '2.0.0'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
 }
 
 version = mod_version
@@ -11,6 +11,7 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    mavenCentral { content { includeGroup 'org.jacoco' } }
     maven {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
@@ -19,6 +20,14 @@ repositories {
     maven { url = "https://cursemaven.com" }
     maven { url = "https://api.modrinth.com/maven" }
     maven { url = "https://maven.blamejared.com/"        }
+    maven {
+        url = 'https://maven.ftb.dev/releases'
+        content { includeGroup 'dev.ftb.mods' }
+    }
+    maven {
+        url = 'https://maven.architectury.dev'
+        content { includeGroup 'dev.architectury' }
+    }
 
     maven {
         url "https://maven.latvian.dev/releases"
@@ -40,6 +49,18 @@ base {
     archivesName = mod_id
 }
 
+sourceSets {
+    testmod
+}
+
+configurations {
+    testmodImplementation.extendsFrom implementation
+    testmodRuntimeOnly.extendsFrom runtimeOnly
+}
+
+sourceSets.testmod.compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
+sourceSets.testmod.runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 kotlin.jvmToolchain(21)
 
@@ -60,6 +81,9 @@ neoForge {
     runs {
         client {
             client()
+            if (project.hasProperty('contactquestsQuickPlay')) {
+                programArguments.addAll '--quickPlaySingleplayer', project.property('contactquestsQuickPlay')
+            }
 
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
@@ -76,7 +100,7 @@ neoForge {
         // The gametest system is also enabled by default for other run configs under the /test command.
         gameTestServer {
             type = "gameTestServer"
-            systemProperty 'neoforge.enabledGameTestNamespaces', project.mod_id
+            systemProperty 'neoforge.enabledGameTestNamespaces', project.findProperty('contactquestsTestNamespaces') ?: project.mod_id
         }
 
         data {
@@ -91,6 +115,10 @@ neoForge {
 
         // applies to all the run configs above
         configureEach {
+            if (project.hasProperty('contactquestsTestGameDir')) {
+                gameDirectory = project.file(project.property('contactquestsTestGameDir'))
+            }
+
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
             // "SCAN": For mods scan.
@@ -113,6 +141,9 @@ neoForge {
         "${mod_id}" {
             sourceSet(sourceSets.main)
         }
+        "${mod_id}_test" {
+            sourceSet(sourceSets.testmod)
+        }
     }
 }
 
@@ -121,21 +152,23 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 
 
 dependencies {
-    implementation 'thedarkcolour:kotlinforforge-neoforge:5.3.0'
+    implementation "thedarkcolour:kotlinforforge-neoforge:${kotlinforforge_version}"
     annotationProcessor 'org.spongepowered:mixin:0.8.7:processor'
 
-    implementation "curse.maven:ftb-quests-forge-289412:${ftbquests_neoforge_21}"
-    implementation "curse.maven:ftb-library-forge-404465:${ftblibrary_neoforge_21}"
-    implementation "curse.maven:ftb-teams-forge-404468:${ftbteams_neoforge_21}"
+    implementation("dev.ftb.mods:ftb-quests-neoforge:${ftbquests_version}") { transitive = false }
+    implementation("dev.ftb.mods:ftb-library-neoforge:${ftblibrary_version}") { transitive = false }
+    implementation("dev.ftb.mods:ftb-teams-neoforge:${ftbteams_version}") { transitive = false }
     implementation "curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_neoforge_21}"
     implementation "curse.maven:jade-324717:${jade_neoforge_21}"
-    implementation "dev.latvian.mods:kubejs-neoforge:${kubejs_version}"
-    // Example mod dependency with JEI
-    // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
-    // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
-    // compileOnly "mezz.jei:jei-${mc_version}-forge-api:${jei_version}"
-    runtimeOnly "mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}"
-    runtimeOnly "curse.maven:architectury-api-419699:${architectury_api_neoforge_21}"
+    implementation("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") {
+        exclude group: 'dev.latvian.apps', module: 'tiny-java-server'
+        exclude group: 'com.github.rtyley', module: 'animated-gif-lib-for-java'
+        exclude group: 'dev.latvian.mods', module: 'better-advanced-tooltips'
+    }
+    // Optional client recipe bridge; never bundled or required by the production mod.
+    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}") { transitive = false }
+    runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}") { transitive = false }
+    implementation("dev.architectury:architectury-neoforge:${architectury_version}") { transitive = false }
 //    runtimeOnly "curse.maven:jupiter-1072905:${jupiter_neoforge_21}"
     implementation "curse.maven:oelib-1319210:${oelib_neoforge_21}"
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
@@ -168,6 +201,8 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
                              mod_version            : mod_version,
                              mod_authors            : mod_authors,
                              mod_description        : mod_description]
+    replaceProperties.ftbquests_version_range = ftbquests_version_range
+    replaceProperties.ftblibrary_version_range = ftblibrary_version_range
     inputs.properties replaceProperties
     expand replaceProperties
     from "src/main/templates"
@@ -189,7 +224,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url uri("${project.projectDir}/repo")
         }
     }
 }
@@ -214,4 +249,113 @@ tasks.named('processResources') {
 
 tasks.named('runServer') {
     standardInput = System.in
+}
+
+// Export the resolved launch settings once. The runner starts fresh test JVMs
+// directly, so contactquestsAutoTest never starts a nested Gradle build.
+configurations {
+    contactquestsWindowsNatives
+    contactquestsCoverageAgent { transitive = false }
+    contactquestsCoverageCli { transitive = false }
+}
+dependencies {
+    contactquestsCoverageAgent 'org.jacoco:org.jacoco.agent:0.8.16:runtime@jar'
+    contactquestsCoverageCli 'org.jacoco:org.jacoco.cli:0.8.16:nodeps@jar'
+    ['lwjgl', 'lwjgl-freetype', 'lwjgl-glfw', 'lwjgl-jemalloc', 'lwjgl-openal',
+     'lwjgl-opengl', 'lwjgl-stb', 'lwjgl-tinyfd'].each { module ->
+        contactquestsWindowsNatives "org.lwjgl:${module}:3.3.3:natives-windows"
+    }
+}
+
+def exportTestLaunch = { String name, String runName, String prepareName, boolean windows ->
+    tasks.register(name) {
+        group = 'verification'
+        dependsOn prepareName, 'testmodClasses', 'jar', 'contactquestsWindowsLaunchAgent'
+        def destination = layout.buildDirectory.file("contactquests-tests/${runName}.json")
+        outputs.file destination
+        // Resolve and export on every explicit invocation to avoid stale settings.
+        outputs.upToDateWhen { false }
+        doLast {
+            def run = tasks.named(runName).get()
+            def cp = (run.classpath.files + run.classpathProvider.files).collect { it.absolutePath }.unique()
+            def vmArgs = (run.jvmArgs + run.allJvmArgs + run.jvmArgumentProviders.collectMany { it.asArguments().toList() }).unique()
+            def args = (run.args ?: []) + run.argumentProviders.collectMany { it.asArguments().toList() }
+            def record = [
+                java: run.javaLauncher.get().executablePath.asFile.absolutePath,
+                mainClass: run.mainClass.get(), classpath: cp, jvmArgs: vmArgs,
+                args: args, environment: run.environmentProperty.get(),
+                gameDirectory: run.gameDirectory.get().asFile.absolutePath,
+                projectDirectory: projectDir.absolutePath,
+                pathSeparator: File.pathSeparator,
+                productionJar: tasks.named('jar').get().archiveFile.get().asFile.absolutePath,
+                coverageAgent: configurations.contactquestsCoverageAgent.singleFile.absolutePath,
+                coverageCli: configurations.contactquestsCoverageCli.singleFile.absolutePath,
+                windowsLaunchAgent: tasks.named('contactquestsWindowsLaunchAgent').get().archiveFile.get().asFile.absolutePath,
+                windowsNatives: windows ? configurations.contactquestsWindowsNatives.files.collect { it.absolutePath } : [],
+                dependencies: [neoforge: neo_version, ftbquests: ftbquests_version,
+                    ftblibrary: ftblibrary_version, ftbteams: ftbteams_version,
+                    kotlinforforge: kotlinforforge_version, kubejs: kubejs_version]
+            ]
+            def target = destination.get().asFile
+            target.parentFile.mkdirs()
+            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(record)) + '\n'
+        }
+    }
+}
+tasks.register('contactquestsWindowsLaunchAgent', Jar) {
+    group = 'verification'
+    dependsOn 'testmodClasses'
+    archiveFileName = 'contactquests-windows-launch-agent.jar'
+    destinationDirectory = layout.buildDirectory.dir('contactquests-tests')
+    from sourceSets.testmod.output
+    include 'com/creeperyang/contactquests/test/WindowsLwjglAccessAgent*.class'
+    manifest {
+        attributes 'Premain-Class': 'com.creeperyang.contactquests.test.WindowsLwjglAccessAgent'
+    }
+}
+exportTestLaunch('contactquestsExportServerLaunch', 'runGameTestServer', 'prepareGameTestServerRun', false)
+exportTestLaunch('contactquestsExportClientLaunch', 'runClient', 'prepareClientRun', true)
+exportTestLaunch('contactquestsExportDedicatedLaunch', 'runServer', 'prepareServerRun', false)
+
+def contactquestsPython = providers.environmentVariable('CQ_PYTHON').orElse(
+        System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'python' : 'python3')
+
+tasks.register('contactquestsTestReport', Exec) {
+    group = 'verification'
+    description = 'Regenerate the report for the latest isolated ContactQuests test run.'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/report/generate-report.py').absolutePath, '--latest'
+}
+
+tasks.register('contactquestsAutoTest', Exec) {
+    group = 'verification'
+    description = 'Run all regression cases, editors, Windows multiplayer/rejoin, and an independent server/client without KubeJS or Rhino.'
+    dependsOn 'contactquestsExportServerLaunch', 'contactquestsExportClientLaunch', 'contactquestsExportDedicatedLaunch'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/runner/run-tests.py').absolutePath,
+            'suite', '--prepared'
+}
+
+tasks.register('contactquestsReleaseValidation', Exec) {
+    group = 'verification'
+    description = 'Check release tag/metadata/production-jar validation with isolated positive and negative fixtures.'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/release/test-release.py').absolutePath
+}
+
+// This run is intentionally manual-only. It is not referenced by
+// contactquestsAutoTest, check, or any automatic GameTest task.
+neoForge.runs {
+    contactquestsClickTest {
+        client()
+        systemProperty 'contactquests.test.manualClick', 'true'
+        systemProperty 'contactquests.test.manualClickResult', 'test-results/1.21.1-neoforge/manual-click-result.json'
+        systemProperty 'neoforge.enabledGameTestNamespaces', ''
+        if (project.hasProperty('contactquestsClickGameDir')) {
+            gameDirectory = project.file(project.property('contactquestsClickGameDir'))
+        }
+        if (project.hasProperty('contactquestsClickWorld')) {
+            programArguments.addAll '--quickPlaySingleplayer', project.property('contactquestsClickWorld')
+        }
+    }
 }

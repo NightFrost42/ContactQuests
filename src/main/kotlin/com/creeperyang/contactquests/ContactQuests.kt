@@ -7,13 +7,17 @@ import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.data.RewardDistributionManager
+import com.creeperyang.contactquests.data.RewardDeliverySavedData
 import com.creeperyang.contactquests.data.TaskDeliverySavedData
 import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.quest.reward.PostcardReward
+import com.creeperyang.contactquests.quest.reward.RedPacketReward
 import com.creeperyang.contactquests.quest.reward.RewardRegistry
 import com.creeperyang.contactquests.quest.task.PostcardTask
+import com.creeperyang.contactquests.quest.task.RedPacketTask
 import com.creeperyang.contactquests.quest.task.TaskRegistry
 import com.creeperyang.contactquests.registry.ModItems
+import com.creeperyang.contactquests.mailbox.TeamMailboxBinding
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import net.minecraft.client.Minecraft
 import net.neoforged.bus.api.SubscribeEvent
@@ -36,16 +40,11 @@ import org.apache.logging.log4j.Logger
 import thedarkcolour.kotlinforforge.neoforge.forge.MOD_BUS
 import thedarkcolour.kotlinforforge.neoforge.forge.runForDist
 
-/**
- * Main mod class.
- *
- * An example for blocks is in the `blocks` package of this mod.
- */
+/** 模组主入口，负责注册配置、网络协议、事件监听与服务端数据加载生命周期。 */
 @Mod(ContactQuests.ID)
 object ContactQuests {
     const val ID = "contactquests"
 
-    // the logger for our mod
     val LOGGER: Logger = LogManager.getLogger(ID)
 
     @JvmStatic
@@ -77,6 +76,7 @@ object ContactQuests {
 
         TaskRegistry.init()
         RewardRegistry.init()
+        TeamMailboxBinding.init()
         ModItems.register(MOD_BUS)
         EVENT_BUS.register(ModCommands)
         EVENT_BUS.register(EventHandler)
@@ -117,30 +117,24 @@ object ContactQuests {
         EVENT_BUS.register(this)
     }
 
-    /**
-     * This is used for initializing client specific
-     * things such as renderers and keymaps
-     * Fired on the mod specific event bus.
-     */
     private fun onClientSetup(event: FMLClientSetupEvent) {
-//        ContactQuestsClient.init()
     }
 
-    /**
-     * Fired on the global Forge bus.
-     */
     private fun onServerSetup(event: FMLDedicatedServerSetupEvent) {
-        //服务端函数在这里初始化
     }
 
     fun onCommonSetup(event: FMLCommonSetupEvent) {
         NpcConfigManager.initFile()
+        com.creeperyang.contactquests.config.ChoiceTemplateConfig.reload()
+        com.creeperyang.contactquests.llm.NpcLlmConfig.reload()
     }
 
     @SubscribeEvent
     fun onServerStarted(event: ServerStartedEvent) {
         try {
             DataManager.init()
+            // 在主世界 tick 循环开始前先导入早期按维度分开存储的奖励待派发队列，迁移标记会防止重复导入。
+            event.server.allLevels.forEach { RewardDeliverySavedData.get(it) }
             if (ModList.get().isLoaded("kubejs")) {
                 try {
                     val clazz = Class.forName("com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin")
@@ -167,8 +161,12 @@ object ContactQuests {
         }
 
         if (event.updateCause == TagsUpdatedEvent.UpdateCause.SERVER_DATA_LOAD) {
+            com.creeperyang.contactquests.config.ChoiceTemplateConfig.reload()
+            com.creeperyang.contactquests.llm.NpcLlmConfig.reload()
             PostcardTask.PostcardPlaceholderSupport.reset()
+            RedPacketTask.RedPacketPlaceholderSupport.reset()
             PostcardReward.reset()
+            RedPacketReward.reset()
             CollectionSavedData.reset()
 
             if (ModList.get().isLoaded("kubejs")) {
@@ -196,6 +194,8 @@ object ContactQuests {
         val overworld = server.overworld()
 
         TaskDeliverySavedData[overworld].tick(overworld)
+        com.creeperyang.contactquests.data.ChoiceRewardSavedData.get(overworld).tick(overworld)
+        com.creeperyang.contactquests.llm.NpcLlmService.tick(overworld)
         RewardDistributionManager.onServerTick(overworld)
     }
 

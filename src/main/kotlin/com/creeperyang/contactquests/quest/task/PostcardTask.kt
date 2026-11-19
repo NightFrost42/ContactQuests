@@ -1,14 +1,17 @@
 package com.creeperyang.contactquests.quest.task
 
 import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
+import com.creeperyang.contactquests.client.gui.PostcardStyleIcon
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
+import com.creeperyang.contactquests.utils.PostcardUtils
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
-import dev.ftb.mods.ftblibrary.icon.Color4I
+import dev.ftb.mods.ftblibrary.icon.Icon
+import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
 import dev.ftb.mods.ftblibrary.ui.Widget
@@ -88,10 +91,11 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
     private fun checkStyleMatch(stack: ItemStack): Boolean {
         if (postcardStyle.isEmpty()) return true
 
+        val expected = PostcardUtils.normalizeStyleId(postcardStyle) ?: return false
         val styleType = getComponent<ResourceLocation>("postcard_style_id") ?: return false
-        val itemStyle = stack[styleType]?.toString() ?: return false
+        val itemStyle = stack[styleType] ?: return false
 
-        return itemStyle.contains(postcardStyle) || postcardStyle.contains(itemStyle)
+        return itemStyle == expected
     }
 
     private fun checkTextMatch(stack: ItemStack): Boolean {
@@ -110,17 +114,6 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
             val result = normalizedItem.contains(normalizedConfig)
 
-//            if (!result && !player.level().isClientSide) {
-//                ContactQuests.info("--- Postcard Task Validation Failed ---")
-//                ContactQuests.info("Task ID: $id")
-//                ContactQuests.info("Config Raw: '$postcardText'")
-//                ContactQuests.info("Config Resolved: '$resolvedText'")
-//                ContactQuests.info("Config Normalized (Expected): '$normalizedConfig'")
-//                ContactQuests.info("Item Text (Actual): '$normalizedItem'")
-//                ContactQuests.info("Match Result: false")
-//                ContactQuests.info("---------------------------------------")
-//            }
-
             return result
         }
         return false
@@ -130,10 +123,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         if (teamData != null) {
             val cached = (teamData as ITeamDataExtension).`contactQuests$getPostcardText`(this.id)
             if (!cached.isNullOrEmpty()) {
-//                ContactQuests.info("[Debug Client] Task $id found cached text: $cached")
-                return cached
-            } else {
-//                ContactQuests.info("[Debug Client] Task $id has NO cached text.")
+                return if (player != null) PostcardPlaceholderSupport.replace(cached, player, teamData) else cached
             }
         }
 
@@ -145,15 +135,14 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
     }
 
     override fun getValidDisplayItems(): MutableList<ItemStack> {
-        val displayList = mutableListOf<ItemStack>()
-        val validItemIds = listOf("postcard", "ender_postcard")
-        for (itemIdStr in validItemIds) {
-            val itemId = ResourceLocation.fromNamespaceAndPath("contact", itemIdStr)
-            val item = BuiltInRegistries.ITEM[itemId]
-            displayList.add(ItemStack(item))
-        }
-        return displayList
+        val styleId = PostcardUtils.resolveStyleId(postcardStyle)
+        return mutableListOf(PostcardItem.getPostcard(styleId, false), PostcardItem.getPostcard(styleId, true))
     }
+
+    @OnlyIn(Dist.CLIENT)
+    override fun getAltIcon(): Icon = ItemIcon.getItemIcon(
+        PostcardItem.getPostcard(PostcardUtils.resolveStyleId(postcardStyle), false)
+    )
 
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
@@ -202,7 +191,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
                         for (styleId in allStyles) {
                             val btnName = getStyleDisplayName(styleId)
 
-                            panel.add(object : SimpleTextButton(panel, btnName, Color4I.empty()) {
+                            panel.add(object : SimpleTextButton(panel, btnName, PostcardStyleIcon(styleId)) {
                                 override fun onClicked(btn: MouseButton?) {
                                     playClickSound()
 
@@ -327,6 +316,18 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         fun replace(text: String, player: Player, team: TeamData): String {
             var result = text
             replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
+
+        fun replaceForTeamCache(text: String, player: Player, team: TeamData): String {
+            var result = text
+            val hasCustomPlayer = replacers["<player_name>"] !== defaultReplacers["<player_name>"]
+            replacers.forEach { (key, func) ->
+                if (key == "<player_name>" && !hasCustomPlayer) return@forEach
                 if (result.contains(key)) {
                     result = result.replace(key, func(player, team))
                 }

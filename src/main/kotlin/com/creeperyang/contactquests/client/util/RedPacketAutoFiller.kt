@@ -104,7 +104,9 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
                 return
             }
         }
-        findItemAndSetup(menu, req, player)
+        // 已预填的数量和槽位上限都必须从本次可搬入数量中扣除。
+        val amountToAdd = (min(req.amountNeeded, 64L) - slotItem.count).coerceAtLeast(0L)
+        findItemAndSetup(menu, req, player, amountToAdd)
     }
 
     private fun handleFillTextState(
@@ -135,7 +137,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         actionDelay = 0
     }
 
-    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement, player: Player) {
+    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement, player: Player, amountToAdd: Long) {
         val inventoryStart = RedPacketEnvelopeScreenHandler.CONTENT_COUNT
         val inventoryEnd = menu.slots.size
 
@@ -148,7 +150,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
                     RegistryUtils.registryAccess
                 )
             ) {
-                setupTransferAction(menu.containerId, player, i, stack, req.amountNeeded)
+                setupTransferAction(menu.containerId, player, i, stack, amountToAdd)
                 return
             }
         }
@@ -184,6 +186,27 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     }
 
     private fun handleDeposit(mc: Minecraft, menu: RedPacketEnvelopeScreenHandler, player: Player) {
+        val carried = player.containerMenu.carried
+        if (carried.isEmpty) {
+            itemsToDeposit = 0
+            currentState = State.IDLE
+            return
+        }
+
+        val teamData = ClientQuestFile.INSTANCE?.selfTeamData
+        val req = if (teamData != null) getCurrentTaskRequirement(teamData, player) else null
+        val stillNeeded = if (req != null && !req.itemStack.isEmpty &&
+                ItemMatchingSystem.INSTANCE.doesItemMatch(
+                    req.itemStack, carried, taskData?.matchComponents, RegistryUtils.registryAccess
+                )) {
+            (min(req.amountNeeded, 64L) - menu.getSlot(0).item.count).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+        if (itemsToDeposit > stillNeeded) {
+            itemsToDeposit = stillNeeded.toInt()
+        }
+
         var clicksThisTick = 0
         while (itemsToDeposit > 0 && clicksThisTick < CLICKS_PER_TICK) {
             click(mc, menu.containerId, 0, 1, ClickType.PICKUP, player)
@@ -192,8 +215,8 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         }
 
         if (itemsToDeposit <= 0) {
-            val carried = player.containerMenu.carried
-            currentState = if (!carried.isEmpty) {
+            val remainingCarried = player.containerMenu.carried
+            currentState = if (!remainingCarried.isEmpty) {
                 State.RETURN_REST
             } else {
                 State.IDLE

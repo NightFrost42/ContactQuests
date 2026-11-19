@@ -20,7 +20,8 @@ class KubeJSMailQueueSavedData : SavedData() {
         val items: List<ItemStack>,
         var ticksLeft: Int,
         val isPostcard: Boolean,
-        val isRedPacket: Boolean
+        val isRedPacket: Boolean,
+        val originalItems: List<ItemStack>? = null
     )
 
     companion object {
@@ -46,6 +47,14 @@ class KubeJSMailQueueSavedData : SavedData() {
                     itemsList.add(ItemStack.parseOptional(provider, itemsTag.getCompound(j)))
                 }
 
+                val originalItems = if (mailTag.contains("OriginalItems", Tag.TAG_LIST.toInt())) {
+                    val origTag = mailTag.getList("OriginalItems", Tag.TAG_COMPOUND.toInt())
+                    MutableList(origTag.size) { idx -> ItemStack.parseOptional(provider, origTag.getCompound(idx)) }
+                        .filter { !it.isEmpty }
+                } else {
+                    null
+                }
+
                 data.pendingMails.add(
                     PendingMail(
                         playerUUID = mailTag.getUUID("PlayerUUID"),
@@ -53,7 +62,8 @@ class KubeJSMailQueueSavedData : SavedData() {
                         items = itemsList,
                         ticksLeft = mailTag.getInt("TicksLeft"),
                         isPostcard = mailTag.getBoolean("IsPostcard"),
-                        isRedPacket = mailTag.getBoolean("IsRedPacket")
+                        isRedPacket = mailTag.getBoolean("IsRedPacket"),
+                        originalItems = originalItems
                     )
                 )
             }
@@ -76,21 +86,40 @@ class KubeJSMailQueueSavedData : SavedData() {
                 itemsTag.add(item.save(provider, CompoundTag()))
             }
             mailTag.put("Items", itemsTag)
+            mail.originalItems?.let { originals ->
+                val origTag = ListTag()
+                originals.filter { !it.isEmpty }.forEach { item ->
+                    origTag.add(item.save(provider, CompoundTag()))
+                }
+                mailTag.put("OriginalItems", origTag)
+            }
             list.add(mailTag)
         }
         tag.put(TAG_MAILS, list)
         return tag
     }
 
+    @JvmOverloads
     fun addMail(
         player: Player,
         recipient: String,
         items: List<ItemStack>,
         delay: Int,
         isPostcard: Boolean,
-        isRedPacket: Boolean
+        isRedPacket: Boolean,
+        originalItems: List<ItemStack>? = null
     ) {
-        pendingMails.add(PendingMail(player.uuid, recipient, items, delay, isPostcard, isRedPacket))
+        pendingMails.add(
+            PendingMail(
+                player.uuid,
+                recipient,
+                items.map { it.copy() },
+                delay.coerceAtLeast(0),
+                isPostcard,
+                isRedPacket,
+                originalItems?.map { it.copy() }
+            )
+        )
         setDirty()
     }
 
@@ -100,12 +129,22 @@ class KubeJSMailQueueSavedData : SavedData() {
         val iterator = pendingMails.iterator()
         while (iterator.hasNext()) {
             val mail = iterator.next()
-            mail.ticksLeft--
+            if (mail.ticksLeft > 0) {
+                mail.ticksLeft--
+                setDirty()
+            }
 
             if (mail.ticksLeft <= 0) {
                 val player = level.server.playerList.getPlayer(mail.playerUUID)
                 if (player != null) {
-                    if (mail.isPostcard) {
+                    if (mail.originalItems != null && com.creeperyang.contactquests.llm.NpcLlmConfig.npc(mail.recipient) != null) {
+                        com.creeperyang.contactquests.llm.NpcLlmService.receiveAfterTasks(
+                            player,
+                            mail.recipient,
+                            mail.originalItems,
+                            mail.items
+                        )
+                    } else if (mail.isPostcard) {
                         DataManager.processPostcardDelivery(
                             player,
                             mail.items.firstOrNull() ?: ItemStack.EMPTY,
@@ -120,11 +159,10 @@ class KubeJSMailQueueSavedData : SavedData() {
                     } else {
                         DataManager.processParcelDelivery(player, mail.items, mail.recipient)
                     }
+                    iterator.remove()
+                    setDirty()
                 }
-                iterator.remove()
-                setDirty()
             }
         }
-        setDirty()
     }
 }

@@ -14,7 +14,7 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 
-@Info("Fired when a player tries to send mail (Parcel/Postcard/RedPacket) via a mailbox.")
+@Info("Fired for mail remaining after task quantities have been allocated. Parcel items are remaining contents; postcard/red packet items retain their envelope. intercept() consumes only this remainder.")
 class MailReceivedEventJS(
     val player: ServerPlayer,
     val recipient: String,

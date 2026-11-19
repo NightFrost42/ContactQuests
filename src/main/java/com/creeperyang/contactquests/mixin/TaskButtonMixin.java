@@ -1,8 +1,10 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.quest.task.ParcelTask;
+import com.creeperyang.contactquests.quest.task.ContactTask;
+import com.creeperyang.contactquests.client.util.TooltipUtils;
 import com.creeperyang.contactquests.quest.task.RedPacketTask;
-import com.creeperyang.contactquests.utils.ParcelTagSelectionScreen;
+import com.creeperyang.contactquests.client.gui.ParcelTagSelectionScreen;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -10,6 +12,7 @@ import dev.ftb.mods.ftblibrary.icon.Icon;
 import dev.ftb.mods.ftblibrary.ui.ContextMenuItem;
 import dev.ftb.mods.ftblibrary.ui.Theme;
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton;
+import dev.ftb.mods.ftblibrary.util.TooltipList;
 import dev.ftb.mods.ftbquests.api.ItemFilterAdapter;
 import dev.ftb.mods.ftbquests.client.gui.ContextMenuBuilder;
 import dev.ftb.mods.ftbquests.client.gui.quests.QuestScreen;
@@ -32,6 +35,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 
+/** 为 FTB 任务按钮渲染 Contact 邮递角标，并在右键菜单中挂载物品标签筛选转换弹窗。 */
 @Mixin(TaskButton.class)
 public abstract class TaskButtonMixin {
 
@@ -41,6 +45,11 @@ public abstract class TaskButtonMixin {
     @Shadow(remap = false)
     @Final
     private QuestScreen questScreen;
+
+    @Inject(method = "addMouseOverText", at = @At("TAIL"), remap = false)
+    private void wrapMailTaskTooltip(TooltipList list, CallbackInfo ci) {
+        if (task instanceof ContactTask) TooltipUtils.wrap(list);
+    }
 
     @Inject(method = "draw", at = @At("TAIL"), remap = false)
     private void drawOverlay(GuiGraphics graphics, Theme theme,
@@ -112,7 +121,7 @@ public abstract class TaskButtonMixin {
 
     @Unique
     private void contactQuestsSetTagFilterAndSave(ParcelTask parcelTask, ItemFilterAdapter adapter, TagKey<Item> tag) {
-        parcelTask.setStackAndCount(adapter.makeTagFilterStack(tag), parcelTask.getItemStack().getCount());
+        parcelTask.setItemStack(adapter.makeTagFilterStack(tag));
 
         if (parcelTask.getRawTitle().isEmpty()) {
             parcelTask.setRawTitle("Any #" + tag.location());

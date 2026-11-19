@@ -1,0 +1,31 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="CC-BY-SA-4.0"
+
+[[mods]]
+modId="contactquests_test"
+version="0.1.0"
+displayName="ContactQuests Deterministic Tests"
+authors="ContactQuests"
+description='''Fixed server/client/KubeJS test harness for ContactQuests.'''
+
+[[dependencies.contactquests_test]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.contactquests_test]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.22)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.contactquests_test]]
+modId="contactquests"
+type="required"
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"

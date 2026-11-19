@@ -1,0 +1,770 @@
+{
+  "branch": "1.21.1-neoforge",
+  "fixed": true,
+  "withoutKubejs": true,
+  "scenarios": [
+    {
+      "id": "server.features.escrow_snapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, nonempty withReward escrow and exact original attachments persist beside an unclaimed native reward",
+      "phases": ["client-no-kubejs"]
+    },
+    {
+      "id": "server.features.escrow_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "A new no-KubeJS JVM restores exact nonempty escrow without an early item return",
+      "phases": ["client-no-kubejs-rejoin"]
+    },
+    {
+      "id": "server.features.escrow_claim",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The original player claims the same-NPC native reward after restart and receives exact original attachments once without scripts",
+      "phases": ["client-no-kubejs-rejoin"]
+    },
+    {
+      "id": "server.features.escrow_repeat",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated native claim in the restarted no-KubeJS server preserves the exact mailbox, empty escrow and pending delivery state",
+      "phases": ["client-no-kubejs-rejoin"]
+    },
+    {
+      "id": "client.features.visible_choice_outer_tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual non-editor RewardButton tooltip includes both native choices and postcard instruction",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_copy_text",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real copy button copies the exact letter without changing request, claim or stationery",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_write_tooltip",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real write tooltip names the NPC and reveals no technical identity",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.no_jei.dependencies_absent",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Windows client starts and reconnects with actual JEI mod/API absent",
+      "phases": [
+        "client-no-kubejs",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.no_jei.dependencies_absent",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Dedicated server starts and restarts with actual JEI mod/API absent",
+      "phases": [
+        "dedicated-no-kubejs",
+        "dedicated-no-kubejs-restart"
+      ]
+    },
+    {
+      "id": "client.no_jei.recipe_noop",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual no-JEI item-cell click keeps the original page and complete item/progress state without optional class errors",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_display",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, actual non-hidden empty-label options expose native item names, quantities, icons and tooltips",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_request",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, natural selected-item letter names the actual NPC and native reward without visible request identity",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_written",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, native editor holds exact chosen-item prose plus invisible server-owned card binding before Done",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.visible_choice_claim_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, native claim state synchronizes for the real non-hidden postcard selection",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.visible_choice_prepared",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, separate non-hidden choice preserves all original hidden fixtures and supplies actual editable Contact stationery",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.visible_choice_delivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, native RewardButton/Done/postbox path delivers only apple x3 and rejects replay without extra diamond",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_stationery_ready",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Received mail at hotbar 0 precedes editable stationery at inventory 9 without script dependencies",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_stationery",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, actual Write skips read-only mail and opens the blank inventory card in Contact's editor",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.choice_stationery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, original received mail remains byte-for-byte intact after the blank card is actually prepared and posted",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.choice_card",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, real Contact Done/send preserves hidden selection while the player rewrites all prose",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_card_private",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, written card normal/advanced tooltips contain no request identity or special address",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_keep",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, actual postbox input stays in NPC keep storage with one real Contact reply",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_discard",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Without scripts, discard removes only the actual current postbox input and sends one real Contact reply",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.dependencies_absent",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "KubeJS and Rhino mods and representative classes are absent from the actual runtime",
+      "phases": [
+        "dedicated-no-kubejs",
+        "dedicated-no-kubejs-restart"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.dependencies_absent",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The actual Windows client has neither KubeJS nor Rhino classes",
+      "phases": [
+        "client-no-kubejs",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native task/reward/editor graphs and exclusively bound non-personal party mailbox are prepared without scripts",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.mixed_mail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real mixed Contact envelope credits diamond=2, stores exactly dirt=3 once, and counts one wrong-mail batch",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.mail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact send routes consume accepted envelopes and complete exact task progress [2,2,1]",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.claim",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Five actual rewards claimed twice deliver apple=2, emerald=3, diamond=8 and one Contact postcard",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM reads task quantities, claim states, party-only mailbox, count and edited rules without reseeding",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.mail",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client sees exact [2,2,1] progress and five unclaimed rewards",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.claim",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client sees all five claimed rewards",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.no_kubejs.progress.rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Client receives persisted [2,2,1] progress and five claim states after separate server restart",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.editor.quest.quest.save",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real right-click native quest editor saves seven Tag/mutex fields via Done",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.missing",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce missing; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.unlocked",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce unlocked; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.mutex",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce mutex; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.editor.rules_effect.reset",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce reset; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.missing",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce missing; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.unlocked",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce unlocked; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.mutex",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce mutex; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.editor.rules_effect.reset",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Rules saved by actual native editor enforce reset; client also checks the actual player quest node",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.no_kubejs.npc_response",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native SAVE sends exactly one real Contact acknowledgement postcard for one mixed-mail remainder batch",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real six mail rewards, original weighted table, real postcard and configured mock NPC",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.selected",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Actual native selection sends a server request and returns dedicated recipient and filled text",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_choice",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact postcard through postbox marks native claim and delivers selected seven diamonds only",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_repeat",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Repeated choice card remains intact and cannot duplicate delivery",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_llm",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Two asynchronous fixed mock turns retain isolated context/model/persona, authorize one graph publication and never call old NPC/script reactions",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_with_rewards",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Fixed mock withReward policy and native FTB reward claim return scoped AI escrow once without KubeJS",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.verify_fail",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Mock provider failure preserves real mail, no fabricated NPC response or legacy reaction",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.pending_failure_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Failed provider envelope and retry time survive a real no-KubeJS JVM restart",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.snapshot",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New choice and NPC data saved for native process restart",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.hidden",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "All six actual FTB reward buttons hide custom title/icon, tooltip, quantity/probability and ingredient contents",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.table_editor",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "FTB native controls expose hide/template/option labels and native content animation and 25%/75% tooltip",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_selection",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real FTB click opens choice screen; B selected through actual button",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_request",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Server postcard response includes selected option/token and dedicated recipient",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_written",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Real Contact editor displays exact filled text and submits native Done button",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.features.choice_claim_sync",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native claimed state synchronizes after actual postcard mail",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native restart restores pending token/template, hidden six rewards/table, isolated NPC history/stash/published keys without replay",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.features.hidden_rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Sealed reward titles/icons/tooltips and ingredient protections survive fresh-client reconnect",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.features.table_animation",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Both native FTB table reward buttons actually draw apple and diamond icons across successive Windows frames",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.events",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Tag grant, native complete/reset and independent script block transition once; reads and reload do not replay",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.hidden_delivery",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Hidden direct/red-packet/postcard/random/All rewards retain actual exact delivery and duplicate claim protection",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.features.accepted_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Accepted real Contact card, sender components, token and delay survive a new JVM and grant the chosen contents once to the original team",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "server.features.tool_journal_rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Completed tool result is not replayed; unfinished authorized journal publishes one native quest, retains actual mail and delivers exactly one Contact reply with the complete tool results through restart",
+      "phases": [
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "gametest.llmProviderConfigRejectsInvalidSettingsAtomically",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Provider validation preserves active settings on invalid replacement and accepts explicit local loopback",
+      "phases": [
+        "server"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.prepare",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.verify",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.finish",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Long fixed-provider reply travels through a real Contact postbox and mailbox with exact full body, separate ordered cards and restored prior state",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.postcard.letters.rejoin",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "New JVM restores exact real Contact card sequence, hidden components and full conversation from vanilla saved inventory",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.postcard.letters.reader",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every actual delivered long-reply card opens via native item use and fits native Font/bounds; the concatenated reader text equals the complete NPC reply",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.letters.reader_rejoin",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Every persisted actual long-reply card is readable after a new JVM, fits native Font/bounds and reconstructs the complete response",
+      "phases": [
+        "client-rejoin",
+        "client-no-kubejs-rejoin"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.hidden_choice",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Contact page lines fit actual loaded card text bounds",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.visible_choice",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Contact page lines fit actual loaded card text bounds",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "client.postcard.layout.received",
+      "scope": "client",
+      "required": true,
+      "implementation": "implemented",
+      "description": "Native Contact page lines fit actual loaded card text bounds",
+      "phases": [
+        "client-no-kubejs"
+      ]
+    },
+    {
+      "id": "server.commands.tags_remove_no_team_completion",
+      "scope": "server",
+      "required": true,
+      "implementation": "implemented",
+      "description": "The real command dispatcher resolves a player with no FTB team and completes tag-remove suggestions with a normal empty future without changing the control team",
+      "phases": [
+        "client-smoke",
+        "client-no-kubejs"
+      ]
+    }
+  ]
+}

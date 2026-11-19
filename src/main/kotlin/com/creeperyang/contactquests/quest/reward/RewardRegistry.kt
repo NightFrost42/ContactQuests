@@ -2,11 +2,18 @@ package com.creeperyang.contactquests.quest.reward
 
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.Icons
+import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
 import dev.ftb.mods.ftbquests.quest.reward.RewardTypes
 import net.minecraft.resources.ResourceLocation
 
 object RewardRegistry {
+    val PARCEL_CHOICE: RewardType = RewardTypes.register(
+        ResourceLocation.fromNamespaceAndPath("contactquests", "parcel_choice"),
+        { id, quest -> ParcelChoiceReward(id, quest) },
+        { ItemIcon.getItemIcon("contact:postcard") }
+    ).setExcludeFromListRewards(true)
+
     val PARCEL: RewardType = RewardTypes.register(
         ResourceLocation.fromNamespaceAndPath("contactquests", "parcel"),
         { id, quest -> ParcelReward(id, quest) },
@@ -28,7 +35,7 @@ object RewardRegistry {
     val POSTCARD: RewardType = RewardTypes.register(
         ResourceLocation.fromNamespaceAndPath("contactquests", "postcard"),
         { id, quest -> PostcardReward(id, quest) },
-        { Icon.getIcon("contact:item/postcard") }
+        { ItemIcon.getItemIcon("contact:postcard") }
     ).setExcludeFromListRewards(true)
 
     val RED_PACKET: RewardType = RewardTypes.register(
@@ -38,6 +45,6 @@ object RewardRegistry {
     ).setExcludeFromListRewards(true)
 
     fun init() {
-        // Class loading trigger
+        // 触发伴生对象类加载以向 FTB Quests 注册全部自定义奖励类型
     }
 }

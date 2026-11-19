@@ -35,20 +35,28 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     override fun getType(): RewardType = RewardRegistry.RED_PACKET
 
-    override fun claim(player: ServerPlayer, notify: Boolean) {
+    override fun claim(player: ServerPlayer, notify: Boolean): Boolean {
         var actualCount = count + player.level().random.nextInt(randomBonus + 1)
         actualCount = calculateMultipliedCount(actualCount, player)
+        if (item.isEmpty || actualCount <= 0) return false
 
-        val stackToSend = item.copy()
-        stackToSend.count = actualCount
-
-        val container = SimpleContainer(1)
-        container.setItem(0, stackToSend)
-
+        val maxStack = item.maxStackSize.coerceIn(1, 99)
         val processedBlessing = processText(blessing.replace("\\n", "\n"), player)
-        val redPacket = RedPacketUtils.getRedPacket(container, processedBlessing, targetAddressee)
+        var remaining = actualCount
+        var distributed = false
+        while (remaining > 0) {
+            val chunk = minOf(remaining, maxStack)
+            val stackToSend = item.copy()
+            stackToSend.count = chunk
 
-        distributeItem(player, redPacket)
+            val container = SimpleContainer(1)
+            container.setItem(0, stackToSend)
+
+            val redPacket = RedPacketUtils.getRedPacket(container, processedBlessing, targetAddressee)
+            distributed = distributeItem(player, redPacket) || distributed
+            remaining -= chunk
+        }
+        return distributed
     }
 
     override fun writeData(nbt: CompoundTag, provider: HolderLookup.Provider) {
@@ -108,6 +116,7 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): MutableComponent {
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
         return if (randomBonus > 0) {
             Component.literal("$count-${count + randomBonus}x ").append(item.hoverName)
         } else if (count > 1) {
@@ -119,11 +128,13 @@ class RedPacketReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
+        if (isContentsHiddenForViewer()) return sealedIcon()
         return if (item.isEmpty) super.getAltIcon() else ItemIcon.getItemIcon(item.copy().also { it.count = 1 })
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
+        if (isContentsHiddenForViewer()) return Optional.empty()
         return PositionedIngredient.of(item, widget, true)
     }
 

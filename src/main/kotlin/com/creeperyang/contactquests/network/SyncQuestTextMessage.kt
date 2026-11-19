@@ -1,16 +1,21 @@
 package com.creeperyang.contactquests.network
 
 import com.creeperyang.contactquests.ContactQuests
-import com.creeperyang.contactquests.utils.IQuestExtension
-import dev.ftb.mods.ftbquests.client.FTBQuestsClient
+import com.creeperyang.contactquests.bridge.IQuestExtension
+import dev.ftb.mods.ftbquests.client.ClientQuestFile
+import dev.ftb.mods.ftbquests.quest.translation.TranslationKey
 import net.minecraft.network.RegistryFriendlyByteBuf
 import net.minecraft.network.codec.StreamCodec
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload
 import net.minecraft.resources.ResourceLocation
 import net.neoforged.neoforge.network.handling.IPayloadContext
+import java.util.Collections
 
-data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int, val content: Any?) :
+class SyncQuestTextMessage @JvmOverloads constructor(
+    val id: Long, val locale: String, val type: Int, content: Any?, val global: Boolean = false
+) :
     CustomPacketPayload {
+    val content: Any? = if (content is List<*>) Collections.unmodifiableList(ArrayList(content)) else content
 
     override fun type(): CustomPacketPayload.Type<SyncQuestTextMessage> {
         return TYPE
@@ -20,6 +25,7 @@ data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int,
         buf.writeLong(id)
         buf.writeUtf(locale)
         buf.writeByte(type)
+        buf.writeBoolean(global)
 
         if (content == null) {
             buf.writeBoolean(false)
@@ -34,14 +40,30 @@ data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int,
 
     fun handle(context: IPayloadContext) {
         context.enqueueWork {
-            val file = FTBQuestsClient.getClientQuestFile()
+            val file = ClientQuestFile.INSTANCE
             if (file != null) {
                 val quest = file.get(id)
 
                 if (quest is IQuestExtension) {
                     val ext = quest as IQuestExtension
 
-                    if (content == null) {
+                    if (global) {
+                        when (type) {
+                            0 -> {
+                                file.translationManager.addTranslation(quest, locale, TranslationKey.TITLE, content as String)
+                                ext.`contactQuests$setTitleOverride`(locale, null)
+                            }
+                            1 -> {
+                                file.translationManager.addTranslation(quest, locale, TranslationKey.QUEST_SUBTITLE, content as String)
+                                ext.`contactQuests$setSubtitleOverride`(locale, null)
+                            }
+                            2 -> {
+                                @Suppress("UNCHECKED_CAST")
+                                file.translationManager.addTranslation(quest, locale, TranslationKey.QUEST_DESC, content as List<String>)
+                                ext.`contactQuests$setDescriptionOverride`(locale, null)
+                            }
+                        }
+                    } else if (content == null) {
                         when (type) {
                             0 -> ext.`contactQuests$setTitleOverride`(locale, null)
                             1 -> ext.`contactQuests$setSubtitleOverride`(locale, null)
@@ -65,7 +87,13 @@ data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int,
                     }
 
                     quest.clearCachedData()
-                    file.refreshGui()
+                    file.clearCachedData()
+                    // 全量刷新会重建 QuestScreen 并关掉当前详情弹窗；仅修改文案时只需重绘面板即可。
+                    file.getQuestScreen().ifPresent { screen ->
+                        screen.refreshQuestPanel()
+                        screen.refreshViewQuestPanel()
+                        screen.refreshChapterPanel()
+                    }
                 }
             }
         }
@@ -82,6 +110,7 @@ data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int,
                 val id = buf.readLong()
                 val locale = buf.readUtf()
                 val type = buf.readByte().toInt()
+                val global = buf.readBoolean()
                 val hasContent = buf.readBoolean()
 
                 val content: Any? = if (hasContent) {
@@ -93,7 +122,7 @@ data class SyncQuestTextMessage(val id: Long, val locale: String, val type: Int,
                 } else {
                     null
                 }
-                SyncQuestTextMessage(id, locale, type, content)
+                SyncQuestTextMessage(id, locale, type, content, global)
             }
         )
     }
