@@ -18,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+/** 为 ContactQuests 的邮寄任务与包裹奖励注入 FTB Quests 客户端编辑器提供器。 */
 @Mixin(GuiProviders.class)
 public abstract class GuiProvidersMixin {
     @Inject(method = "setTaskGuiProviders", at = @At("TAIL"), remap = false)
@@ -94,7 +95,6 @@ public abstract class GuiProvidersMixin {
             s.setHasSearchBox(true);
             s.openGui();
         });
-
 
         RewardRegistry.INSTANCE.getRED_PACKET().setGuiProvider((gui, quest, callback) -> {
             ItemStackConfig c = new ItemStackConfig(false, false);

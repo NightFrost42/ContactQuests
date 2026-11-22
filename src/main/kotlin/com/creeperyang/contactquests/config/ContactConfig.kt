@@ -40,7 +40,6 @@ object ContactConfig {
             .comment("这将作为默认值填入，你可以随时在任务编辑器中修改它。")
             .define("default_target_addressee", "QuestNPC")
 
-
         BUILDER.pop()
 
         SPEC = BUILDER.build()

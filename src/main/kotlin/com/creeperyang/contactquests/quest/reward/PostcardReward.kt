@@ -1,16 +1,18 @@
 package com.creeperyang.contactquests.quest.reward
 
+import com.creeperyang.contactquests.client.gui.PostcardStyleIcon
+import com.creeperyang.contactquests.utils.PostcardUtils
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
-import dev.ftb.mods.ftblibrary.icon.Color4I
 import dev.ftb.mods.ftblibrary.icon.Icon
 import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
 import dev.ftb.mods.ftblibrary.ui.Widget
+import dev.ftb.mods.ftblibrary.util.client.PositionedIngredient
 import dev.ftb.mods.ftblibrary.ui.input.MouseButton
 import dev.ftb.mods.ftblibrary.ui.misc.AbstractButtonListScreen
 import dev.ftb.mods.ftbquests.quest.Quest
@@ -23,6 +25,7 @@ import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
+import java.util.Optional
 
 class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
@@ -91,17 +94,10 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         }
     }
 
-
     override fun getType(): RewardType = RewardRegistry.POSTCARD
 
     override fun claim(player: ServerPlayer, notify: Boolean) {
-        val styleId = if (postcardStyle.isNotEmpty()) ResourceLocation.tryParse(postcardStyle) else null
-
-        var postcardStack = if (styleId != null) {
-            PostcardItem.getPostcard(styleId, isEnder)
-        } else {
-            PostcardItem.getPostcard(ResourceLocation("contact", "default"), isEnder)
-        }
+        var postcardStack = PostcardItem.getPostcard(PostcardUtils.resolveStyleId(postcardStyle), isEnder)
 
         if (postcardText.isNotEmpty()) {
             val processedText = postcardText.replace("\\n", "\n")
@@ -110,7 +106,7 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         }
 
         if (targetAddressee.isNotEmpty()) {
-            postcardStack.getOrCreateTag().putString("Sender", targetAddressee)
+            postcardStack.orCreateTag.putString("Sender", targetAddressee)
         }
 
         distributeItem(player, postcardStack)
@@ -167,20 +163,19 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
-        if (postcardStyle.isNotEmpty()) {
-            val rl = ResourceLocation.tryParse(postcardStyle)
-            if (rl != null) {
-                val stack = PostcardItem.getPostcard(rl, isEnder)
-                return ItemIcon.getItemIcon(stack)
-            }
-        }
-        return Icon.getIcon("contact:item/postcard")
+        if (isContentsHiddenForViewer()) return sealedIcon()
+        return ItemIcon.getItemIcon(PostcardItem.getPostcard(PostcardUtils.resolveStyleId(postcardStyle), isEnder))
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): Component {
-        return Component.translatable("item.contact.postcard")
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
+        return Component.translatable(if (isEnder) "item.contact.ender_postcard" else "item.contact.postcard")
     }
+
+    @OnlyIn(Dist.CLIENT)
+    override fun getIngredient(widget: Widget): Optional<PositionedIngredient> =
+        if (isContentsHiddenForViewer()) Optional.empty() else super.getIngredient(widget)
 
     @OnlyIn(Dist.CLIENT)
     private class PostcardStyleConfig(private val reward: PostcardReward) : ConfigValue<String>() {
@@ -230,7 +225,7 @@ class PostcardReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
         }
 
         private inner class StyleButton(panel: Panel, title: Component, val styleId: String) :
-            SimpleTextButton(panel, title, Color4I.empty()) {
+            SimpleTextButton(panel, title, PostcardStyleIcon(styleId)) {
             override fun onClicked(btn: MouseButton?) {
                 playClickSound()
                 configValue.value = styleId

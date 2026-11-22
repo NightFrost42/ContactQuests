@@ -2,19 +2,21 @@ package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.ContactQuests;
 import com.creeperyang.contactquests.config.TagConfig;
-import com.creeperyang.contactquests.utils.*;
-import com.mojang.datafixers.util.Pair;
+import com.creeperyang.contactquests.bridge.IInlineQuestTextOwner;
+import com.creeperyang.contactquests.bridge.IQuestExtension;
+import com.creeperyang.contactquests.bridge.ITeamDataExtension;
+import com.creeperyang.contactquests.quest.DependencyMode;
+import com.creeperyang.contactquests.quest.MutexMode;
+import com.creeperyang.contactquests.utils.QuestObjectText;
 import dev.ftb.mods.ftblibrary.config.ConfigGroup;
 import dev.ftb.mods.ftbquests.quest.*;
 import dev.ftb.mods.ftbquests.quest.task.Task;
 import dev.ftb.mods.ftbquests.util.ConfigQuestObject;
-import dev.ftb.mods.ftbquests.util.TextUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.spongepowered.asm.mixin.Final;
@@ -27,18 +29,40 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import com.mojang.datafixers.util.Pair;
+import dev.ftb.mods.ftbquests.util.TextUtils;
+import net.minecraft.network.chat.Component;
+import java.util.function.Predicate;
 
+/** 为 FTB Quest 扩展前置 Tag 校验、互斥任务锁定、脚本强制开关，以及按存档隔离的标题/描述动态覆写能力。 */
 @Mixin(Quest.class)
-public abstract class QuestMixin extends QuestObject implements IQuestExtension {
+public abstract class QuestMixin extends QuestObject implements IQuestExtension, IInlineQuestTextOwner {
+
+    @Unique
+    private String contactQuests$getLocale() {
+        return getQuestFile().isServerSide() ? "zh_cn" : contactQuests$clientLocale();
+    }
+
+    @Unique
+    @OnlyIn(Dist.CLIENT)
+    private static String contactQuests$clientLocale() {
+        return net.minecraft.client.Minecraft.getInstance().getLanguageManager().getSelected();
+    }
+
+    @Unique private boolean contactQuests$localInlineText;
+
+    @Override public boolean contactQuests$usesLocalInlineText() { return contactQuests$localInlineText; }
+    @Override public void contactQuests$setLocalInlineText(boolean enabled) { contactQuests$localInlineText = enabled; }
 
     @Unique
     private final List<String> contactQuests$mutexGuids = new ArrayList<>();
     @Shadow(remap = false)
     @Final
     private List<Task> tasks;
-
+    @Shadow(remap = false)
+    @Final
+    private List<String> rawDescription;
     @Unique
     private final List<String> contactQuests$requiredTags = new ArrayList<>();
     @Unique
@@ -47,6 +71,10 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private boolean contactQuests$hideWithoutTags = false;
     @Shadow(remap = false)
     private Chapter chapter;
+    @Shadow(remap = false)
+    private int minRequiredDependencies;
+    @Shadow(remap = false)
+    private int repeatCooldown;
     @Unique
     private MutexMode contactQuests$mutexMode = MutexMode.ANY;
     @Unique
@@ -56,6 +84,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     @Unique
     private final Map<String, List<String>> contactQuests$descOverrides = new HashMap<>();
     @Unique
+    private final Map<String, String> contactQuests$titleOverrides = new HashMap<>();
+    @Unique
     private final Map<String, String> contactQuests$subtitleOverrides = new HashMap<>();
 
     protected QuestMixin(long id) {
@@ -63,7 +93,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     }
 
     @Override
-    @Unique
     public List<String> contactQuests$getRequiredTags() {
         return contactQuests$requiredTags;
     }
@@ -76,7 +105,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
                 long longId = getQuestFile().getID(id);
                 QuestObjectBase obj = getQuestFile().get(longId);
                 if (obj instanceof QuestObject qo) {
-                    uiList.add(qo.getTitle().getString());
+                    uiList.add(QuestObjectText.safeTitle(qo).getString());
                 }
             } catch (Exception ignored) {
             }
@@ -106,7 +135,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
         boolean met;
         if (contactQuests$tagMode == DependencyMode.ANY) {
-            met = contactQuests$requiredTags.stream().anyMatch(ext::contactQuests$hasTag);
+            // 两条分支均返回“标签条件是否拦截当前任务”；返回 true 时调用方会将其视作依赖未满足。
+            met = !contactQuests$requiredTags.stream().anyMatch(ext::contactQuests$hasTag);
         } else {
             met = !contactQuests$requiredTags.stream().allMatch(ext::contactQuests$hasTag);
         }
@@ -128,7 +158,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
                         return null;
                     }
                 })
-                .filter(Objects::nonNull)
+                .filter(QuestObject.class::isInstance)
+                .map(QuestObject.class::cast)
                 .filter(data::isCompleted)
                 .count();
 
@@ -141,14 +172,13 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         };
     }
 
-    @OnlyIn(Dist.CLIENT)
     @Inject(method = "fillConfigGroup", at = @At("TAIL"), remap = false)
+    @OnlyIn(Dist.CLIENT)
     private void injectConfig(ConfigGroup config, CallbackInfo ci) {
         ConfigGroup group = config.getOrCreateSubgroup("contact_quests_tags");
         group.setNameKey("contactquests.config.group");
 
         TagConfig tagConfig = new TagConfig(getQuestFile(), contactQuests$requiredTags);
-
         group.addList("required_tags", contactQuests$requiredTags, tagConfig, v -> {
             contactQuests$requiredTags.clear();
             contactQuests$requiredTags.addAll(v);
@@ -200,6 +230,14 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
     private void injectIsVisible(TeamData data, CallbackInfoReturnable<Boolean> cir) {
         if (Boolean.FALSE.equals(cir.getReturnValue())) return;
 
+        if (data instanceof ITeamDataExtension ext) {
+            if (ext.contactQuests$isQuestForced(this.id)) return;
+            if (contactQuests$hideIfLocked && ext.contactQuests$isQuestBlocked(this.id)) {
+                cir.setReturnValue(false);
+                return;
+            }
+        }
+
         if (contactQuests$hideIfLocked && contactQuests$internal$checkMutexLocked(data)) {
             cir.setReturnValue(false);
             return;
@@ -223,7 +261,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
             }
         }
 
-        if (Boolean.FALSE.equals(cir.getReturnValue())) return;
+        if (!Boolean.TRUE.equals(cir.getReturnValue())) return;
 
         if (contactQuests$internal$checkMutexLocked(data)) {
             cir.setReturnValue(false);
@@ -244,6 +282,20 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         }
     }
 
+    @Override
+    public void contactQuests$setTitleOverride(String locale, String title) {
+        if (title == null) contactQuests$titleOverrides.remove(locale);
+        else contactQuests$titleOverrides.put(locale, title);
+        clearCachedData();
+    }
+
+    @Override
+    public void contactQuests$setNativeDescription(List<String> description) {
+        this.rawDescription.clear();
+        if (description != null) {
+            this.rawDescription.addAll(description);
+        }
+    }
 
     @Override
     public void contactQuests$setSubtitleOverride(String locale, String subtitle) {
@@ -253,15 +305,24 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "getRawDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetRawDescription(CallbackInfoReturnable<List<String>> cir) {
-        String locale = ClientLocaleHelper.getLocale();
+        String locale = contactQuests$getLocale();
         if (contactQuests$descOverrides.containsKey(locale)) {
             cir.setReturnValue(contactQuests$descOverrides.get(locale));
         }
     }
 
+    @Override
+    public String contactQuests$getTitleOverride() {
+        String locale = contactQuests$getLocale();
+        if (contactQuests$titleOverrides.containsKey(locale)) {
+            return contactQuests$titleOverrides.get(locale);
+        }
+        return null;
+    }
+
     @Inject(method = "getRawSubtitle", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetRawSubtitle(CallbackInfoReturnable<String> cir) {
-        String locale = ClientLocaleHelper.getLocale();
+        String locale = contactQuests$getLocale();
         if (contactQuests$subtitleOverrides.containsKey(locale)) {
             cir.setReturnValue(contactQuests$subtitleOverrides.get(locale));
         }
@@ -269,7 +330,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "getSubtitle", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetSubtitle(CallbackInfoReturnable<Component> cir) {
-        String locale = ClientLocaleHelper.getLocale();
+        String locale = contactQuests$getLocale();
         if (contactQuests$subtitleOverrides.containsKey(locale)) {
             cir.setReturnValue(TextUtils.parseRawText(contactQuests$subtitleOverrides.get(locale)));
         }
@@ -277,7 +338,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "getDescription", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectGetDescription(CallbackInfoReturnable<List<Component>> cir) {
-        String locale = ClientLocaleHelper.getLocale();
+        String locale = contactQuests$getLocale();
         if (contactQuests$descOverrides.containsKey(locale)) {
             List<String> rawList = contactQuests$descOverrides.get(locale);
 
@@ -291,7 +352,7 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "buildDescriptionIndex", at = @At("HEAD"), cancellable = true, remap = false)
     private void injectBuildDescriptionIndex(CallbackInfoReturnable<List<Pair<Integer, Integer>>> cir) {
-        String locale = ClientLocaleHelper.getLocale();
+        String locale = contactQuests$getLocale();
         if (contactQuests$descOverrides.containsKey(locale)) {
             List<String> overrideList = contactQuests$descOverrides.get(locale);
             List<Pair<Integer, Integer>> index = new ArrayList<>();
@@ -314,15 +375,15 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
 
     @Inject(method = "writeData", at = @At("TAIL"), remap = false)
     private void writeTagsNBT(CompoundTag nbt, CallbackInfo ci) {
+        // 固定版本（2101.1.38/39）原生 writer 在落盘前会把该编辑整数字段强转为 byte，此处补写完整 int 值以保留设置。
+        if (minRequiredDependencies > 0) nbt.putInt("min_required_dependencies", minRequiredDependencies);
         if (!contactQuests$requiredTags.isEmpty()) {
             ListTag list = new ListTag();
             contactQuests$requiredTags.forEach(t -> list.add(StringTag.valueOf(t)));
             nbt.put("cq_req_tags", list);
             nbt.putString("cq_tag_mode", contactQuests$tagMode.name());
         }
-        if (contactQuests$hideWithoutTags) {
-            nbt.putBoolean("cq_hide_no_tags", true);
-        }
+        if (contactQuests$hideWithoutTags) nbt.putBoolean("cq_hide_no_tags", true);
 
         if (!contactQuests$mutexGuids.isEmpty()) {
             ListTag list = new ListTag();
@@ -349,7 +410,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
             }
         }
         contactQuests$hideWithoutTags = nbt.getBoolean("cq_hide_no_tags");
-
 
         contactQuests$mutexGuids.clear();
         if (nbt.contains("cq_mutex_ids")) {
@@ -379,6 +439,8 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         buffer.writeEnum(contactQuests$mutexMode);
         buffer.writeVarInt(contactQuests$mutexNum);
         buffer.writeBoolean(contactQuests$hideIfLocked);
+        // 即便当前原生条件字段未启用，同步网络时仍保留作者配置好的 repeatCooldown 数值。
+        buffer.writeInt(repeatCooldown);
     }
 
     @Inject(method = "readNetData", at = @At("TAIL"), remap = false)
@@ -395,5 +457,6 @@ public abstract class QuestMixin extends QuestObject implements IQuestExtension 
         contactQuests$mutexMode = buffer.readEnum(MutexMode.class);
         contactQuests$mutexNum = buffer.readVarInt();
         contactQuests$hideIfLocked = buffer.readBoolean();
+        repeatCooldown = buffer.readInt();
     }
 }

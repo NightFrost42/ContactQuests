@@ -1,0 +1,151 @@
+{
+  "id": "client.contact.parcel_autofill",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "install_synthetic_tasks"
+    },
+    {
+      "action": "seed_autofill",
+      "type": "parcel"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "open_task_display",
+      "type": "parcel"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "parcel-valid-task-display"
+    },
+    {
+      "action": "click_task_submit",
+      "type": "parcel"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 200
+    },
+    {
+      "action": "assert_screen",
+      "screen": "EnvelopeScreen"
+    },
+    {
+      "action": "assert_autofill_container",
+      "item": "diamond",
+      "count": 2,
+      "wrong_item": "dirt",
+      "wrong_min_count": 3
+    },
+    {
+      "action": "screenshot",
+      "name": "parcel-autofilled"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "parcel",
+      "variant": "quick_move_exact",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "parcel",
+      "variant": "quick_move_exact",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "parcel",
+      "variant": "quick_move_exact",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 100
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "parcel",
+      "variant": "quick_move_exact",
+      "phase": "snapshot"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "parcel",
+      "variant": "quick_move_exact",
+      "phase": "verify"
+    },
+    { "action": "wrapping_autofill", "variant": "precise", "phase": "prepare" },
+    { "action": "wait_ticks", "ticks": 30 },
+    { "action": "wrapping_autofill", "variant": "precise", "phase": "open" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "precise", "phase": "submit" },
+    { "action": "wait_ticks", "ticks": 100 },
+    { "action": "wrapping_autofill", "variant": "precise", "phase": "snapshot" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "precise", "phase": "verify" },
+    { "action": "wrapping_autofill", "variant": "prefilled", "phase": "prepare" },
+    { "action": "wait_ticks", "ticks": 30 },
+    { "action": "wrapping_autofill", "variant": "prefilled", "phase": "open" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "prefilled", "phase": "submit" },
+    { "action": "wait_ticks", "ticks": 100 },
+    { "action": "wrapping_autofill", "variant": "prefilled", "phase": "snapshot" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "prefilled", "phase": "verify" },
+    { "action": "wrapping_autofill", "variant": "full", "phase": "prepare" },
+    { "action": "wait_ticks", "ticks": 30 },
+    { "action": "wrapping_autofill", "variant": "full", "phase": "open" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "full", "phase": "submit" },
+    { "action": "wait_ticks", "ticks": 100 },
+    { "action": "wrapping_autofill", "variant": "full", "phase": "snapshot" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "full", "phase": "verify" },
+    { "action": "wrapping_autofill", "variant": "missing", "phase": "prepare" },
+    { "action": "wait_ticks", "ticks": 30 },
+    { "action": "wrapping_autofill", "variant": "missing", "phase": "open" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "missing", "phase": "submit" },
+    { "action": "wait_ticks", "ticks": 100 },
+    { "action": "wrapping_autofill", "variant": "missing", "phase": "snapshot" },
+    { "action": "wait_ticks", "ticks": 10 },
+    { "action": "wrapping_autofill", "variant": "missing", "phase": "verify" },
+    { "action": "close_screen" },
+    { "action": "wait_ticks", "ticks": 5 },
+    { "action": "finish" }
+  ]
+}

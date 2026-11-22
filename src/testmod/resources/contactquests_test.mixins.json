@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "com.creeperyang.contactquests.test.mixin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+    "ContactForgeDevServerMixin"
+  ],
+  "client": [
+    "TestInputConstantsMixin",
+    "TestMouseHandlerMixin",
+    "TestWindowMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

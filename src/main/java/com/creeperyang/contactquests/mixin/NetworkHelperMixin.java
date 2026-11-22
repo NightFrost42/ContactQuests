@@ -1,8 +1,6 @@
 package com.creeperyang.contactquests.mixin;
 
 import com.creeperyang.contactquests.ContactQuests;
-import com.creeperyang.contactquests.compat.kubejs.KubeJSNpcSavedData;
-import com.creeperyang.contactquests.config.NpcConfigManager;
 import com.creeperyang.contactquests.data.DataManager;
 import com.flechazo.contact.common.item.LetterItem;
 import com.flechazo.contact.common.item.ParcelItem;
@@ -11,6 +9,7 @@ import com.flechazo.contact.common.item.RedPacketItem;
 import com.flechazo.contact.common.screenhandler.PostboxScreenHandler;
 import com.flechazo.contact.helper.NetworkHelper;
 import com.flechazo.contact.network.ActionMessage;
+import com.flechazo.contact.platform.PlatformHelper;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import org.objectweb.asm.Opcodes;
@@ -23,17 +22,124 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.util.*;
 
+/** 拦截 Contact 发信网络处理与收件人列表包，将 NPC/自定义收件目标路由到任务队列并安全注入自动补全列表。 */
 @Mixin(NetworkHelper.class)
 public class NetworkHelperMixin {
 
+    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
+    private static void onHandleSendMail(ServerPlayer player, String recipientName, int deliveryTicks, CallbackInfo ci) {
+        if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
+            return;
+        }
+
+        ItemStack stackInSlot = container.parcel.getItem(0);
+        if (stackInSlot.isEmpty()) {
+            ci.cancel();
+            return;
+        }
+
+        DataManager.INSTANCE.ensureTargetsFresh();
+
+        String finalRecipientKey = findKeyIgnoreCase(recipientName, player);
+
+        if (finalRecipientKey == null) {
+            finalRecipientKey = recipientName;
+        }
+
+        if (com.creeperyang.contactquests.data.ChoiceRewardSavedData.hasChoiceMarker(stackInSlot)
+                || DataManager.INSTANCE.isChoiceAddress(finalRecipientKey)) {
+            var remainder = DataManager.INSTANCE.receiveChoiceCard(player, stackInSlot, finalRecipientKey);
+            if (remainder.getCount() < stackInSlot.getCount()) {
+                container.parcel.setItem(0, remainder);
+                new ActionMessage(1, "").sendTo(player);
+            }
+            ci.cancel();
+            return;
+        }
+
+        if (DataManager.INSTANCE.acceptsNpcMail(player, finalRecipientKey)) {
+            boolean accepted = false;
+
+            if (stackInSlot.getItem() instanceof PostcardItem) {
+                accepted = DataManager.INSTANCE.matchPostcardTaskItem(player, stackInSlot, finalRecipientKey);
+            } else if (stackInSlot.getItem() instanceof RedPacketItem) {
+                accepted = DataManager.INSTANCE.matchRedPacketTaskItem(player, stackInSlot, finalRecipientKey);
+            } else if (stackInSlot.getItem() instanceof ParcelItem || stackInSlot.getItem() instanceof LetterItem) {
+                accepted = DataManager.INSTANCE.matchParcelTaskItem(player, stackInSlot, finalRecipientKey);
+            } else {
+                ContactQuests.debug("未知的物品类型 " + stackInSlot.getItem().getClass().getName());
+            }
+
+            if (accepted) {
+                container.parcel.setItem(0, ItemStack.EMPTY);
+                ActionMessage msg = new ActionMessage(1, "");
+                msg.sendTo(player);
+            }
+            ci.cancel();
+        } else if (PlatformHelper.getNameToUUID().get(recipientName) == null) {
+            // 原生 Contact 路径对未知收件人会排队写入 null UUID，进而导致整个邮箱附加数据保存失败，此处直接拦截。
+            ci.cancel();
+        }
+
+    }
+
+    @SuppressWarnings("AddedMixinMembersNamePattern")
+    @Unique
+    private static String findKeyIgnoreCase(String inputName, ServerPlayer player) {
+        Set<String> allKeys = new HashSet<>();
+        allKeys.addAll(DataManager.parcelReceiver.keySet());
+        allKeys.addAll(DataManager.redPacketReceiver.keySet());
+        allKeys.addAll(DataManager.postcardReceiver.keySet());
+        allKeys.addAll(DataManager.rewardSenders);
+
+        allKeys.addAll(DataManager.INSTANCE.getAvailableTargets(player).keySet());
+        allKeys.addAll(DataManager.INSTANCE.getHiddenTargets(player).keySet());
+
+        for (String key : allKeys) {
+            if (key.equalsIgnoreCase(inputName)) {
+                return key;
+            }
+        }
+        return null;
+    }
+
+    @SuppressWarnings("UnresolvedLocalCapture")
+    @Inject(
+            method = "handleNormalEnquiry",
+            at = @At(
+                    value = "FIELD",
+                    target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
+                    opcode = Opcodes.GETFIELD,
+                    ordinal = 2, remap = true
+            ),
+            locals = LocalCapture.CAPTURE_FAILHARD,
+            remap = false
+    )
+    private static void injectCustomTargetsNames(
+            ServerPlayer player,
+            String lowerIn,
+            String nameIn,
+            boolean shouldSend,
+            CallbackInfo ci,
+            List<String> names,
+            List<Integer> ticks
+    ) {
+        // 前两次列表读取处于玩家名遍历循环内部；必须等循环结束后再插入 NPC 目标，避免并发修改异常。
+        DataManager.INSTANCE.ensureTargetsFresh();
+        List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
+
+        insertAndTrim(names, ticks, matches);
+
+        ensureHiddenTarget(player, lowerIn, names, ticks);
+    }
+
     @Unique
     private static List<Map.Entry<String, Integer>> getSortedMatches(ServerPlayer player, String lowerIn, List<String> currentNames) {
-        Map<String, Integer> customTargets = getAllKnownTargets(player);
+        Map<String, Integer> customTargets = DataManager.INSTANCE.getAvailableTargets(player);
         List<Map.Entry<String, Integer>> matches = new ArrayList<>();
 
         for (Map.Entry<String, Integer> entry : customTargets.entrySet()) {
             String targetName = entry.getKey();
-
             if (targetName.toLowerCase(Locale.ROOT).startsWith(lowerIn) && !currentNames.contains(targetName)) {
                 matches.add(entry);
             }
@@ -63,19 +169,13 @@ public class NetworkHelperMixin {
     private static void insertAndTrim(List<String> names, List<Integer> ticks, List<Map.Entry<String, Integer>> matches) {
         for (int i = matches.size() - 1; i >= 0; i--) {
             Map.Entry<String, Integer> entry = matches.get(i);
+            //noinspection SequencedCollectionMethodCanBeUsed
             names.add(0, entry.getKey());
+            //noinspection SequencedCollectionMethodCanBeUsed
             ticks.add(0, entry.getValue());
         }
 
         trimToSize(names, ticks);
-    }
-
-    @Unique
-    private static void trimToSize(List<String> names, List<Integer> ticks) {
-        while (names.size() > 4) {
-            names.remove(names.size() - 1);
-            ticks.remove(ticks.size() - 1);
-        }
     }
 
     @Unique
@@ -96,119 +196,12 @@ public class NetworkHelperMixin {
     }
 
     @Unique
-    private static Map<String, Integer> getAllKnownTargets(ServerPlayer player) {
-        Map<String, Integer> targets = new HashMap<>();
-
-        for (String name : DataManager.parcelReceiver.keySet()) targets.putIfAbsent(name, 0);
-        for (String name : DataManager.redPacketReceiver.keySet()) targets.putIfAbsent(name, 0);
-        for (String name : DataManager.postcardReceiver.keySet()) targets.putIfAbsent(name, 0);
-
-        Set<String> configNpcs = NpcConfigManager.INSTANCE.getAllNpcNames();
-        for (String name : configNpcs) {
-            targets.put(name, NpcConfigManager.INSTANCE.getDeliveryTime(name, player.level()));
+    private static void trimToSize(List<String> names, List<Integer> ticks) {
+        while (names.size() > 4) {
+            //noinspection SequencedCollectionMethodCanBeUsed
+            names.remove(names.size() - 1);
+            //noinspection SequencedCollectionMethodCanBeUsed
+            ticks.remove(ticks.size() - 1);
         }
-
-        try {
-            KubeJSNpcSavedData kubeData = KubeJSNpcSavedData.Companion.get(player.serverLevel());
-            Map<String, KubeJSNpcSavedData.NpcConfig> kubeNpcs = kubeData.getAllNpcs();
-            for (Map.Entry<String, KubeJSNpcSavedData.NpcConfig> entry : kubeNpcs.entrySet()) {
-                targets.put(entry.getKey(), entry.getValue().getDeliveryTime());
-            }
-        } catch (Exception e) {
-            ContactQuests.warn("Failed to load KubeJS NPCs", e);
-        }
-
-        targets.putAll(DataManager.INSTANCE.getAvailableTargets(player));
-
-        return targets;
-    }
-
-    @Inject(method = "handleSendMail", at = @At("HEAD"), cancellable = true, remap = false)
-    private static void onHandleSendMail(ServerPlayer player, String recipientName, int deliveryTicks, CallbackInfo ci) {
-        if (!(player.containerMenu instanceof PostboxScreenHandler container)) {
-            return;
-        }
-
-        ItemStack stackInSlot = container.parcel.getItem(0);
-        if (stackInSlot.isEmpty()) return;
-
-        String knownKey = findKeyIgnoreCase(recipientName, player);
-        boolean isKnownNpc = (knownKey != null);
-        String finalRecipientKey = isKnownNpc ? knownKey : recipientName;
-
-        boolean taskMatched = checkTaskMatch(player, stackInSlot, finalRecipientKey);
-
-        if (taskMatched || isKnownNpc) {
-            if (isKnownNpc && !taskMatched) {
-                ContactQuests.debug("Sending mail to known NPC (No Task): " + finalRecipientKey);
-            }
-
-            container.parcel.setItem(0, ItemStack.EMPTY);
-            ActionMessage msg = new ActionMessage(1, "");
-            msg.sendTo(player);
-            ci.cancel();
-        }
-    }
-
-    @Unique
-    private static boolean checkTaskMatch(ServerPlayer player, ItemStack stack, String recipientKey) {
-        if (stack.getItem() instanceof PostcardItem) {
-            return DataManager.INSTANCE.matchPostcardTaskItem(player, stack, recipientKey);
-        }
-
-        if (stack.getItem() instanceof RedPacketItem) {
-            return DataManager.INSTANCE.matchRedPacketTaskItem(player, stack, recipientKey);
-        }
-
-        if (stack.getItem() instanceof ParcelItem || stack.getItem() instanceof LetterItem) {
-            return DataManager.INSTANCE.matchParcelTaskItem(player, stack, recipientKey);
-        }
-
-        ContactQuests.debug("未知的物品类型 " + stack.getItem().getClass().getName());
-        return false;
-    }
-
-    @SuppressWarnings("AddedMixinMembersNamePattern")
-    @Unique
-    private static String findKeyIgnoreCase(String inputName, ServerPlayer player) {
-        Set<String> allKeys = new HashSet<>();
-        allKeys.addAll(DataManager.parcelReceiver.keySet());
-        allKeys.addAll(DataManager.redPacketReceiver.keySet());
-        allKeys.addAll(DataManager.postcardReceiver.keySet());
-
-        allKeys.addAll(DataManager.INSTANCE.getAvailableTargets(player).keySet());
-
-        for (String key : allKeys) {
-            if (key.equalsIgnoreCase(inputName)) {
-                return key;
-            }
-        }
-        return null;
-    }
-
-    @SuppressWarnings("InvalidInjectorMethodSignature")
-    @Inject(
-            method = "handleNormalEnquiry",
-            at = @At(
-                    value = "FIELD",
-                    target = "Lnet/minecraft/server/level/ServerPlayer;containerMenu:Lnet/minecraft/world/inventory/AbstractContainerMenu;",
-                    opcode = Opcodes.GETFIELD,
-                    ordinal = 2),
-            locals = LocalCapture.CAPTURE_FAILHARD, remap = false
-    )
-    private void injectCustomTargetsNames(
-            ServerPlayer player,
-            String lowerIn,
-            String nameIn,
-            boolean shouldSend,
-            CallbackInfo ci,
-            List<String> names,
-            List<Integer> ticks
-    ) {
-        List<Map.Entry<String, Integer>> matches = getSortedMatches(player, lowerIn, names);
-
-        insertAndTrim(names, ticks, matches);
-
-        ensureHiddenTarget(player, lowerIn, names, ticks);
     }
 }

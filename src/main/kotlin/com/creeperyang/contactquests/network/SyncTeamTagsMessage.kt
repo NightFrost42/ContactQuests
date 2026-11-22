@@ -1,13 +1,15 @@
 package com.creeperyang.contactquests.network
 
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.network.FriendlyByteBuf
+import net.minecraftforge.fml.loading.FMLEnvironment
 import net.minecraftforge.network.NetworkEvent
 import java.util.*
 import java.util.function.Supplier
 
-class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) {
+class SyncTeamTagsMessage(val teamId: UUID, tags: Set<String>) {
+    val tags: Set<String> = Collections.unmodifiableSet(HashSet(tags))
 
     fun encode(buf: FriendlyByteBuf) {
         buf.writeUUID(teamId)
@@ -26,7 +28,13 @@ class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) {
     fun handle(ctxSupplier: Supplier<NetworkEvent.Context>) {
         val ctx = ctxSupplier.get()
         ctx.enqueueWork {
-            val file = ClientQuestFile.INSTANCE
+            if (FMLEnvironment.dist.isClient) ClientHandler.apply(this)
+        }
+        ctx.packetHandled = true
+    }
+    private object ClientHandler {
+        fun apply(message: SyncTeamTagsMessage) = with(message) {
+            val file = ClientQuestFile.INSTANCE ?: return@with
 
             if (file.selfTeamData.teamId == teamId) {
                 val teamData = file.selfTeamData
@@ -43,6 +51,6 @@ class SyncTeamTagsMessage(val teamId: UUID, val tags: Set<String>) {
                 }
             }
         }
-        ctx.packetHandled = true
     }
+
 }

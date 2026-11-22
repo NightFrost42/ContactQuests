@@ -1,16 +1,20 @@
 package com.creeperyang.contactquests.mixin;
 
-import com.creeperyang.contactquests.network.NetworkHandler;
 import com.creeperyang.contactquests.network.SyncTeamExtensionMessage;
 import com.creeperyang.contactquests.network.SyncTeamTagsMessage;
-import com.creeperyang.contactquests.utils.IQuestExtension;
-import com.creeperyang.contactquests.utils.ITeamDataExtension;
+import com.creeperyang.contactquests.bridge.IQuestExtension;
+import com.creeperyang.contactquests.bridge.ITeamDataExtension;
+import com.creeperyang.contactquests.quest.QuestStateEvents;
+import dev.ftb.mods.ftbquests.quest.task.Task;
 import dev.ftb.mods.ftblibrary.snbt.SNBTCompoundTag;
 import dev.ftb.mods.ftbquests.quest.Quest;
 import dev.ftb.mods.ftbquests.quest.TeamData;
+import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.*;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import com.creeperyang.contactquests.network.NetworkHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -20,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 
+/** 为 FTB TeamData 挂载解锁 Tag、强制开放/屏蔽任务、明信片/红包动态文案缓存及弹性章节校验规则。 */
 @Mixin(TeamData.class)
 public class TeamDataMixin implements ITeamDataExtension {
 
@@ -41,10 +46,13 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$unlockTag(String tag) {
-        if (contactQuests$unlockedTags.add(tag)) {
-            return contactQuests$operationTag();
-        }
-        return false;
+        if (tag == null || tag.isBlank() || tag.length() > 128) return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "tag_grant", tag);
+        try {
+            if (contactQuests$unlockedTags.add(tag)) return contactQuests$operationTag();
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Unique
@@ -67,10 +75,12 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$removeTag(String tag) {
-        if (contactQuests$unlockedTags.remove(tag)) {
-            return contactQuests$operationTag();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "tag_remove", tag);
+        try {
+            if (contactQuests$unlockedTags.remove(tag)) return contactQuests$operationTag();
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
@@ -82,11 +92,15 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$forceQuest(long questId) {
-        if (contactQuests$forcedQuests.add(questId)) {
-            contactQuests$blockedQuests.remove(questId);
-            return contactQuests$operationSync();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_force");
+        try {
+            if (contactQuests$forcedQuests.add(questId)) {
+                contactQuests$blockedQuests.remove(questId);
+                return contactQuests$operationSync();
+            }
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
@@ -107,20 +121,65 @@ public class TeamDataMixin implements ITeamDataExtension {
     @Override
     @Unique
     public boolean contactQuests$blockQuest(long questId) {
-        if (contactQuests$blockedQuests.add(questId)) {
-            contactQuests$forcedQuests.remove(questId);
-            return contactQuests$operationSync();
-        }
-        return false;
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_block");
+        try {
+            if (contactQuests$blockedQuests.add(questId)) {
+                contactQuests$forcedQuests.remove(questId);
+                return contactQuests$operationSync();
+            }
+            return false;
+        } finally { QuestStateEvents.end(self); }
     }
 
     @Override
     @Unique
     public boolean contactQuests$unblockQuest(long questId) {
-        if (contactQuests$blockedQuests.remove(questId)) {
-            return contactQuests$operationSync();
+        TeamData self = (TeamData) (Object) this;
+        QuestStateEvents.begin(self, "script_unblock");
+        try {
+            if (contactQuests$blockedQuests.remove(questId)) return contactQuests$operationSync();
+            return false;
+        } finally { QuestStateEvents.end(self); }
+    }
+
+    @Inject(
+            method = "claimReward(Lnet/minecraft/server/level/ServerPlayer;Ldev/ftb/mods/ftbquests/quest/reward/Reward;ZJ)V",
+            at = @At("HEAD"),
+            cancellable = true,
+            remap = false
+    )
+    private void contactQuests$guardChoiceRewardClaim(
+            ServerPlayer player,
+            dev.ftb.mods.ftbquests.quest.reward.Reward reward,
+            boolean notify,
+            long time,
+            CallbackInfo ci
+    ) {
+        if (reward instanceof com.creeperyang.contactquests.quest.reward.ParcelChoiceReward choiceReward
+                && com.creeperyang.contactquests.data.ChoiceRewardSavedData.authorized(player, choiceReward) == null) {
+            ci.cancel();
         }
-        return false;
+    }
+
+    @Inject(method = "setCompleted", at = @At("HEAD"), remap = false)
+    private void completionMutationHead(long id, Date date, CallbackInfoReturnable<Boolean> cir) {
+        QuestStateEvents.begin((TeamData) (Object) this, date == null ? "native_reset" : "native_complete");
+    }
+
+    @Inject(method = "setCompleted", at = @At("RETURN"), remap = false)
+    private void completionMutationReturn(long id, Date date, CallbackInfoReturnable<Boolean> cir) {
+        QuestStateEvents.end((TeamData) (Object) this);
+    }
+
+    @Inject(method = "setProgress", at = @At("HEAD"), remap = false)
+    private void taskMutationHead(Task task, long progress, CallbackInfo ci) {
+        QuestStateEvents.begin((TeamData) (Object) this, progress == 0 ? "native_reset" : "native_progress");
+    }
+
+    @Inject(method = "setProgress", at = @At("RETURN"), remap = false)
+    private void taskMutationReturn(Task task, long progress, CallbackInfo ci) {
+        QuestStateEvents.end((TeamData) (Object) this);
     }
 
     @Override
@@ -254,14 +313,53 @@ public class TeamDataMixin implements ITeamDataExtension {
 
         if (Boolean.TRUE.equals(cir.getReturnValue())) {
             Object questObj = quest;
-            if (((IQuestExtension) questObj).contactQuests$isLockedByMutex((TeamData) (Object) this)) {
-                cir.setReturnValue(false);
-            }
-
             if (questObj instanceof IQuestExtension) {
+                if (((IQuestExtension) questObj).contactQuests$isLockedByMutex((TeamData) (Object) this)) {
+                    cir.setReturnValue(false);
+                }
+
                 if (((IQuestExtension) questObj).contactQuests$areTagsMet((TeamData) (Object) this)) {
                     cir.setReturnValue(false);
                 }
+            }
+        }
+    }
+
+    @Inject(method = "canStartTasks(Ldev/ftb/mods/ftbquests/quest/Quest;)Z", at = @At("RETURN"), cancellable = true, remap = false)
+    private void checkContactRulesInFlexibleChapters(Quest quest, CallbackInfoReturnable<Boolean> cir) {
+        // FTB 的 FLEXIBLE（自由）章节进度模式会跳过原生前置依赖检查，但显式的 Contact 互斥锁定与 Tag 前置在提交时依然必须生效。
+        if (!Boolean.TRUE.equals(cir.getReturnValue()) || contactQuests$isQuestForced(quest.id)) return;
+        if (contactQuests$isQuestBlocked(quest.id)
+                || (Object) quest instanceof IQuestExtension ext
+                && (ext.contactQuests$isLockedByMutex((TeamData) (Object) this)
+                || ext.contactQuests$areTagsMet((TeamData) (Object) this))) {
+            cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(method = "getCannotStartReason", at = @At("HEAD"), cancellable = true, remap = false)
+    private void injectGetCannotStartReason(Quest quest, CallbackInfoReturnable<Component> cir) {
+        if (contactQuests$isQuestBlocked(quest.id)) {
+            cir.setReturnValue(Component.translatable("contactquests.quest.locked.script").withStyle(ChatFormatting.RED));
+            return;
+        }
+        if (contactQuests$isQuestForced(quest.id)) return;
+        Object questObj = quest;
+        if (questObj instanceof IQuestExtension ext) {
+            if (ext.contactQuests$isLockedByMutex((TeamData) (Object) this)) {
+                List<String> mutexTasks = ext.contactQuests$getMutexTasks();
+                String tagsStr = String.join(", ", mutexTasks);
+                cir.setReturnValue(Component.translatable("contactquests.quest.locked.mutex_tasks", tagsStr)
+                        .withStyle(ChatFormatting.RED));
+                return;
+            }
+
+            if (ext.contactQuests$areTagsMet((TeamData) (Object) this)) {
+                List<String> missingTags = ext.contactQuests$getRequiredTags().stream()
+                        .filter(tag -> !contactQuests$hasTag(tag)).toList();
+                String tagsStr = String.join(", ", missingTags);
+                cir.setReturnValue(Component.translatable("contactquests.quest.locked.missing_tags", tagsStr)
+                        .withStyle(ChatFormatting.RED));
             }
         }
     }
@@ -304,7 +402,6 @@ public class TeamDataMixin implements ITeamDataExtension {
             list.forEach(t -> contactQuests$unlockedTags.add(t.getAsString()));
         }
 
-
         contactQuests$forcedQuests.clear();
         if (nbt.contains("ContactQuestsForcedQuests")) {
             ListTag list = nbt.getList("ContactQuestsForcedQuests", Tag.TAG_LONG);
@@ -346,7 +443,6 @@ public class TeamDataMixin implements ITeamDataExtension {
     private void injectWrite(FriendlyByteBuf buffer, boolean self, CallbackInfo ci) {
         buffer.writeVarInt(contactQuests$unlockedTags.size());
         contactQuests$unlockedTags.forEach(buffer::writeUtf);
-
 
         buffer.writeVarInt(contactQuests$forcedQuests.size());
         contactQuests$forcedQuests.forEach(buffer::writeLong);

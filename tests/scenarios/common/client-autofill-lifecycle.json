@@ -1,0 +1,88 @@
+{
+  "id": "client.contact.autofill_lifecycle",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "assert_level_loaded"
+    },
+    {
+      "action": "install_synthetic_tasks"
+    },
+    {
+      "action": "close_screen"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_multitick"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "red_packet_multitick"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "wrapping_multitick"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_reopen_pickup"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_reopen_deposit"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "red_packet_reopen_pickup"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "red_packet_reopen_deposit"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_close_pickup"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "red_packet_close_deposit"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "postcard_reopen"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_shared_prefilled"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "postcard_intervention"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "red_packet_empty"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_shared_send"
+    },
+    {
+      "action": "autofill_lifecycle",
+      "phase": "parcel_midflight_mutation"
+    },
+    {
+      "action": "finish"
+    }
+  ]
+}

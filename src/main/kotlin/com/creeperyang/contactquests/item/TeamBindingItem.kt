@@ -1,6 +1,7 @@
 package com.creeperyang.contactquests.item
 
-import com.creeperyang.contactquests.utils.IMailboxTeamAccessor
+import com.creeperyang.contactquests.bridge.IMailboxTeamAccessor
+import com.creeperyang.contactquests.mailbox.TeamMailboxBinding
 import com.flechazo.contact.common.block.MailboxBlock
 import com.flechazo.contact.common.handler.MailboxManager
 import com.flechazo.contact.platform.PlatformHelper
@@ -36,7 +37,6 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             return InteractionResult.SUCCESS
         }
 
-
         val team = FTBTeamsAPI.api().manager.getTeamForPlayerID(player.uuid).orElse(null)
         if (team == null) {
             player.sendSystemMessage(
@@ -47,10 +47,6 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
         }
 
         val teamId = team.id
-        if (teamId == null) {
-            player.sendSystemMessage(Component.literal("Error: Team ID is null! Cannot bind mailbox."))
-            return InteractionResult.FAIL
-        }
 
         if (!checkAndHandleExistingMailbox(teamId, level, pos, player)) {
             return InteractionResult.FAIL
@@ -60,6 +56,17 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
             pos
         } else {
             pos.above()
+        }
+
+        // Contact 将真实拥有者与方块视觉标记分开存储；更改任意一侧前（包含个人拥有邮箱）都要先校验双端状态。
+        TeamMailboxBinding.refresh(level as net.minecraft.server.level.ServerLevel, targetPos)
+        val existingOwner = PlatformHelper.getMailboxOwner(level.dimension(), targetPos)
+        if (existingOwner != null && existingOwner != teamId) {
+            player.sendSystemMessage(
+                Component.translatable("message.contactquests.binding.occupied")
+                    .withStyle(ChatFormatting.RED)
+            )
+            return InteractionResult.FAIL
         }
 
         PlatformHelper.setMailboxData(teamId, level.dimension(), targetPos)
@@ -110,7 +117,7 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
 
         if (player.hasPermissions(2)) {
             player.sendSystemMessage(
-                Component.literal("[Teleport]")
+                Component.translatable("message.contactquests.binding.teleport")
                     .withStyle(ChatFormatting.AQUA, ChatFormatting.UNDERLINE)
                     .withStyle { style ->
                         style.withClickEvent(
@@ -122,7 +129,7 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
                             .withHoverEvent(
                                 HoverEvent(
                                     HoverEvent.Action.SHOW_TEXT,
-                                    Component.literal("Click to teleport")
+                                    Component.translatable("message.contactquests.binding.teleport_hint")
                                 )
                             )
                     }
@@ -130,10 +137,10 @@ class TeamBindingItem(properties: Properties) : Item(properties) {
         }
     }
 
-    private fun updateMailboxVisuals(level: Level, targetPos: BlockPos, teamId: UUID) {
+    private fun updateMailboxVisuals(level: Level, targetPos: BlockPos, teamId: UUID?) {
         val newBe = level.getBlockEntity(targetPos)
         if (newBe is IMailboxTeamAccessor) {
-            newBe.`contactquests$setTeamId`(teamId)
+            newBe.`contactQuests$setTeamId`(teamId)
             newBe.setChanged()
             level.sendBlockUpdated(targetPos, newBe.blockState, newBe.blockState, 3)
         }

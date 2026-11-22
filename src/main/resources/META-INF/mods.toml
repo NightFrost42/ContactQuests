@@ -45,29 +45,16 @@ config = "${mod_id}.mixins.json"
 
 # The coremods config file path is not configurable and is always loaded from META-INF/coremods.json
 
-# A dependency - use the . to indicate dependency for a specific modid. Dependencies are optional.
-[[dependencies."${mod_id}"]] #optional
-# the modid of the dependency
-modId = "forge" #mandatory
-# The type of the dependency. Can be one of "required", "optional", "incompatible" or "discouraged" (case insensitive).
-# 'required' requires the mod to exist, 'optional' does not
-# 'incompatible' will prevent the game from loading when the mod exists, and 'discouraged' will show a warning
-mandatory = true #mandatory
-# Optional field describing why the dependency is required or why it is incompatible
-# reason="..."
-# The version range of the dependency
-versionRange = "${forge_version_range}" #mandatory
-# An ordering relationship for the dependency.
-# BEFORE - This mod is loaded BEFORE the dependency
-# AFTER - This mod is loaded AFTER the dependency
+[[dependencies."${mod_id}"]]
+modId = "forge"
+mandatory = true
+versionRange = "${forge_version_range}"
 ordering = "NONE"
-# Side this dependency is applied on - BOTH, CLIENT, or SERVER
 side = "BOTH"
-# Here's another dependency
+
 [[dependencies."${mod_id}"]]
 modId = "minecraft"
 mandatory = true
-# This version range declares a minimum of the current minecraft version up to but not including the next major version
 versionRange = "${minecraft_version_range}"
 ordering = "NONE"
 side = "BOTH"
@@ -75,38 +62,55 @@ side = "BOTH"
 [[dependencies."${mod_id}"]]
 modId = "kotlinforforge"
 mandatory = true
-versionRange = "[4.11,)"
+versionRange = "[4.13,)"
 ordering = "NONE"
 side = "BOTH"
 
 [[dependencies."${mod_id}"]]
-modId="ftbquests"
+modId = "ftbquests"
 mandatory = true
-versionRange = "[2001,)"
-ordering="AFTER"
-side="BOTH"
+versionRange = "${ftbquests_version_range}"
+ordering = "AFTER"
+side = "BOTH"
 
 [[dependencies."${mod_id}"]]
-modId="contact"
+modId = "contact"
 mandatory = true
 versionRange = "[1.2.3,)"
-ordering="AFTER"
-side="BOTH"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "oelib"
+mandatory = true
+versionRange = "[0.3.2,)"
+ordering = "AFTER"
+side = "BOTH"
 
 [[dependencies."${mod_id}"]]
 modId = "ftblibrary"
 mandatory = true
-versionRange = "[2001.0.0,)"
+versionRange = "${ftblibrary_version_range}"
 ordering = "AFTER"
 side = "BOTH"
-# Features are specific properties of the game environment, that you may want to declare you require. This example declares
-# that your mod requires GL version 3.2 or higher. Other features will be added. They are side aware so declaring this won't
-# stop your mod loading on the server for example.
-#[features."${mod_id}"]
-#openGLVersion="[3.2,)"
+
 [[dependencies."${mod_id}"]]
 modId = "jade"
 mandatory = false
 versionRange = "[11.13.2,)"
+ordering = "AFTER"
+side = "CLIENT"
+
+[[dependencies."${mod_id}"]]
+modId = "kubejs"
+mandatory = false
+versionRange = "[2001.6.5,)"
+ordering = "AFTER"
+side = "BOTH"
+
+[[dependencies."${mod_id}"]]
+modId = "jei"
+mandatory = false
+versionRange = "[15,)"
 ordering = "AFTER"
 side = "CLIENT"

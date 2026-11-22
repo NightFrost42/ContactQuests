@@ -19,6 +19,7 @@ import net.minecraft.network.chat.Component
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.item.Items
 import net.minecraftforge.api.distmarker.Dist
+import net.minecraftforge.fml.loading.FMLEnvironment
 import net.minecraftforge.api.distmarker.OnlyIn
 import java.util.function.Predicate
 import kotlin.math.max
@@ -89,13 +90,14 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
 
     @OnlyIn(Dist.CLIENT)
     override fun onButtonClicked(button: Button?, canClick: Boolean) {
+        if (!FMLEnvironment.dist.isClient) return
         button!!.playClickSound()
 
         val validItems = getValidDisplayItems().filter {
             !it.isEmpty && it.item != Items.AIR && it.count > 0
         }.toMutableList()
 
-        if (validItems.isEmpty()) {
+        if (validItems.isEmpty() && !allowsEmptyDisplayItems()) {
             Minecraft.getInstance().toasts.addToast(
                 CustomToast(
                     Component.translatable("contactquest.task.no_valid_items"),
@@ -109,6 +111,8 @@ abstract class ContactTask(id: Long, quest: Quest) : Task(id, quest), Predicate<
     }
 
     abstract fun getValidDisplayItems(): MutableList<ItemStack>
+
+    protected open fun allowsEmptyDisplayItems(): Boolean = false
 
     @OnlyIn(Dist.CLIENT)
     abstract fun openTaskGui(validItems: MutableList<ItemStack>)

@@ -3,7 +3,6 @@ package com.creeperyang.contactquests.quest.task
 import com.creeperyang.contactquests.client.gui.ValidParcelItemsScreen
 import com.creeperyang.contactquests.data.DataManager
 import dev.ftb.mods.ftblibrary.util.TooltipList
-import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
 import dev.ftb.mods.ftbquests.item.MissingItem
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
@@ -26,8 +25,7 @@ class ParcelTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
     }
 
     override fun test(stack: ItemStack): Boolean {
-        if (itemStack.isEmpty) return false
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, stack, shouldMatchNBT(), weakNBTmatch)
+        return isTargetItem(stack)
     }
 
     @OnlyIn(Dist.CLIENT)

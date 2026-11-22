@@ -1,77 +1,63 @@
 package com.creeperyang.contactquests.network
 
-import com.creeperyang.contactquests.registry.ModItems
 import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerPlayer
-import net.minecraft.world.item.ItemStack
 import net.minecraftforge.network.NetworkDirection
-import net.minecraftforge.network.NetworkEvent
 import net.minecraftforge.network.NetworkRegistry
 import net.minecraftforge.network.PacketDistributor
 import net.minecraftforge.network.simple.SimpleChannel
 import java.util.function.BiConsumer
-import java.util.function.Supplier
 
 object NetworkHandler {
-    private const val PROTOCOL_VERSION = "1"
-
+    private const val PROTOCOL_VERSION = "2"
     val CHANNEL: SimpleChannel = NetworkRegistry.newSimpleChannel(
-        ResourceLocation("contactquests", "main"),
-        { PROTOCOL_VERSION },
-        { it == PROTOCOL_VERSION },
-        { it == PROTOCOL_VERSION }
+        ResourceLocation("contactquests", "main"), { PROTOCOL_VERSION },
+        { it == PROTOCOL_VERSION }, { it == PROTOCOL_VERSION }
     )
-
     fun register() {
-        var id = 0
-        CHANNEL.messageBuilder(RequestBinderPayload::class.java, id++, NetworkDirection.PLAY_TO_SERVER)
-            .encoder { msg, buf -> RequestBinderPayload.encode(msg, buf) }
-            .decoder { buf -> RequestBinderPayload.decode(buf) }
-            .consumerNetworkThread(BiConsumer { msg, ctx -> handleRequestBinder(msg, ctx) })
+        CHANNEL.messageBuilder(RequestBinderMessage::class.java, 0, NetworkDirection.PLAY_TO_SERVER)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> RequestBinderMessage.decode(buf) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
             .add()
-
-        CHANNEL.messageBuilder(SyncTeamTagsMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(SyncTeamTagsMessage::class.java, 1, NetworkDirection.PLAY_TO_CLIENT)
             .encoder { msg, buf -> msg.encode(buf) }
             .decoder { buf -> SyncTeamTagsMessage.decode(buf) }
-            .consumerMainThread { msg, ctxSupplier -> msg.handle(ctxSupplier) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
             .add()
-
-        CHANNEL.messageBuilder(OpenQuestMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(OpenQuestMessage::class.java, 2, NetworkDirection.PLAY_TO_CLIENT)
             .encoder { msg, buf -> msg.encode(buf) }
             .decoder { buf -> OpenQuestMessage.decode(buf) }
-            .consumerMainThread { msg, ctxSupplier -> msg.handle(ctxSupplier) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
             .add()
-
-        CHANNEL.messageBuilder(SyncTeamExtensionMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(SyncTeamExtensionMessage::class.java, 3, NetworkDirection.PLAY_TO_CLIENT)
             .encoder { msg, buf -> msg.encode(buf) }
             .decoder { buf -> SyncTeamExtensionMessage(buf) }
-            .consumerMainThread { msg, ctx -> msg.handle(ctx) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
             .add()
-
-        CHANNEL.messageBuilder(SyncQuestTextMessage::class.java, id++, NetworkDirection.PLAY_TO_CLIENT)
+        CHANNEL.messageBuilder(SyncQuestTextMessage::class.java, 4, NetworkDirection.PLAY_TO_CLIENT)
             .encoder { msg, buf -> msg.encode(buf) }
-            .decoder { buf -> SyncQuestTextMessage(buf) }
-            .consumerMainThread { msg, ctx -> msg.handle(ctx) }
+            .decoder { buf -> SyncQuestTextMessage.decode(buf) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
+            .add()
+        CHANNEL.messageBuilder(RequestChoiceMessage::class.java, 5, NetworkDirection.PLAY_TO_SERVER)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> RequestChoiceMessage.decode(buf) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
+            .add()
+        CHANNEL.messageBuilder(PrepareChoicePostcardMessage::class.java, 6, NetworkDirection.PLAY_TO_SERVER)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> PrepareChoicePostcardMessage.decode(buf) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
+            .add()
+        CHANNEL.messageBuilder(ChoicePostcardMessage::class.java, 7, NetworkDirection.PLAY_TO_CLIENT)
+            .encoder { msg, buf -> msg.encode(buf) }
+            .decoder { buf -> ChoicePostcardMessage.decode(buf) }
+            .consumerNetworkThread(BiConsumer { msg, ctx -> msg.handle(ctx) })
             .add()
     }
-
-    internal fun handleRequestBinder(msg: RequestBinderPayload, ctxSupplier: Supplier<NetworkEvent.Context>) {
-        val ctx = ctxSupplier.get()
-        ctx.enqueueWork {
-            val player = ctx.sender
-            if (player is ServerPlayer) {
-                val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
-
-                if (!player.inventory.add(itemStack)) {
-                    player.drop(itemStack, false)
-                }
-            }
-        }
-        ctx.packetHandled = true
+    @JvmStatic fun sendToPlayer(msg: Any, player: ServerPlayer) {
+        CHANNEL.send(PacketDistributor.PLAYER.with { player }, msg)
     }
-
-    @JvmStatic
-    fun sendToPlayer(message: Any, player: ServerPlayer) {
-        CHANNEL.send(PacketDistributor.PLAYER.with { player }, message)
-    }
+    @JvmStatic fun sendToServer(msg: Any) { CHANNEL.sendToServer(msg) }
 }

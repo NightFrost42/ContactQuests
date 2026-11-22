@@ -2,12 +2,12 @@ package com.creeperyang.contactquests.quest.task
 
 import com.creeperyang.contactquests.client.gui.ValidRedPacketItemsScreen
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
+import com.creeperyang.contactquests.utils.ContactMailNbt
 import com.flechazo.contact.common.item.RedPacketItem
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
-import dev.ftb.mods.ftbquests.integration.item_filtering.ItemMatchingSystem
 import dev.ftb.mods.ftbquests.item.MissingItem
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.TeamData
@@ -16,7 +16,6 @@ import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.Tag
 import net.minecraft.network.FriendlyByteBuf
 import net.minecraft.network.chat.Component
 import net.minecraft.server.level.ServerPlayer
@@ -35,7 +34,7 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
     override fun getType(): TaskType = TaskRegistry.RED_PACKET
 
     override fun getItemNbtKey() = "inner_item"
-    override fun getConfigNameKey() = "contactquest.task.ftbquests.redpacket.valid_for"
+    override fun getConfigNameKey() = "contactquest.task.red_packet.item"
 
     fun setStackAndCount(stack: ItemStack, count: Int): RedPacketTask {
         this.itemStack = stack.copy()
@@ -71,56 +70,24 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
 
     override fun test(stack: ItemStack): Boolean {
         if (stack.isEmpty || stack.item !is RedPacketItem) return false
-
+        val contentStack = getFirstItemFromRedPacket(stack)
+        if (contentStack.isEmpty) return false
         if (blessing.isNotEmpty()) {
-            val tag = stack.tag ?: return false
-
-            val stackBlessing = when {
-                tag.contains("red_packet_blessing") -> tag.getString("red_packet_blessing")
-                tag.contains("blessing") -> tag.getString("blessing")
-                tag.contains("blessings") -> tag.getString("blessings")
-                else -> ""
-            }
-
-            var targetBlessing = blessing
-            val (player, teamData) = tempContext!!
-            var normalizedConfig = ""
-            if (tempContext != null) {
-                targetBlessing = getResolvedText(teamData, player)
-
-                normalizedConfig = targetBlessing.replace("\\n", "\n").trim()
-            }
-
-//            if (stackBlessing != targetBlessing && !player.level().isClientSide) {
-//                ContactQuests.info("--- Postcard Task Validation Failed ---")
-//                ContactQuests.info("Task ID: $id")
-//                ContactQuests.info("Config Raw: '$blessing'")
-//                ContactQuests.info("Config Resolved: '$targetBlessing'")
-//                ContactQuests.info("Config Normalized (Expected): '$normalizedConfig'")
-//                ContactQuests.info("Match Result: false")
-//
-//                ContactQuests.info("---------------------------------------")
-//            }
-
+            val stackBlessing = ContactMailNbt.getBlessing(stack).trim()
+            val ctx = tempContext
+            val targetBlessing = if (ctx != null) getResolvedText(ctx.second, ctx.first) else blessing
+            val normalizedConfig = targetBlessing.replace("\\n", "\n").trim()
             if (stackBlessing != normalizedConfig) return false
         }
-
         if (itemStack.isEmpty) return true
-
-        val contentStack = getFirstItemFromRedPacket(stack)
-
-        return ItemMatchingSystem.INSTANCE.doesItemMatch(itemStack, contentStack, shouldMatchNBT(), weakNBTmatch)
+        return isTargetItem(contentStack)
     }
-
 
     fun getResolvedText(teamData: TeamData?, player: Player?): String {
         if (teamData != null) {
             val cached = (teamData as ITeamDataExtension).`contactQuests$getRedPacketBlessing`(this.id)
             if (!cached.isNullOrEmpty()) {
-//                ContactQuests.info("[Debug Client] Task $id found cached text: $cached")
-                return cached
-            } else {
-//                ContactQuests.info("[Debug Client] Task $id has NO cached text.")
+                return if (player != null) RedPacketPlaceholderSupport.replace(cached, player, teamData) else cached
             }
         }
 
@@ -130,30 +97,10 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         return blessing
     }
 
-    private fun getFirstItemFromRedPacket(stack: ItemStack): ItemStack {
-        val tag = stack.tag ?: return ItemStack.EMPTY
+    private fun getFirstItemFromRedPacket(stack: ItemStack): ItemStack =
+        ContactMailNbt.readContents(stack).firstOrNull() ?: ItemStack.EMPTY
 
-        if (tag.contains("parcel", Tag.TAG_LIST.toInt())) {
-            val items = tag.getList("parcel", Tag.TAG_COMPOUND.toInt())
-            if (items.isNotEmpty()) {
-                return ItemStack.of(items.getCompound(0))
-            }
-        }
-
-        val tagListType = Tag.TAG_LIST.toInt()
-        val tagCompoundType = Tag.TAG_COMPOUND.toInt()
-
-        if (tag.contains("Items", tagListType)) {
-            val items = tag.getList("Items", tagCompoundType)
-            if (items.isNotEmpty()) {
-                return ItemStack.of(items.getCompound(0))
-            }
-        } else if (tag.contains("Item", tagCompoundType)) {
-            return ItemStack.of(tag.getCompound("Item"))
-        }
-
-        return ItemStack.EMPTY
-    }
+    override fun allowsEmptyDisplayItems(): Boolean = itemStack.isEmpty
 
     fun checkContent(stack: ItemStack): Boolean {
         return isTargetItem(stack)
@@ -241,6 +188,18 @@ class RedPacketTask(id: Long, quest: Quest) : ItemMatchingTask(id, quest) {
         fun replace(text: String, player: Player, team: TeamData): String {
             var result = text
             replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
+
+        fun replaceForTeamCache(text: String, player: Player, team: TeamData): String {
+            var result = text
+            val hasCustomPlayer = replacers["<player_name>"] !== defaultReplacers["<player_name>"]
+            replacers.forEach { (key, func) ->
+                if (key == "<player_name>" && !hasCustomPlayer) return@forEach
                 if (result.contains(key)) {
                     result = result.replace(key, func(player, team))
                 }

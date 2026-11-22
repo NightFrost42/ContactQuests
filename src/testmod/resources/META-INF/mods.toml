@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="CC-BY-SA-4.0"
+
+[[mods]]
+modId="contactquests_test"
+version="1.0.0"
+displayName="ContactQuests Test"
+description='''ContactQuests test infrastructure.'''
+
+[[dependencies.contactquests_test]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.contactquests_test]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.21)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.contactquests_test]]
+modId="contactquests"
+mandatory=true
+versionRange="[0,)"
+ordering="AFTER"
+side="BOTH"

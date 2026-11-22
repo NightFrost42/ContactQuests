@@ -37,6 +37,8 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
 
     override fun claim(player: ServerPlayer, notify: Boolean) {
         val currentTable = table ?: return
+        if (currentTable.weightedRewards.any { !it.weight.isFinite() || it.weight < 0f }
+            || !currentTable.getTotalWeight(false).isFinite()) return
 
         val rewards = currentTable.generateWeightedRandomRewards(player.random, 1, false)
 
@@ -45,11 +47,12 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
         }
     }
 
-    protected fun handleReward(player: ServerPlayer, reward: Reward, notify: Boolean) {
-        if (reward is ItemReward) {
+    protected fun handleReward(player: ServerPlayer, reward: Reward, notify: Boolean): Boolean {
+        return if (reward is ItemReward) {
             val stack = reward.item.copy()
+            if ((reward as ItemRewardAccessor).`contactQuests$isOnlyOne`() && player.inventory.contains(stack)) return false
 
-            val rBonus = (reward as ItemRewardAccessor).`contactquests$getRandomBonus`()
+            val rBonus = (reward as ItemRewardAccessor).`contactQuests$getRandomBonus`()
             val bonus = player.level().random.nextInt(rBonus + 1)
 
             stack.count = calculateMultipliedCount(reward.count + bonus, player)
@@ -57,6 +60,8 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
             distributeItem(player, stack)
         } else {
             reward.claim(player, notify)
+            returnStoredItems(player)
+            true
         }
     }
 
@@ -121,21 +126,25 @@ open class ParcelRandomReward(id: Long, quest: Quest) : ParcelRewardBase(id, que
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): Component {
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
         return table?.getTitleOrElse(super.getAltTitle()) ?: super.getAltTitle()
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
+        if (isContentsHiddenForViewer()) return sealedIcon()
         return table?.icon ?: Icons.DICE
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun addMouseOverText(list: TooltipList) {
+        if (isContentsHiddenForViewer()) return
         table?.addMouseOverText(list, true, false)
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
+        if (isContentsHiddenForViewer()) return Optional.empty()
         val t = table
         return if (t != null && t.lootCrate != null) {
             PositionedIngredient.of(t.lootCrate!!.createStack(), widget)

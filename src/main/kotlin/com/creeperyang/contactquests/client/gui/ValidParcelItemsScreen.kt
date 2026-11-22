@@ -33,12 +33,13 @@ class ValidParcelItemsScreen(task: ParcelTask, validItems: MutableList<ItemStack
         } else {
             list.add(Component.translatable("contactquest.gui.missing_requirements").withStyle(ChatFormatting.RED))
             if (!hasValidSlot) {
-                list.add(Component.literal("- ").append(
-                    Component.translatable("item.contact.envelope").append(" or ").append(Component.translatable("item.contact.wrapping_paper"))
+                list.add(Component.translatable("contactquest.gui.parcel_materials",
+                    Component.translatable("item.contact.envelope"), Component.translatable("item.contact.wrapping_paper")
                 ).withStyle(ChatFormatting.DARK_RED))
             }
             if (!hasQuestItem) {
-                list.add(Component.literal("- ").append("${task.count}x ").append(task.itemStack.hoverName).withStyle(ChatFormatting.DARK_RED))
+                list.add(Component.translatable("contactquest.gui.item_requirement", task.count, task.itemStack.hoverName)
+                    .withStyle(ChatFormatting.DARK_RED))
             }
         }
     }

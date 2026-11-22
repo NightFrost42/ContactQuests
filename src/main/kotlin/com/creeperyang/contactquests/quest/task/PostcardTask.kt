@@ -1,13 +1,17 @@
 package com.creeperyang.contactquests.quest.task
 
+import com.creeperyang.contactquests.client.gui.PostcardStyleIcon
 import com.creeperyang.contactquests.client.gui.ValidPostcardItemsScreen
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
+import com.creeperyang.contactquests.utils.ContactMailNbt
 import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import dev.ftb.mods.ftblibrary.config.ConfigCallback
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.ConfigValue
+import dev.ftb.mods.ftblibrary.icon.Icon
+import dev.ftb.mods.ftblibrary.icon.ItemIcon
 import dev.ftb.mods.ftblibrary.icon.Color4I
 import dev.ftb.mods.ftblibrary.ui.Panel
 import dev.ftb.mods.ftblibrary.ui.SimpleTextButton
@@ -31,7 +35,6 @@ import net.minecraft.world.entity.player.Player
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.registries.ForgeRegistries
 
 class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
 
@@ -77,37 +80,21 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         return true
     }
 
+    private fun normalizeStyleId(style: String): ResourceLocation? {
+        val trimmed = style.trim()
+        if (trimmed.isEmpty()) return null
+        return ResourceLocation.tryParse(if (':' in trimmed) trimmed else "contact:$trimmed")
+    }
+
     private fun checkStyleMatch(stack: ItemStack): Boolean {
         if (postcardStyle.isEmpty()) return true
-        val tag = stack.tag ?: return false
-        var itemStyleId = ""
-
-        if (tag.contains("CardID")) {
-            itemStyleId = tag.getString("CardID")
-        } else if (tag.contains("Info")) {
-            val infoTag = tag.getCompound("Info")
-            if (infoTag.contains("ID")) {
-                itemStyleId = "contact:" + infoTag.getString("ID")
-            }
-        }
-
-        if (itemStyleId.isEmpty()) return false
-
-        val configRl = ResourceLocation.tryParse(postcardStyle)
-        val itemRl = ResourceLocation.tryParse(itemStyleId)
-
-        return if (configRl != null && itemRl != null) {
-            configRl == itemRl
-        } else {
-            itemStyleId == postcardStyle
-        }
+        val expected = normalizeStyleId(postcardStyle) ?: return false
+        return normalizeStyleId(ContactMailNbt.getPostcardStyleRaw(stack)) == expected
     }
 
     private fun checkTextMatch(stack: ItemStack): Boolean {
         if (postcardText.isEmpty()) return true
-        val tag = stack.tag ?: return false
-
-        val itemText = if (tag.contains("Text")) tag.getString("Text") else ""
+        val itemText = ContactMailNbt.getText(stack)
 
         if (tempContext != null) {
             val (player, teamData) = tempContext!!
@@ -128,8 +115,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         if (teamData != null) {
             val cached = (teamData as ITeamDataExtension).`contactQuests$getPostcardText`(this.id)
             if (!cached.isNullOrEmpty()) {
-                return cached
-            } else {
+                return if (player != null) PostcardPlaceholderSupport.replace(cached, player, teamData) else cached
             }
         }
 
@@ -140,18 +126,16 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         return postcardText
     }
 
+    private fun displayStyleId(): ResourceLocation =
+        normalizeStyleId(postcardStyle) ?: ResourceLocation("contact", "stripes")
+
     override fun getValidDisplayItems(): MutableList<ItemStack> {
-        val displayList = mutableListOf<ItemStack>()
-        val validItemIds = listOf("postcard", "ender_postcard")
-        for (itemIdStr in validItemIds) {
-            val itemId = ResourceLocation("contact", itemIdStr)
-            val item = ForgeRegistries.ITEMS.getValue(itemId)
-            if (item != null) {
-                displayList.add(ItemStack(item))
-            }
-        }
-        return displayList
+        val styleId = displayStyleId()
+        return mutableListOf(PostcardItem.getPostcard(styleId, false), PostcardItem.getPostcard(styleId, true))
     }
+
+    @OnlyIn(Dist.CLIENT)
+    override fun getAltIcon(): Icon = ItemIcon.getItemIcon(PostcardItem.getPostcard(displayStyleId(), false))
 
     @OnlyIn(Dist.CLIENT)
     override fun fillConfigGroup(config: ConfigGroup) {
@@ -200,7 +184,7 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
                         for (styleId in allStyles) {
                             val btnName = getStyleDisplayName(styleId)
 
-                            panel.add(object : SimpleTextButton(panel, btnName, Color4I.empty()) {
+                            panel.add(object : SimpleTextButton(panel, btnName, PostcardStyleIcon(styleId)) {
                                 override fun onClicked(btn: MouseButton?) {
                                     playClickSound()
 
@@ -324,6 +308,18 @@ class PostcardTask(id: Long, quest: Quest) : ContactTask(id, quest) {
         fun replace(text: String, player: Player, team: TeamData): String {
             var result = text
             replacers.forEach { (key, func) ->
+                if (result.contains(key)) {
+                    result = result.replace(key, func(player, team))
+                }
+            }
+            return result
+        }
+
+        fun replaceForTeamCache(text: String, player: Player, team: TeamData): String {
+            var result = text
+            val hasCustomPlayer = replacers["<player_name>"] !== defaultReplacers["<player_name>"]
+            replacers.forEach { (key, func) ->
+                if (key == "<player_name>" && !hasCustomPlayer) return@forEach
                 if (result.contains(key)) {
                     result = result.replace(key, func(player, team))
                 }

@@ -1,6 +1,8 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.ContactQuests
+import com.creeperyang.contactquests.client.util.TooltipUtils
+import com.creeperyang.contactquests.client.util.MailItemInteraction
 import dev.ftb.mods.ftblibrary.icon.Color4I
 import dev.ftb.mods.ftblibrary.ui.*
 import dev.ftb.mods.ftblibrary.ui.input.Key
@@ -12,10 +14,7 @@ import dev.ftb.mods.ftbquests.quest.task.Task
 import net.minecraft.ChatFormatting
 import net.minecraft.client.Minecraft
 import net.minecraft.client.gui.GuiGraphics
-import net.minecraft.client.multiplayer.ClientPacketListener
 import net.minecraft.network.chat.Component
-import net.minecraft.network.protocol.game.ServerboundSetCarriedItemPacket
-import net.minecraft.world.InteractionHand
 import net.minecraft.world.entity.player.Player
 import kotlin.math.max
 
@@ -60,6 +59,7 @@ abstract class BaseValidTaskScreen<T : Task>(
             override fun addMouseOverText(list: TooltipList) {
                 val hasSlot = findValidSlot(Minecraft.getInstance().player ?: return) != -1
                 addSubmitTooltip(list, hasSlot)
+                TooltipUtils.wrap(list)
             }
             override fun getWidgetType(): WidgetType {
                 val hasSlot = findValidSlot(Minecraft.getInstance().player ?: return WidgetType.DISABLED) != -1
@@ -74,7 +74,7 @@ abstract class BaseValidTaskScreen<T : Task>(
     private fun handleSubmit() {
         val mc = Minecraft.getInstance()
         val player = mc.player ?: return
-        val connection = mc.connection ?: return
+        if (mc.connection == null) return
 
         val slot = findValidSlot(player)
         if (slot == -1) {
@@ -83,27 +83,12 @@ abstract class BaseValidTaskScreen<T : Task>(
         }
 
         mc.keyboardHandler.clipboard = targetAddressee
-        player.displayClientMessage(
-            Component.translatable("contactquest.msg.copied", targetAddressee).withStyle(ChatFormatting.GREEN), true
+        player.sendSystemMessage(
+            Component.translatable("contactquest.msg.copied", targetAddressee).withStyle(ChatFormatting.GREEN)
         )
 
         scheduleAutoFiller()
-        executeOpenInteraction(mc, player, connection, slot)
-    }
-
-    private fun executeOpenInteraction(mc: Minecraft, player: Player, connection: ClientPacketListener, slot: Int) {
-        mc.setScreen(null)
-        player.closeContainer()
-        if (slot >= 9) {
-            mc.gameMode?.handlePickItem(slot)
-        } else if (player.inventory.selected != slot) {
-            player.inventory.selected = slot
-            connection.send(ServerboundSetCarriedItemPacket(slot))
-        }
-        mc.tell {
-            if (slot < 9) connection.send(ServerboundSetCarriedItemPacket(slot))
-            mc.gameMode?.useItem(player, InteractionHand.MAIN_HAND)
-        }
+        MailItemInteraction.open(slot)
     }
 
     override fun getTheme(): Theme = FTBQuestsTheme.INSTANCE

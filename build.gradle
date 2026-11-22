@@ -18,7 +18,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '6.0.24'
     id 'org.parchmentmc.librarian.forgegradle' version '1.2.0'
     id 'org.spongepowered.mixin' version '0.7.38'
-    id 'org.jetbrains.kotlin.jvm' version '1.9.24'
+    id 'org.jetbrains.kotlin.jvm' version '2.4.0'
 }
 
 version = mod_version
@@ -26,10 +26,15 @@ group = mod_group_id
 
 repositories {
     mavenLocal()
+    mavenCentral { content { includeGroup 'org.jacoco' } }
     maven {
         name = 'Kotlin for Forge'
         url = 'https://thedarkcolour.github.io/KotlinForForge/'
         content { includeGroup "thedarkcolour" }
+    }
+    maven {
+        url = 'https://maven.ftb.dev/releases'
+        content { includeGroup 'dev.ftb.mods' }
     }
     maven { url = "https://cursemaven.com" }
     maven { url = "https://api.modrinth.com/maven" }
@@ -56,18 +61,52 @@ repositories {
             includeGroup "dev.architectury"
         }
     }
-
-    maven {
-        url "https://maven.sighs.cc/repository/maven-releases/"
-    }
 }
 
 base {
     archivesName = mod_id
 }
 
+configurations {
+    contactquestsCoverageAgent { transitive = false }
+    contactquestsCoverageCli { transitive = false }
+    oelibJarJar {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+// OELib 0.3.x keeps its classes in nested jars; expose them only to compilers.
+def oelibCompileJarsDirectory = layout.buildDirectory.dir('generated/oelib-compile-jars')
+def extractOelibCompileJars = tasks.register('extractOelibCompileJars', Sync) {
+    from(configurations.oelibJarJar.collect { archive -> zipTree(archive) }) {
+        include 'META-INF/jarjar/*.jar'
+        eachFile { details -> details.path = details.name }
+        includeEmptyDirs = false
+    }
+    into oelibCompileJarsDirectory
+}
+def oelibCompileJars = files(fileTree(
+        dir: extractOelibCompileJars.map { it.destinationDir }, include: '*.jar'
+)).builtBy(extractOelibCompileJars)
+
+tasks.matching { it.name in ['compileKotlin', 'compileJava', 'compileTestmodJava', 'compileTestmodKotlin'] }.configureEach {
+    dependsOn extractOelibCompileJars
+}
+
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 kotlin.jvmToolchain(17)
+
+sourceSets {
+    testmod {
+        java { srcDirs = ['src/testmod/java'] }
+        kotlin { srcDirs = ['src/testmod/kotlin'] }
+        resources { srcDirs = ['src/testmod/resources'] }
+        compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath + configurations.compileClasspath
+        runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath + configurations.runtimeClasspath
+    }
+}
 
 mixin {
     add sourceSets.main, "${mod_id}.refmap.json"
@@ -83,6 +122,14 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run')
+            if (project.hasProperty('contactquestsTestGameDir')) {
+                workingDirectory project.file(project.property('contactquestsTestGameDir'))
+            }
+            if (project.hasProperty('contactquestsQuickPlay')) {
+                args '--quickPlaySingleplayer', project.property('contactquestsQuickPlay')
+            }
+
+            property 'forge.enabledGameTestNamespaces', project.findProperty('contactquestsTestNamespaces') ?: mod_id
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
@@ -90,15 +137,25 @@ minecraft {
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
+            args '--mixin.config', 'contactquests_test.mixins.json'
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                }
+                "contactquests_test" {
+                    source sourceSets.testmod
                 }
             }
         }
 
         server {
             workingDirectory project.file('run')
+            if (project.hasProperty('contactquestsTestGameDir')) {
+                workingDirectory project.file(project.property('contactquestsTestGameDir'))
+            }
+
+            property 'forge.enabledGameTestNamespaces', project.findProperty('contactquestsTestNamespaces') ?: mod_id
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
@@ -106,17 +163,25 @@ minecraft {
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
-            args '--nogui'
+            args '--nogui', '--mixin.config', 'contactquests_test.mixins.json'
 
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                }
+                "contactquests_test" {
+                    source sourceSets.testmod
                 }
             }
         }
 
         gameTestServer {
             workingDirectory project.file('run')
+            if (project.hasProperty('contactquestsTestGameDir')) {
+                workingDirectory project.file(project.property('contactquestsTestGameDir'))
+            }
+
+            property 'forge.enabledGameTestNamespaces', project.findProperty('contactquestsTestNamespaces') ?: mod_id
 
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
@@ -124,9 +189,14 @@ minecraft {
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
 
+            args '--mixin.config', 'contactquests_test.mixins.json'
+
             mods {
                 "${mod_id}" {
                     source sourceSets.main
+                }
+                "contactquests_test" {
+                    source sourceSets.testmod
                 }
             }
         }
@@ -156,34 +226,40 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
-    implementation 'thedarkcolour:kotlinforforge:4.11.0'
+    implementation "thedarkcolour:kotlinforforge:${kotlinforforge_version}"
 
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
-    implementation fg.deobf("curse.maven:ftb-quests-forge-289412:${ftbquests_forge_20}")
-    implementation fg.deobf("curse.maven:ftb-library-forge-404465:${ftblibrary_forge_20}")
-    implementation fg.deobf("curse.maven:ftb-teams-forge-404468:${ftbteams_forge_20}")
+    implementation(fg.deobf("dev.ftb.mods:ftb-quests-forge:${ftbquests_version}")) { transitive = false }
+    implementation(fg.deobf("dev.ftb.mods:ftb-library-forge:${ftblibrary_version}")) { transitive = false }
+    implementation(fg.deobf("dev.ftb.mods:ftb-teams-forge:${ftbteams_version}")) { transitive = false }
     implementation fg.deobf("curse.maven:contact-love-rekindled-1326820:${contact_love_rekindled_forge_20}")
-    implementation fg.deobf("cc.sighs.oelib:OELib-forge-1.20.1:0.2.2")
+    implementation fg.deobf("curse.maven:oelib-1319210:${oelib_forge_20}")
+    add('oelibJarJar', fg.deobf("curse.maven:oelib-1319210:${oelib_forge_20}"))
+    compileOnly oelibCompileJars
     implementation fg.deobf("curse.maven:jade-324717:${jade_forge_20}")
 
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    compileOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")) { transitive = false }
+    runtimeOnly(fg.deobf("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")) { transitive = false }
+    runtimeOnly fg.deobf("net.mezzdev.config:mezz_config-1.20.1-forge:${mezz_config_version}")
 
-//    implementation fg.deobf("curse.maven:architectury-api-419699:${architectury_api_forge_20}")
     implementation fg.deobf("dev.architectury:architectury-forge:${architectury_api_forge_20}")
-    runtimeOnly fg.deobf("curse.maven:jupiter-1072905:${jupiter_forge_20}")
-    runtimeOnly fg.deobf("curse.maven:oelib-1319210:${oelib_forge_20}")
     implementation fg.deobf("dev.latvian.mods:kubejs-forge:${kubejs_forge_20}")
     implementation fg.deobf("dev.latvian.mods:rhino-forge:${rhino_version}")
+
+    contactquestsCoverageAgent 'org.jacoco:org.jacoco.agent:0.8.16:runtime@jar'
+    contactquestsCoverageCli 'org.jacoco:org.jacoco.cli:0.8.16:nodeps@jar'
 }
 
 tasks.named('processResources', ProcessResources).configure {
     var replaceProperties = [
-            minecraft_version   : minecraft_version, minecraft_version_range: minecraft_version_range,
-            forge_version       : forge_version, forge_version_range: forge_version_range,
-            loader_version_range: loader_version_range,
-            mod_id              : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
-            mod_authors         : mod_authors, mod_description: mod_description,
+            minecraft_version       : minecraft_version, minecraft_version_range: minecraft_version_range,
+            forge_version           : forge_version, forge_version_range: forge_version_range,
+            loader_version_range    : loader_version_range,
+            mod_id                  : mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_authors             : mod_authors, mod_description: mod_description,
+            ftbquests_version_range : ftbquests_version_range,
+            ftblibrary_version_range: ftblibrary_version_range,
     ]
     inputs.properties replaceProperties
 
@@ -204,6 +280,16 @@ jar {
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
                 "MixinConfigs"            : "${mod_id}.mixins.json"
         ])
+    }
+}
+jar.finalizedBy('reobfJar')
+
+tasks.register('devJar', Jar) {
+    archiveClassifier = 'dev'
+    dependsOn 'processResources'
+    from sourceSets.main.output
+    manifest {
+        from tasks.named('jar', Jar).get().manifest
     }
 }
 
@@ -244,4 +330,119 @@ tasks.withType(JavaExec).configureEach { task ->
     if (task.name == 'runServer') {
         task.standardInput = System.in
     }
+}
+
+// Export resolved ForgeGradle launch settings so the runner can start fresh JVMs.
+class ContactQuestsRunExporter extends net.minecraftforge.gradle.common.util.runs.RunConfigGenerator {
+    @Override
+    void createRunConfiguration(
+            net.minecraftforge.gradle.common.util.MinecraftExtension minecraft,
+            File outputDir,
+            Project project,
+            List<String> additionalClientArgs,
+            FileCollection minecraftArtifacts,
+            FileCollection runtimeClasspathArtifacts
+    ) {}
+
+    static Map<String, Object> resolve(Project project, def runTask) {
+        def runConfig = runTask.runConfig.get()
+        def modClasses = mapModClassesToGradle(project, runConfig)
+        def tokens = configureTokensLazy(
+                project, runConfig, modClasses,
+                runTask.minecraftArtifacts, runTask.runtimeClasspathArtifacts
+        )
+        def args = getArgsStream(runConfig, tokens, false).collect(java.util.stream.Collectors.toList())
+        def jvmArgs = []
+        runConfig.jvmArgs.each { jvmArgs.add(runConfig.replace(tokens, it)) }
+        if (runConfig.client) {
+            runTask.additionalClientArgs.get().each { jvmArgs.add(runConfig.replace(tokens, it)) }
+        }
+        runConfig.properties.each { k, v ->
+            jvmArgs.add("-D${k}=${runConfig.replace(tokens, v)}".toString())
+        }
+        def env = [:]
+        runConfig.environment.each { k, v ->
+            env[k] = runConfig.replace(tokens, v)
+        }
+        def cp = runConfig.allSources.collectMany { it.runtimeClasspath.files }
+                .collect { it.absolutePath }.unique()
+        def wd = new File(runConfig.workingDirectory)
+        def gameDir = (wd.isAbsolute() ? wd : project.file(runConfig.workingDirectory)).absolutePath
+        return [
+            mainClass: runConfig.main ?: runTask.mainClass.get(),
+            classpath: cp,
+            jvmArgs: jvmArgs,
+            args: args,
+            environment: env,
+            gameDirectory: gameDir
+        ]
+    }
+}
+
+def exportTestLaunch = { String name, String runName, String prepareName ->
+    tasks.register(name) {
+        group = 'verification'
+        dependsOn prepareName, 'classes', 'testmodClasses', 'devJar', 'jar', 'createSrgToMcp'
+        def destination = layout.buildDirectory.file("contactquests-tests/${runName}.json")
+        outputs.file destination
+        outputs.upToDateWhen { false }
+        doLast {
+            def run = tasks.named(runName, JavaExec).get()
+            def resolved = ContactQuestsRunExporter.resolve(project, run)
+            def record = [
+                java: run.javaLauncher.getOrNull()?.executablePath?.asFile?.absolutePath ?: org.gradle.internal.jvm.Jvm.current().javaExecutable.absolutePath,
+                mainClass: resolved.mainClass,
+                classpath: resolved.classpath,
+                jvmArgs: resolved.jvmArgs,
+                args: resolved.args,
+                environment: resolved.environment,
+                gameDirectory: resolved.gameDirectory,
+                projectDirectory: projectDir.absolutePath,
+                pathSeparator: File.pathSeparator,
+                productionJar: tasks.named('devJar').get().archiveFile.get().asFile.absolutePath,
+                releaseJar: tasks.named('jar').get().archiveFile.get().asFile.absolutePath,
+                coverageAgent: configurations.contactquestsCoverageAgent.singleFile.absolutePath,
+                coverageCli: configurations.contactquestsCoverageCli.singleFile.absolutePath,
+                dependencies: [forge: forge_version, ftbquests: ftbquests_version,
+                    ftblibrary: ftblibrary_version, ftbteams: ftbteams_version,
+                    kotlinforforge: kotlinforforge_version, kubejs: kubejs_forge_20,
+                    mezz_config: mezz_config_version]
+            ]
+            def target = destination.get().asFile
+            target.parentFile.mkdirs()
+            target.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(record)) + '\n'
+        }
+    }
+}
+
+afterEvaluate {
+    exportTestLaunch('contactquestsExportServerLaunch', 'runGameTestServer', 'prepareRunGameTestServer')
+    exportTestLaunch('contactquestsExportClientLaunch', 'runClient', 'prepareRunClient')
+    exportTestLaunch('contactquestsExportDedicatedLaunch', 'runServer', 'prepareRunServer')
+}
+
+def contactquestsPython = providers.environmentVariable('CQ_PYTHON').orElse(
+        System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows') ? 'python' : 'python3')
+
+tasks.register('contactquestsTestReport', Exec) {
+    group = 'verification'
+    description = 'Regenerate the report for the latest isolated ContactQuests test run.'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/report/generate-report.py').absolutePath, '--latest'
+}
+
+tasks.register('contactquestsAutoTest', Exec) {
+    group = 'verification'
+    description = 'Run all regression cases, editors, Windows multiplayer/rejoin, and an independent server/client without KubeJS or Rhino.'
+    dependsOn 'contactquestsExportServerLaunch', 'contactquestsExportClientLaunch', 'contactquestsExportDedicatedLaunch'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/runner/run-tests.py').absolutePath,
+            'suite', '--prepared'
+}
+
+tasks.register('contactquestsReleaseValidation', Exec) {
+    group = 'verification'
+    description = 'Check release tag/metadata/production-jar validation with isolated positive and negative fixtures.'
+    workingDir projectDir
+    commandLine contactquestsPython.get(), file('tests/release/test-release.py').absolutePath
 }

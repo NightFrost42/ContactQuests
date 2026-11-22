@@ -8,23 +8,18 @@ import net.minecraft.server.level.ServerLevel
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
 
-
 class QuestOverrideSavedData : SavedData() {
     val overrides = HashMap<Long, CompoundTag>()
-
 
     companion object {
         private const val TAG_OVERRIDES = "QuestOverrides"
 
-
         fun get(level: ServerLevel): QuestOverrideSavedData {
             return level.server.overworld().dataStorage.computeIfAbsent(
-                { tag -> load(tag) },
-                { QuestOverrideSavedData() },
-                "contactquests_quest_overrides"
+                ::load,
+                ::QuestOverrideSavedData, "contactquests_quest_overrides"
             )
         }
-
 
         private fun load(tag: CompoundTag): QuestOverrideSavedData {
             val data = QuestOverrideSavedData()
@@ -39,7 +34,6 @@ class QuestOverrideSavedData : SavedData() {
         }
     }
 
-
     override fun save(tag: CompoundTag): CompoundTag {
         val list = ListTag()
         for ((id, overrideTag) in overrides) {
@@ -52,10 +46,8 @@ class QuestOverrideSavedData : SavedData() {
         return tag
     }
 
-
     fun setOverride(id: Long, key: String, value: Any) {
         val tag = overrides.computeIfAbsent(id) { CompoundTag() }
-
 
         when (value) {
             is Int -> tag.putInt(key, value)
@@ -63,12 +55,7 @@ class QuestOverrideSavedData : SavedData() {
             is Double -> tag.putDouble(key, value)
             is String -> tag.putString(key, value)
             is Boolean -> tag.putBoolean(key, value)
-            is ItemStack -> {
-                val itemTag = CompoundTag()
-                value.save(itemTag)
-                tag.put(key, itemTag)
-            }
-
+            is ItemStack -> tag.put(key, value.save(CompoundTag()))
             is Collection<*> -> {
                 val listTag = ListTag()
                 value.forEach { item ->
@@ -78,7 +65,6 @@ class QuestOverrideSavedData : SavedData() {
                 }
                 tag.put(key, listTag)
             }
-
 
             is Map<*, *> -> {
                 val mapTag = CompoundTag()
@@ -99,11 +85,9 @@ class QuestOverrideSavedData : SavedData() {
         setDirty()
     }
 
-
     fun getOverride(id: Long): CompoundTag? {
         return overrides[id]
     }
-
 
     fun clearOverride(id: Long, key: String? = null) {
         if (key == null) {

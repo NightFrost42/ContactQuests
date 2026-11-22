@@ -1,0 +1,27 @@
+{
+  "id": "client.contact.jade_mailbox",
+  "steps": [
+    {"action": "wait_ticks", "ticks": 40},
+    {"action": "open_world", "world": "ContactQuestsTest"},
+    {"action": "wait_for_level"},
+    {"action": "assert_level_loaded"},
+    {"action": "interaction_mailbox", "phase": "prepare"},
+    {"action": "wait_ticks", "ticks": 25},
+    {"action": "assert_server_case", "id": "server.mailbox.outsider_prepared"},
+    {"action": "interaction_mailbox", "phase": "long_name"},
+    {"action": "wait_ticks", "ticks": 10},
+    {"action": "assert_server_case", "id": "server.mailbox.long_name"},
+    {"action": "use_foreign_mailbox"},
+    {"action": "wait_ticks", "ticks": 20},
+    {"action": "interaction_mailbox", "phase": "verify"},
+    {"action": "wait_ticks", "ticks": 10},
+    {"action": "assert_server_case", "id": "server.mailbox.outsider_denied"},
+    {"action": "assert_foreign_mailbox_message"},
+    {"action": "interaction_mailbox", "phase": "short_name"},
+    {"action": "wait_ticks", "ticks": 10},
+    {"action": "assert_server_case", "id": "server.mailbox.short_name"},
+    {"action": "close_screen"},
+    {"action": "jade_mailbox", "phase": "all"},
+    {"action": "finish"}
+  ]
+}

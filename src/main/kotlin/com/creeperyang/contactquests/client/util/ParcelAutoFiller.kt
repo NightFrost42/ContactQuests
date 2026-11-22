@@ -16,8 +16,8 @@ import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.event.TickEvent
 import kotlin.math.min
 
 @OnlyIn(Dist.CLIENT)
@@ -112,6 +112,29 @@ object ParcelAutoFiller : BaseAutoFiller<String>() {
     }
 
     private fun handleDepositOne(mc: Minecraft, menu: AbstractContainerMenu, player: Player) {
+        val carried = player.containerMenu.carried
+        if (carried.isEmpty) {
+            itemsToDeposit = 0
+            currentState = State.IDLE
+            return
+        }
+
+        val receiverName = taskData
+        val teamData = ClientQuestFile.INSTANCE?.selfTeamData
+        if (receiverName == null || teamData == null) {
+            itemsToDeposit = 0
+            currentState = State.RETURN_REST
+            return
+        }
+
+        val contentCount = if (menu is WrappingPaperScreenHandler) WrappingPaperScreenHandler.CONTENT_COUNT else EnvelopeScreenHandler.CONTENT_COUNT
+        val requirements = getRequirementsForReceiver(receiverName, teamData)
+        reduceRequirementsFromInputSlots(menu, requirements, contentCount)
+        val stillNeeded = requirements.filter { it.matcher(carried) }.sumOf { it.amountNeeded }.coerceAtLeast(0L)
+        if (itemsToDeposit > stillNeeded) {
+            itemsToDeposit = stillNeeded.toInt()
+        }
+
         var clicksThisTick = 0
         while (itemsToDeposit > 0 && clicksThisTick < CLICKS_PER_TICK) {
             click(mc, menu.containerId, currentTargetSlot, 1, ClickType.PICKUP, player)
@@ -120,7 +143,7 @@ object ParcelAutoFiller : BaseAutoFiller<String>() {
         }
 
         if (itemsToDeposit <= 0) {
-            currentState = State.RETURN_REST
+            currentState = if (!player.containerMenu.carried.isEmpty) State.RETURN_REST else State.IDLE
         }
     }
 
@@ -133,9 +156,13 @@ object ParcelAutoFiller : BaseAutoFiller<String>() {
         for (i in 0 until contentCount) {
             val stack = menu.getSlot(i).item
             if (!stack.isEmpty) {
+                var remaining = stack.count.toLong()
                 for (req in requirements) {
+                    if (remaining == 0L) break
                     if (req.amountNeeded > 0 && req.matcher(stack)) {
-                        req.amountNeeded -= stack.count
+                        val allocated = min(remaining, req.amountNeeded)
+                        req.amountNeeded -= allocated
+                        remaining -= allocated
                     }
                 }
             }

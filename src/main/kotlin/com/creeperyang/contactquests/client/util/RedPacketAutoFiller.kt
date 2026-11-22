@@ -15,8 +15,8 @@ import net.minecraft.world.inventory.ClickType
 import net.minecraft.world.item.ItemStack
 import net.minecraftforge.api.distmarker.Dist
 import net.minecraftforge.api.distmarker.OnlyIn
-import net.minecraftforge.event.TickEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
+import net.minecraftforge.event.TickEvent
 import kotlin.math.min
 
 @OnlyIn(Dist.CLIENT)
@@ -39,6 +39,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     override fun resetState() {
         currentState = State.IDLE
         currentSourceSlot = -1
+        itemsToDeposit = 0
         actionDelay = 0
     }
 
@@ -83,9 +84,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         if (!slotItem.isEmpty) {
             val isMatch = !req.itemStack.isEmpty &&
                     ItemMatchingSystem.INSTANCE.doesItemMatch(
-                        req.itemStack,
-                        slotItem,
-                        taskData!!.shouldMatchNBT(),
+                        req.itemStack, slotItem, taskData!!.shouldMatchNBT(),
                         taskData!!.weakNBTmatch
                     )
 
@@ -105,7 +104,9 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
                 return
             }
         }
-        findItemAndSetup(menu, req, player)
+        // 已预填的数量和槽位上限都必须从本次可搬入数量中扣除。
+        val amountToAdd = (min(req.amountNeeded, 64L) - slotItem.count).coerceAtLeast(0L)
+        findItemAndSetup(menu, req, player, amountToAdd)
     }
 
     private fun handleFillTextState(
@@ -136,7 +137,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         actionDelay = 0
     }
 
-    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement, player: Player) {
+    private fun findItemAndSetup(menu: RedPacketEnvelopeScreenHandler, req: RedPacketRequirement, player: Player, amountToAdd: Long) {
         val inventoryStart = RedPacketEnvelopeScreenHandler.CONTENT_COUNT
         val inventoryEnd = menu.slots.size
 
@@ -149,7 +150,7 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
                     taskData!!.weakNBTmatch
                 )
             ) {
-                setupTransferAction(menu.containerId, player, i, stack, req.amountNeeded)
+                setupTransferAction(menu.containerId, player, i, stack, amountToAdd)
                 return
             }
         }
@@ -185,6 +186,27 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
     }
 
     private fun handleDeposit(mc: Minecraft, menu: RedPacketEnvelopeScreenHandler, player: Player) {
+        val carried = player.containerMenu.carried
+        if (carried.isEmpty) {
+            itemsToDeposit = 0
+            currentState = State.IDLE
+            return
+        }
+
+        val teamData = ClientQuestFile.INSTANCE?.selfTeamData
+        val req = if (teamData != null) getCurrentTaskRequirement(teamData, player) else null
+        val stillNeeded = if (req != null && !req.itemStack.isEmpty &&
+                ItemMatchingSystem.INSTANCE.doesItemMatch(
+                    req.itemStack, carried, taskData!!.shouldMatchNBT(), taskData!!.weakNBTmatch
+                )) {
+            (min(req.amountNeeded, 64L) - menu.getSlot(0).item.count).coerceAtLeast(0L)
+        } else {
+            0L
+        }
+        if (itemsToDeposit > stillNeeded) {
+            itemsToDeposit = stillNeeded.toInt()
+        }
+
         var clicksThisTick = 0
         while (itemsToDeposit > 0 && clicksThisTick < CLICKS_PER_TICK) {
             click(mc, menu.containerId, 0, 1, ClickType.PICKUP, player)
@@ -193,8 +215,8 @@ object RedPacketAutoFiller : BaseAutoFiller<RedPacketTask>() {
         }
 
         if (itemsToDeposit <= 0) {
-            val carried = player.containerMenu.carried
-            currentState = if (!carried.isEmpty) {
+            val remainingCarried = player.containerMenu.carried
+            currentState = if (!remainingCarried.isEmpty) {
                 State.RETURN_REST
             } else {
                 State.IDLE

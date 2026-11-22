@@ -140,12 +140,9 @@ class TagSelectionScreen(
 
         override fun alignWidgets() {
             val btnSize = height
-
             if (width > 0) {
                 cancelBtn.setPosAndSize(width - btnSize, 0, btnSize, btnSize)
-
                 acceptBtn.setPosAndSize(width - btnSize * 2 - 2, 0, btnSize, btnSize)
-
                 textBox.setPosAndSize(0, (height - 12) / 2, width - btnSize * 2 - 6, 12)
             }
         }

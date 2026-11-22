@@ -1,0 +1,231 @@
+{
+  "id": "client.no_kubejs.rejoin",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "assert_no_kubejs"
+    },
+    {
+      "action": "assert_no_jei"
+    },
+    {
+      "action": "no_kubejs",
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.no_kubejs.rejoin"
+    },
+    {
+      "action": "assert_no_kubejs_progress",
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "no-kubejs-rejoined-progress"
+    },
+    {
+      "action": "features",
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.rejoin"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.accepted_rejoin"
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.tool_journal_rejoin"
+    },
+    {
+      "action": "features",
+      "phase": "verify_failure_rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "assert_server_case",
+      "id": "server.features.pending_failure_rejoin"
+    },
+    {
+      "action": "features_ui",
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "features_ui",
+      "phase": "hidden_rejoin"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "postcard_letters",
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_for_server_case",
+      "id": "server.postcard.letters.rejoin",
+      "timeout_seconds": 30
+    },
+    {
+      "action": "postcard_letters_ui",
+      "rejoin": true
+    },
+    {
+      "action": "close_screen",
+      "requires_real_llm": true
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "rejoin"
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.rejoin",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "restart"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "open_real_postbox",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "move_mail_to_postbox",
+      "requires_real_llm": true,
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 10
+    },
+    {
+      "action": "set_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "query_recipient_server",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "assert_recipient",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "select_first_recipient",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "click_send",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 15
+    },
+    {
+      "action": "force_send",
+      "requires_real_llm": true,
+      "value": "CQLiveMagpie"
+    },
+    {
+      "action": "wait_ticks",
+      "requires_real_llm": true,
+      "ticks": 20
+    },
+    {
+      "action": "assert_postbox_empty",
+      "requires_real_llm": true
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.restart",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "llm_live",
+      "requires_real_llm": true,
+      "phase": "restored"
+    },
+    {
+      "action": "wait_for_server_case",
+      "requires_real_llm": true,
+      "id": "server.llm_live.restored",
+      "timeout_seconds": 160
+    },
+    {
+      "action": "close_screen",
+      "requires_real_llm": true
+    },
+    {
+      "action": "finish"
+    }
+  ]
+}

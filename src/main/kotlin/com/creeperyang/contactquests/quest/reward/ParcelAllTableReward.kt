@@ -1,6 +1,6 @@
 package com.creeperyang.contactquests.quest.reward
 
-import dev.ftb.mods.ftblibrary.icon.Icons
+import dev.ftb.mods.ftblibrary.util.TooltipList
 import dev.ftb.mods.ftbquests.quest.Quest
 import dev.ftb.mods.ftbquests.quest.reward.RewardType
 import net.minecraft.server.level.ServerPlayer
@@ -18,7 +18,7 @@ class ParcelAllTableReward(id: Long, quest: Quest) : ParcelRandomReward(id, ques
     }
 
 
-    override fun getAltIcon(): dev.ftb.mods.ftblibrary.icon.Icon {
-        return Icons.COLOR_HSB
+    override fun addMouseOverText(list: TooltipList) {
+        if (!isContentsHiddenForViewer()) table?.addMouseOverText(list, false, false)
     }
 }

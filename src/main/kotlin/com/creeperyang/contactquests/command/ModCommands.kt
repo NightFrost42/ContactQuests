@@ -4,16 +4,14 @@ import com.creeperyang.contactquests.ContactQuests
 import com.creeperyang.contactquests.config.NpcConfigManager
 import com.creeperyang.contactquests.data.CollectionSavedData
 import com.creeperyang.contactquests.data.DataManager
-import com.creeperyang.contactquests.network.NetworkHandler
 import com.creeperyang.contactquests.network.OpenQuestMessage
 import com.creeperyang.contactquests.registry.ModItems
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import com.mojang.brigadier.Command
 import com.mojang.brigadier.arguments.IntegerArgumentType
 import com.mojang.brigadier.arguments.StringArgumentType
 import com.mojang.brigadier.context.CommandContext
 import com.mojang.brigadier.suggestion.SuggestionProvider
-import com.mojang.brigadier.suggestion.Suggestions
 import dev.ftb.mods.ftbquests.quest.ServerQuestFile
 import dev.ftb.mods.ftbteams.api.FTBTeamsAPI
 import net.minecraft.ChatFormatting
@@ -22,14 +20,11 @@ import net.minecraft.commands.Commands
 import net.minecraft.commands.SharedSuggestionProvider
 import net.minecraft.commands.arguments.EntityArgument
 import net.minecraft.network.chat.Component
+import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
-import net.minecraftforge.event.RegisterCommandsEvent
 import net.minecraftforge.eventbus.api.SubscribeEvent
-import java.lang.Long
-import java.util.concurrent.CompletableFuture
-import kotlin.Exception
-import kotlin.Int
-import kotlin.String
+import net.minecraftforge.event.RegisterCommandsEvent
+import com.creeperyang.contactquests.network.NetworkHandler
 
 object ModCommands {
 
@@ -39,6 +34,7 @@ object ModCommands {
         val names = data.getStoredNpcNames() + NpcConfigManager.getAllNpcNames()
 
         val quotedNames = names.map { "\"$it\"" }
+
         SharedSuggestionProvider.suggest(quotedNames, builder)
     }
 
@@ -50,28 +46,29 @@ object ModCommands {
             Commands.literal("contactquests")
                 .then(
                     Commands.literal("get_binder_internal")
-                        .executes(this::giveSlefBinder)
+                        .executes(this::giveSelfBinder)
                 )
                 .then(
                     Commands.literal("open")
-                        .then(
-                            Commands.argument("id", StringArgumentType.greedyString())
-                                .executes { ctx ->
-                                    val idStr = StringArgumentType.getString(ctx, "id")
-                                    try {
-                                        val id = Long.parseUnsignedLong(idStr, 16)
-                                        val player = ctx.source.playerOrException
+                    .then(
+                        Commands.argument("id", StringArgumentType.greedyString())
+                            .executes { ctx ->
+                                val idStr = StringArgumentType.getString(ctx, "id")
+                                try {
+                                    val id = java.lang.Long.parseUnsignedLong(idStr, 16)
+                                    val player = ctx.source.playerOrException
 
-                                        NetworkHandler.sendToPlayer(OpenQuestMessage(id), player)
-                                        1
-                                    } catch (e: Exception) {
-                                        0
-                                    }
+                                    NetworkHandler.sendToPlayer(OpenQuestMessage(id), player)
+                                    1
+                                } catch (e: Exception) {
+                                    0
                                 }
-                        )
+                            }
+                    )
                 )
                 .then(
                     Commands.literal("admin")
+                        .requires { source -> source.hasPermission(2) }
                         .then(
                             Commands.literal("givebinder")
                                 .then(
@@ -127,205 +124,166 @@ object ModCommands {
                                 .requires { it.hasPermission(2) }
                                 .then(
                                     Commands.literal("view")
+                                    .then(
+                                        Commands.argument("target", EntityArgument.player())
+                                            .executes { ctx ->
+                                                val target = EntityArgument.getPlayer(ctx, "target")
+                                                val team = resolveTeam(target)
+                                                if (team == null) {
+                                                    ctx.source.sendFailure(Component.translatable("contactquests.command.error.no_team"))
+                                                    return@executes 0
+                                                }
+                                                val teamData = resolveTeamData(target) ?: return@executes 0
+                                                val tags: Collection<String?> = teamData.`contactQuests$getTags`()
+                                                ctx.source.sendSuccess({
+                                                    Component.translatable(
+                                                        "contactquests.command.tags.view", target.name,
+                                                        Component.literal(tags.joinToString(", "))
+                                                            .withStyle(ChatFormatting.GREEN)
+                                                    )
+                                                }, false)
+                                                1
+                                            }
+                                    )
+                                )
+                                .then(
+                                    Commands.literal("add")
+                                    .then(
+                                        Commands.argument("target", EntityArgument.player())
                                         .then(
-                                            Commands.argument("target", EntityArgument.player())
+                                            Commands.argument("tag", StringArgumentType.string())
                                                 .executes { ctx ->
                                                     val target = EntityArgument.getPlayer(ctx, "target")
-                                                    val team =
-                                                        FTBTeamsAPI.api().manager.getTeamForPlayer(
-                                                            target
-                                                        ).orElse(null)
-                                                    if (team == null) {
-                                                        ctx.source.sendFailure(Component.translatable("contactquests.command.error.no_team"))
-                                                        return@executes 0
-                                                    }
-                                                    val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(team.id)
-                                                    if (teamData is ITeamDataExtension) {
-                                                        val tags: Collection<String?> =
-                                                            teamData.`contactQuests$getTags`()
+                                                    val tag = StringArgumentType.getString(ctx, "tag")
+                                                    val teamData = resolveTeamData(target) ?: return@executes 0
+
+                                                    if (teamData.`contactQuests$unlockTag`(tag)) {
                                                         ctx.source.sendSuccess({
                                                             Component.translatable(
-                                                                "contactquests.command.tags.view", target.name,
-                                                                Component.literal(tags.joinToString(", "))
-                                                                    .withStyle(ChatFormatting.GREEN)
-                                                            )
-                                                        }, false)
+                                                                "contactquests.command.tags.added",
+                                                                tag
+                                                            ).withStyle(ChatFormatting.GREEN)
+                                                        }, true)
                                                         1
                                                     } else {
+                                                        ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_exists"))
                                                         0
                                                     }
                                                 }
                                         )
-                                )
-                                .then(
-                                    Commands.literal("add")
-                                        .then(
-                                            Commands.argument("target", EntityArgument.player())
-                                                .then(
-                                                    Commands.argument("tag", StringArgumentType.string())
-                                                        .executes { ctx ->
-                                                            val target = EntityArgument.getPlayer(ctx, "target")
-                                                            val tag = StringArgumentType.getString(ctx, "tag")
-                                                            val team =
-                                                                FTBTeamsAPI.api().manager.getTeamForPlayer(
-                                                                    target
-                                                                ).orElse(null)
-                                                            val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(
-                                                                team?.id ?: return@executes 0
-                                                            )
-
-                                                            if (teamData is ITeamDataExtension) {
-                                                                if (teamData.`contactQuests$unlockTag`(tag)) {
-                                                                    ctx.source.sendSuccess({
-                                                                        Component.translatable(
-                                                                            "contactquests.command.tags.added",
-                                                                            tag
-                                                                        ).withStyle(
-                                                                            ChatFormatting.GREEN
-                                                                        )
-                                                                    }, true)
-                                                                    1
-                                                                } else {
-                                                                    ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_exists"))
-                                                                    0
-                                                                }
-                                                            } else 0
-                                                        }
-                                                )
-                                        )
+                                    )
                                 )
                                 .then(
                                     Commands.literal("remove")
+                                    .then(
+                                        Commands.argument("target", EntityArgument.player())
                                         .then(
-                                            Commands.argument("target", EntityArgument.player())
-                                                .then(
-                                                    Commands.argument("tag", StringArgumentType.string())
-                                                        .suggests { ctx, builder ->
-                                                            val target = try {
-                                                                EntityArgument.getPlayer(ctx, "target")
-                                                            } catch (e: Exception) {
-                                                                null
-                                                            }
-                                                            if (target != null) {
-                                                                val team =
-                                                                    FTBTeamsAPI.api().manager.getTeamForPlayer(
-                                                                        target
-                                                                    ).orElse(null)
-                                                                val teamData =
-                                                                    ServerQuestFile.INSTANCE.getNullableTeamData(
-                                                                        team?.id
-                                                                            ?: return@suggests builder.build() as CompletableFuture<Suggestions?>?
-                                                                    )
-                                                                if (teamData is ITeamDataExtension) {
-                                                                    teamData.`contactQuests$getTags`()
-                                                                        .forEach { builder.suggest(it) }
-                                                                }
-                                                            }
-                                                            builder.buildFuture()
-                                                        }
-                                                        .executes { ctx ->
-                                                            val target = EntityArgument.getPlayer(ctx, "target")
-                                                            val tag = StringArgumentType.getString(ctx, "tag")
-                                                            val team =
-                                                                FTBTeamsAPI.api().manager.getTeamForPlayer(
-                                                                    target
-                                                                ).orElse(null)
-                                                            val teamData = ServerQuestFile.INSTANCE.getNullableTeamData(
-                                                                team?.id ?: return@executes 0
-                                                            )
+                                            Commands.argument("tag", StringArgumentType.string())
+                                                .suggests { ctx, builder ->
+                                                    val target = try {
+                                                        EntityArgument.getPlayer(ctx, "target")
+                                                    } catch (_: Exception) {
+                                                        null
+                                                    }
+                                                    target?.let(::resolveTeamData)
+                                                        ?.`contactQuests$getTags`()
+                                                        ?.forEach { builder.suggest(it) }
+                                                    builder.buildFuture()
+                                                }
+                                                .executes { ctx ->
+                                                    val target = EntityArgument.getPlayer(ctx, "target")
+                                                    val tag = StringArgumentType.getString(ctx, "tag")
+                                                    val teamData = resolveTeamData(target) ?: return@executes 0
 
-                                                            if (teamData is ITeamDataExtension) {
-                                                                if (teamData.`contactQuests$removeTag`(tag)) {
-                                                                    ctx.source.sendSuccess({
-                                                                        Component.translatable(
-                                                                            "contactquests.command.tags.removed",
-                                                                            tag
-                                                                        ).withStyle(ChatFormatting.YELLOW)
-                                                                    }, true)
-                                                                    1
-                                                                } else {
-                                                                    ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_not_found"))
-                                                                    0
-                                                                }
-                                                            } else 0
-                                                        }
-                                                )
+                                                    if (teamData.`contactQuests$removeTag`(tag)) {
+                                                        ctx.source.sendSuccess({
+                                                            Component.translatable(
+                                                                "contactquests.command.tags.removed",
+                                                                tag
+                                                            ).withStyle(ChatFormatting.YELLOW)
+                                                        }, true)
+                                                        1
+                                                    } else {
+                                                        ctx.source.sendFailure(Component.translatable("contactquests.command.error.tag_not_found"))
+                                                        0
+                                                    }
+                                                }
                                         )
+                                    )
                                 )
                         )
-                ).requires { source -> source.hasPermission(2) }
+                )
         )
     }
 
-    private fun giveSlefBinder(context: CommandContext<CommandSourceStack>): Int {
-        try {
+    private fun resolveTeam(target: net.minecraft.server.level.ServerPlayer) =
+        FTBTeamsAPI.api().manager.getTeamForPlayer(target).orElse(null)
+
+    private fun resolveTeamData(target: net.minecraft.server.level.ServerPlayer): ITeamDataExtension? {
+        val team = resolveTeam(target) ?: return null
+        return ServerQuestFile.INSTANCE.getNullableTeamData(team.id) as? ITeamDataExtension
+    }
+
+    private fun giveBinderToPlayer(player: net.minecraft.server.level.ServerPlayer) {
+        val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
+        if (!player.inventory.add(itemStack)) {
+            player.drop(itemStack, false)
+        }
+    }
+
+    /** 为指令执行者本人发放一张团队绑定卡。 */
+    private fun giveSelfBinder(context: CommandContext<CommandSourceStack>): Int {
+        return try {
             val player = context.source.playerOrException
-            val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
-
-            if (!player.inventory.add(itemStack)) {
-                player.drop(itemStack, false)
-            }
-
+            giveBinderToPlayer(player)
             context.source.sendSuccess(
                 { Component.translatable("contactquests.command.give_binder") },
                 false
             )
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 giveSelfBinder 指令失败", e)
+            0
         }
     }
 
+    /** 为指定目标玩家发放一张团队绑定卡。 */
     private fun giveBinder(context: CommandContext<CommandSourceStack>): Int {
-        try {
+        return try {
             val targetPlayer = EntityArgument.getPlayer(context, "target")
-            val itemStack = ItemStack(ModItems.TEAM_BINDING_CARD.get())
-
-            if (!targetPlayer.inventory.add(itemStack)) {
-                targetPlayer.drop(itemStack, false)
-            }
-
+            giveBinderToPlayer(targetPlayer)
             context.source.sendSuccess(
                 { Component.translatable("contactquests.command.give_binder.success", targetPlayer.displayName) },
                 true
             )
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing givebinder command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 givebinder 指令失败", e)
+            0
         }
     }
 
     private fun removeDataAll(context: CommandContext<CommandSourceStack>): Int {
-        try {
+        return try {
             val level = context.source.level
             val npcName = StringArgumentType.getString(context, "npc")
-            val data = CollectionSavedData.get(level)
-
-            data.removeDataAll(npcName)
+            CollectionSavedData.get(level).removeDataAll(npcName)
             context.source.sendSuccess({
-                Component.translatable(
-                    "contactquests.command.remove_data.success_all",
-                    npcName
-                )
+                Component.translatable("contactquests.command.remove_data.success_all", npcName)
             }, true)
-
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing removedata command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 removedata 指令失败", e)
+            0
         }
     }
 
     private fun removeDataTarget(context: CommandContext<CommandSourceStack>): Int {
-        try {
+        return try {
             val level = context.source.level
             val npcName = StringArgumentType.getString(context, "npc")
             val target = EntityArgument.getPlayer(context, "target")
-            val data = CollectionSavedData.get(level)
-
-            data.removeData(target.uuid, npcName)
+            CollectionSavedData.get(level).removeData(target.uuid, npcName)
             context.source.sendSuccess({
                 Component.translatable(
                     "contactquests.command.remove_data.success_target",
@@ -333,131 +291,91 @@ object ModCommands {
                     target.displayName
                 )
             }, true)
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing removedata target command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 removedata target 指令失败", e)
+            0
         }
     }
 
-    private fun setCountSelf(context: CommandContext<CommandSourceStack>): Int {
-        try {
-            val player = context.source.playerOrException
-            val level = context.source.level
+    private fun setCountSelf(context: CommandContext<CommandSourceStack>): Int =
+        setCountForPlayer(context, targeted = false) { context.source.playerOrException }
+
+    private fun setCountTarget(context: CommandContext<CommandSourceStack>): Int =
+        setCountForPlayer(context, targeted = true) { EntityArgument.getPlayer(context, "target") }
+
+    private fun setCountForPlayer(
+        context: CommandContext<CommandSourceStack>,
+        targeted: Boolean,
+        playerResolver: () -> ServerPlayer
+    ): Int {
+        return try {
+            val player = playerResolver()
             val npcName = StringArgumentType.getString(context, "npc")
             val count = IntegerArgumentType.getInteger(context, "count")
-
-            val data = CollectionSavedData.get(level)
-            data.setTriggerCount(player.uuid, npcName, count)
-
+            CollectionSavedData.get(context.source.level).setTriggerCount(player.uuid, npcName, count)
             context.source.sendSuccess({
-                Component.translatable(
-                    "contactquests.command.set_count.success",
-                    npcName,
-                    count
-                )
+                if (targeted) {
+                    Component.translatable("contactquests.command.set_count.success_target", player.displayName, npcName, count)
+                } else {
+                    Component.translatable("contactquests.command.set_count.success", npcName, count)
+                }
             }, true)
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing setcount command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 setcount 指令失败", e)
+            0
         }
     }
 
-    private fun setCountTarget(context: CommandContext<CommandSourceStack>): Int {
-        try {
-            val level = context.source.level
-            val target = EntityArgument.getPlayer(context, "target")
+    private fun getCountSelf(context: CommandContext<CommandSourceStack>): Int =
+        getCountForPlayer(context, targeted = false) { context.source.playerOrException }
+
+    private fun getCountTarget(context: CommandContext<CommandSourceStack>): Int =
+        getCountForPlayer(context, targeted = true) { EntityArgument.getPlayer(context, "target") }
+
+    private fun getCountForPlayer(
+        context: CommandContext<CommandSourceStack>,
+        targeted: Boolean,
+        playerResolver: () -> ServerPlayer
+    ): Int {
+        return try {
+            val player = playerResolver()
             val npcName = StringArgumentType.getString(context, "npc")
-            val count = IntegerArgumentType.getInteger(context, "count")
-
-            val data = CollectionSavedData.get(level)
-            data.setTriggerCount(target.uuid, npcName, count)
-
+            val count = CollectionSavedData.get(context.source.level).getTriggerCount(player.uuid, npcName)
             context.source.sendSuccess({
-                Component.translatable(
-                    "contactquests.command.set_count.success_target",
-                    target.displayName,
-                    npcName,
-                    count
-                )
+                if (targeted) {
+                    Component.translatable("contactquests.command.get_count.success_target", player.displayName, npcName, count)
+                } else {
+                    Component.translatable("contactquests.command.get_count.success", npcName, count)
+                }
             }, true)
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing setcount target command", e)
-            return 0
+            ContactQuests.LOGGER.error("执行 getcount 指令失败", e)
+            0
         }
     }
 
-    private fun getCountSelf(context: CommandContext<CommandSourceStack>): Int {
-        try {
-            val player = context.source.playerOrException
-            val level = context.source.level
-            val npcName = StringArgumentType.getString(context, "npc")
-            val count = IntegerArgumentType.getInteger(context, "count")
-
-            val data = CollectionSavedData.get(level)
-            data.getTriggerCount(player.uuid, npcName)
-
-            context.source.sendSuccess({
-                Component.translatable(
-                    "contactquests.command.get_count.success",
-                    npcName,
-                    count
-                )
-            }, true)
-            return Command.SINGLE_SUCCESS
-        } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing setcount command", e)
-            return 0
-        }
-    }
-
-    private fun getCountTarget(context: CommandContext<CommandSourceStack>): Int {
-        try {
-            val level = context.source.level
-            val target = EntityArgument.getPlayer(context, "target")
-            val npcName = StringArgumentType.getString(context, "npc")
-            val count = IntegerArgumentType.getInteger(context, "count")
-
-            val data = CollectionSavedData.get(level)
-            data.getTriggerCount(target.uuid, npcName)
-
-            context.source.sendSuccess({
-                Component.translatable(
-                    "contactquests.command.get_count.success_target",
-                    target.displayName,
-                    npcName,
-                    count
-                )
-            }, true)
-            return Command.SINGLE_SUCCESS
-        } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing setcount target command", e)
-            return 0
-        }
-    }
-
+    /** 清理已不再被任何任务收件人或发件人配置引用的孤立 NPC 数据。 */
     private fun pruneNpcs(context: CommandContext<CommandSourceStack>): Int {
-        try {
-            val activeNpcs = mutableSetOf<String>()
-            activeNpcs.addAll(DataManager.parcelReceiver.keys)
-            activeNpcs.addAll(DataManager.redPacketReceiver.keys)
-            activeNpcs.addAll(DataManager.postcardReceiver.keys)
-            activeNpcs.addAll(DataManager.rewardSenders)
-
+        return try {
+            val activeNpcs = mutableSetOf<String>().apply {
+                addAll(DataManager.parcelReceiver.keys)
+                addAll(DataManager.redPacketReceiver.keys)
+                addAll(DataManager.postcardReceiver.keys)
+                addAll(DataManager.rewardSenders)
+            }
             val removedCount = NpcConfigManager.removeUnusedNpcs(activeNpcs)
-
             context.source.sendSuccess({
-                Component.literal("配置清理完成：移除了 $removedCount 个未使用的NPC数据。")
+                Component.translatable("contactquests.command.prune.success", removedCount)
                     .withStyle(ChatFormatting.GREEN)
             }, true)
-
-            return Command.SINGLE_SUCCESS
+            Command.SINGLE_SUCCESS
         } catch (e: Exception) {
-            ContactQuests.LOGGER.error("Error executing prune command", e)
-            context.source.sendFailure(Component.literal("清理失败，请查看日志。"))
-            return 0
+            ContactQuests.LOGGER.error("执行 prune 指令失败", e)
+            context.source.sendFailure(Component.translatable("contactquests.command.prune.failure"))
+            0
         }
     }
 }

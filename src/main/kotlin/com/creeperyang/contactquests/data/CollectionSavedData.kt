@@ -1,44 +1,48 @@
 package com.creeperyang.contactquests.data
-import com.creeperyang.contactquests.config.*
-import com.flechazo.contact.common.item.PostcardItem
-import com.flechazo.contact.data.PostcardDataManager
+
+import com.creeperyang.contactquests.config.ErrorSolveType
+import com.creeperyang.contactquests.config.MessageData
+import com.creeperyang.contactquests.config.NpcConfigManager
+import com.creeperyang.contactquests.llm.NpcLlmConfig
+import com.creeperyang.contactquests.llm.NpcLlmService
 import net.minecraft.nbt.CompoundTag
 import net.minecraft.nbt.ListTag
+import net.minecraft.nbt.StringTag
 import net.minecraft.nbt.Tag
-import net.minecraft.resources.ResourceLocation
 import net.minecraft.server.level.ServerLevel
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 import net.minecraft.world.level.saveddata.SavedData
-import java.util.*
-import java.util.regex.Pattern
-import kotlin.random.Random
+import java.util.Collections
+import java.util.UUID
 
+/** 管理按玩家与 NPC 隔离的暂存物品列表、交互触发次数、旧维度存档迁移与超量/退回策略分发。 */
 class CollectionSavedData : SavedData() {
 
     data class CollectionData(
         val name: String,
         var triggerCount: Int,
-        val itemStacks: MutableList<ItemStack>
+        val itemStacks: MutableList<ItemStack>,
+        var lastPostcardStyle: String = ""
     )
 
     private val dataMap: MutableMap<UUID, MutableMap<String, CollectionData>> = Collections.synchronizedMap(HashMap())
+    private val migratedDimensions = mutableSetOf<String>()
 
     companion object {
         private val LEGACY_UUID = UUID(0L, 0L)
 
+        // 保留在 Companion 上以便生成与历史版本一致的静态字段，供测试框架直接镜像与恢复占位符列表。
         private val defaultReplacers = mutableListOf<CollectionTextReplacer>()
         private val replacers = mutableListOf<CollectionTextReplacer>()
 
-        private val ITEM_NAME_PATTERN = Pattern.compile("<item_(\\d+)_name>")
-        private val ITEM_COUNT_PATTERN = Pattern.compile("<item_(\\d+)_count>")
+        init {
+            defaultReplacers.addAll(CollectionReplyComposer.buildDefaultReplacers())
+            reset()
+        }
 
         fun registerReplacer(replacer: CollectionTextReplacer) {
             replacers.add(replacer)
-        }
-
-        private fun registerDefault(replacer: CollectionTextReplacer) {
-            defaultReplacers.add(replacer)
         }
 
         fun reset() {
@@ -46,57 +50,32 @@ class CollectionSavedData : SavedData() {
             replacers.addAll(defaultReplacers)
         }
 
-        init {
-            registerDefault { text, context ->
-                text.replace("<trigger_count>", context.triggerCount.toString())
-                    .replace("<triggerCount>", context.triggerCount.toString())
-            }
-            registerDefault { text, context ->
-                val matcher = ITEM_NAME_PATTERN.matcher(text)
-                val sb = StringBuilder()
-                while (matcher.find()) {
-                    val index = matcher.group(1).toIntOrNull() ?: return@registerDefault null
-                    val listIndex = index - 1
-                    if (listIndex < 0 || listIndex >= context.itemStacks.size) return@registerDefault null
-                    matcher.appendReplacement(sb, context.itemStacks[listIndex].hoverName.string)
-                }
-                matcher.appendTail(sb)
-                sb.toString()
-            }
-            registerDefault { text, context ->
-                val matcher = ITEM_COUNT_PATTERN.matcher(text)
-                val sb = StringBuilder()
-                while (matcher.find()) {
-                    val index = matcher.group(1).toIntOrNull() ?: return@registerDefault null
-                    val listIndex = index - 1
-                    if (listIndex < 0 || listIndex >= context.itemStacks.size) return@registerDefault null
-                    matcher.appendReplacement(sb, context.itemStacks[listIndex].count.toString())
-                }
-                matcher.appendTail(sb)
-                sb.toString()
-            }
-            registerDefault { text, context ->
-                val total = context.itemStacks.sumOf { it.count }
-                text.replace("<total_amount>", total.toString())
-                    .replace("<total_count>", total.toString())
-            }
-            registerDefault { text, context ->
-                val types = context.itemStacks.size
-                text.replace("<total_types>", types.toString())
-            }
-            reset()
-        }
+        internal fun currentReplacers(): List<CollectionTextReplacer> = replacers
 
         fun get(level: ServerLevel): CollectionSavedData {
-            return level.dataStorage.computeIfAbsent(
-                ::load,
-                ::CollectionSavedData,
+            val overworld = level.server.overworld()
+            val global = overworld.dataStorage.computeIfAbsent(
+                ::load, ::CollectionSavedData,
                 "contactquests_collection_data"
             )
+            if (level !== overworld) {
+                val dimension = level.dimension().location().toString()
+                if (dimension !in global.migratedDimensions) {
+                    // 早期版本曾按维度分开持久化玩家暂存物，此处在首次访问非主世界时惰性合并并保留旧文件兜底。
+                    val legacy = level.dataStorage.get(::load, "contactquests_collection_data")
+                    if (legacy != null && legacy !== global) global.mergeLegacy(legacy)
+                    global.migratedDimensions.add(dimension)
+                    global.setDirty()
+                }
+            }
+            return global
         }
 
         private fun load(tag: CompoundTag): CollectionSavedData {
             val data = CollectionSavedData()
+            tag.getList("MigratedDimensions", Tag.TAG_STRING.toInt()).forEach {
+                data.migratedDimensions.add(it.asString)
+            }
 
             if (tag.contains("playerDataMap")) {
                 val playerList = tag.getList("playerDataMap", Tag.TAG_COMPOUND.toInt())
@@ -116,7 +95,8 @@ class CollectionSavedData : SavedData() {
                             val stack = ItemStack.of(itemsTag.getCompound(k))
                             if (!stack.isEmpty) itemStacks.add(stack)
                         }
-                        npcMap[name] = CollectionData(name, count, itemStacks)
+                        val lastStyle = if (npcTag.contains("lastPostcardStyle")) npcTag.getString("lastPostcardStyle") else ""
+                        npcMap[name] = CollectionData(name, count, itemStacks, lastStyle)
                     }
                     data.dataMap[uuid] = npcMap
                 }
@@ -145,6 +125,19 @@ class CollectionSavedData : SavedData() {
         }
     }
 
+    private fun mergeLegacy(legacy: CollectionSavedData) {
+        synchronized(dataMap) {
+            legacy.dataMap.forEach { (uuid, npcMap) ->
+                npcMap.forEach { (name, old) ->
+                    val current = getOrCreateData(uuid, name)
+                    current.triggerCount = (current.triggerCount.toLong() + old.triggerCount)
+                        .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                    mergeItemsIntoData(current, old.itemStacks)
+                }
+            }
+        }
+    }
+
     private fun getOrCreateData(uuid: UUID, name: String): CollectionData {
         val playerMap = dataMap.computeIfAbsent(uuid) { Collections.synchronizedMap(HashMap()) }
 
@@ -163,6 +156,10 @@ class CollectionSavedData : SavedData() {
     }
 
     fun addItems(player: ServerPlayer, name: String, stacks: List<ItemStack>) {
+        if (NpcLlmConfig.npc(name) != null) {
+            NpcLlmService.receive(player, name, stacks)
+            return
+        }
         if (stacks.isEmpty()) return
         val validStacks = stacks.filter { !it.isEmpty }
         if (validStacks.isEmpty()) return
@@ -172,21 +169,34 @@ class CollectionSavedData : SavedData() {
             val data = getOrCreateData(uuid, name)
 
             data.triggerCount++
+            // 立即退回与丢弃策略也会递增持久化交互次数，用于后续阶梯提示配置匹配。
+            setDirty()
             val currentCount = data.triggerCount
+            val incomingStyle = validStacks.firstNotNullOfOrNull { CollectionReplyComposer.extractPostcardStyle(it) }
             val solveType = NpcConfigManager.getErrorSolve(name, currentCount)?.returnType
 
             when (solveType) {
                 ErrorSolveType.NOW -> {
                     val itemsToSend = ArrayList(validStacks.map { it.copy() })
-                    returnNow(player, name, itemsToSend, currentCount)
+                    returnNow(player, name, itemsToSend, currentCount, incomingStyle)
                 }
                 ErrorSolveType.DISCARD -> {
-                    returnDiscard(player, name, currentCount)
+                    returnDiscard(player, name, currentCount, validStacks, incomingStyle)
                 }
-                else -> {
+                ErrorSolveType.WITHREWARDS -> {
+                    if (!incomingStyle.isNullOrEmpty()) {
+                        data.lastPostcardStyle = incomingStyle
+                    }
                     mergeItemsIntoData(data, validStacks)
                     setDirty()
-                    returnSave(player, name, currentCount)
+                }
+                else -> {
+                    if (!incomingStyle.isNullOrEmpty()) {
+                        data.lastPostcardStyle = incomingStyle
+                    }
+                    mergeItemsIntoData(data, validStacks)
+                    setDirty()
+                    returnSave(player, name, currentCount, incomingStyle)
                 }
             }
         }
@@ -207,104 +217,87 @@ class CollectionSavedData : SavedData() {
             }
         }
     }
-    private fun processAndDistribute(
+
+    @JvmOverloads
+    fun returnNow(
         player: ServerPlayer,
         name: String,
-        npcData: ErrorSolveData,
-        itemsToSend: MutableList<ItemStack>,
-        contextItems: List<ItemStack>
+        stacks: MutableList<ItemStack>,
+        countOverride: Int? = null,
+        incomingStyle: String? = null
     ) {
-        val (selectedMsgData, processedText) = selectValidMessage(player, name, npcData, contextItems)
-        val finalMessageData = selectedMsgData.copy(text = processedText)
-        val isEnder: Boolean = npcData.isAllEnder || finalMessageData.isEnder
-        itemsToSend.add(generatePostcard(name, npcData, finalMessageData))
-        for (item in itemsToSend) {
-            RewardDistributionManager.distribute(player, item, name, isEnder)
-        }
-    }
-
-    fun returnNow(player: ServerPlayer, name: String, stacks: MutableList<ItemStack>, countOverride: Int? = null) {
+        if (NpcLlmConfig.npc(name) != null) return
         val count = countOverride ?: getTriggerCount(player.uuid, name)
         val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
-        processAndDistribute(player, name, npcData, stacks, stacks)
+        CollectionReplyComposer.processAndDistribute(this, player, name, npcData, stacks, stacks, incomingStyle)
     }
+
+    @JvmOverloads
     fun returnDiscard(
         player: ServerPlayer,
         name: String,
         countOverride: Int? = null,
-        contextItems: List<ItemStack> = emptyList()
+        contextItems: List<ItemStack> = emptyList(),
+        incomingStyle: String? = null
     ) {
+        if (NpcLlmConfig.npc(name) != null) return
         val count = countOverride ?: (getTriggerCount(player.uuid, name) + 1)
         val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
         val itemsToSend = mutableListOf<ItemStack>()
         val finalContext = contextItems.ifEmpty { getStacks(player.uuid, name) }
-        processAndDistribute(player, name, npcData, itemsToSend, finalContext)
+        CollectionReplyComposer.processAndDistribute(this, player, name, npcData, itemsToSend, finalContext, incomingStyle)
     }
 
-    fun returnSave(player: ServerPlayer, name: String, countOverride: Int? = null) {
+    @JvmOverloads
+    fun returnSave(
+        player: ServerPlayer,
+        name: String,
+        countOverride: Int? = null,
+        incomingStyle: String? = null
+    ) {
+        if (NpcLlmConfig.npc(name) != null) return
         val count = countOverride ?: getTriggerCount(player.uuid, name)
         val npcData = NpcConfigManager.getErrorSolve(name, count) ?: return
         val itemsToSend = mutableListOf<ItemStack>()
-        processAndDistribute(player, name, npcData, itemsToSend, getStacks(player.uuid, name))
+        CollectionReplyComposer.processAndDistribute(this, player, name, npcData, itemsToSend, getStacks(player.uuid, name), incomingStyle)
     }
 
-    fun returnReward(player: ServerPlayer, name: String) {
+    @JvmOverloads
+    fun returnReward(player: ServerPlayer, name: String, isEnder: Boolean = false) {
+        if (NpcLlmConfig.npc(name) != null) {
+            NpcLlmService.returnForReward(player, name, isEnder)
+            return
+        }
         val uuid = player.uuid
-        val currentCount = getTriggerCount(uuid, name) + 1
-        val solveType = NpcConfigManager.getErrorSolve(name, currentCount)?.returnType
-
-        if (solveType == ErrorSolveType.WITHREWARDS) {
-            val npcData = NpcConfigManager.getErrorSolve(name, currentCount) ?: return
-
+        synchronized(dataMap) {
             val playerMap = dataMap[uuid] ?: return
             val data = playerMap[name] ?: return
-            val savedStacks = data.itemStacks
+            val validSaved = data.itemStacks.filter { !it.isEmpty }
+            if (validSaved.isEmpty()) return
 
-            if (savedStacks.isNotEmpty() && savedStacks.first().isEmpty) {
-                savedStacks.removeFirst()
-            }
-            val itemsToSend = ArrayList(savedStacks)
+            val currentCount = getTriggerCount(uuid, name)
+            if (currentCount <= 0) return
+            val npcData = NpcConfigManager.getErrorSolve(name, currentCount) ?: return
+            if (npcData.returnType != ErrorSolveType.WITHREWARDS) return
 
-            val message = NpcConfigManager.getMessage(npcData)
-            val isEnder: Boolean = npcData.isAllEnder || message.isEnder
-            for (item in itemsToSend) {
-                RewardDistributionManager.distribute(player, item, name, isEnder)
-            }
+            val itemsToSend = ArrayList(validSaved.map { it.copy() })
+            CollectionReplyComposer.processAndDistribute(
+                this, player, name, npcData, itemsToSend, itemsToSend, data.lastPostcardStyle, isEnder
+            )
 
-            savedStacks.clear()
+            data.itemStacks.clear()
+            data.lastPostcardStyle = ""
             setDirty()
         }
     }
-    fun generatePostcard(name: String, npcData: ErrorSolveData, messageData: MessageData): ItemStack {
-        val styleType = npcData.styleType
-        val isEnder = npcData.isAllEnder || messageData.isEnder
-        val styleId = when (styleType) {
-            StyleType.RANDOM -> {
-                val allStyles = PostcardDataManager.getPostcards().keys.map { it.toString() }.sorted().toMutableList()
-                if (!allStyles.contains("")) allStyles.add(0, "")
-                val num = Random.nextInt(allStyles.size)
-                allStyles[num]
-            }
-            StyleType.SAME -> npcData.style
-            StyleType.SPECIFIC -> messageData.style
-        }
-        val style = if (styleId.isNotEmpty()) ResourceLocation.tryParse(styleId) else null
-        var postcard = if (style != null) {
-            PostcardItem.getPostcard(style, isEnder)
-        } else {
-            PostcardItem.getPostcard(ResourceLocation("contact", "default"), isEnder)
-        }
 
-        var message = messageData.text.replace("\\n", "\n")
-        if (messageData.text.isNotEmpty()) {
-            val processedText = message
-            postcard = PostcardItem.setText(postcard, processedText)
-        }
-        if (name.isNotEmpty()) {
-            postcard.getOrCreateTag().putString("postcard_sender", name)
-        }
-        return postcard
-    }
+    @JvmOverloads
+    fun generatePostcard(
+        name: String,
+        npcData: com.creeperyang.contactquests.config.ErrorSolveData,
+        messageData: MessageData,
+        incomingStyle: String? = null
+    ): ItemStack = CollectionReplyComposer.generatePostcard(name, npcData, messageData, incomingStyle)
 
     fun getStacks(uuid: UUID, name: String): MutableList<ItemStack> {
         val pData = dataMap[uuid]?.get(name)
@@ -334,7 +327,6 @@ class CollectionSavedData : SavedData() {
         val uuid = player.uuid
         synchronized(dataMap) {
             val data = getOrCreateData(uuid, name)
-
             mergeItemsIntoData(data, validStacks)
             setDirty()
         }
@@ -398,6 +390,9 @@ class CollectionSavedData : SavedData() {
                         itemsTag.add(stack.save(CompoundTag()))
                     }
                     npcTag.put("itemStacks", itemsTag)
+                    if (data.lastPostcardStyle.isNotEmpty()) {
+                        npcTag.putString("lastPostcardStyle", data.lastPostcardStyle)
+                    }
                     npcList.add(npcTag)
                 }
                 pTag.put("npcData", npcList)
@@ -405,57 +400,23 @@ class CollectionSavedData : SavedData() {
             }
         }
         tag.put("playerDataMap", playerList)
+        val dimensions = ListTag()
+        migratedDimensions.forEach { dimensions.add(StringTag.valueOf(it)) }
+        tag.put("MigratedDimensions", dimensions)
         return tag
     }
 
-    private fun selectValidMessage(
-        player: ServerPlayer,
-        name: String,
-        npcData: ErrorSolveData,
-        contextItems: List<ItemStack>
-    ): Pair<MessageData, String> {
-        val messages = ArrayList(npcData.message)
-        val triggerCount = getTriggerCount(player.uuid, name)
-        val context = ReplacerContext(player, name, triggerCount, contextItems)
+    // 保留此私有入口以兼容测试模块通过反射直接验证内置占位符替换逻辑
+    private fun applyReplacements(text: String, context: ReplacerContext): String? =
+        CollectionReplyComposer.applyReplacements(text, context, replacers)
 
-        while (messages.isNotEmpty()) {
-            val pickedMsg = pickWeightedMessage(messages)
-            val processedText = applyReplacements(pickedMsg.text, context)
-            if (processedText != null) {
-                return Pair(pickedMsg, processedText)
-            }
-            messages.remove(pickedMsg)
-        }
-        val defaultMsg = MessageData(text = "Error: No valid message", weight = 1)
-        return Pair(defaultMsg, defaultMsg.text)
-    }
-
-    private fun pickWeightedMessage(messages: List<MessageData>): MessageData {
-        if (messages.isEmpty()) return MessageData()
-        val totalWeight = messages.sumOf { it.weight }
-        if (totalWeight <= 0) return messages.random()
-        var randomVal = Random.nextInt(totalWeight)
-        for (msg in messages) {
-            randomVal -= msg.weight
-            if (randomVal < 0) return msg
-        }
-        return messages.first()
-    }
-
-    private fun applyReplacements(text: String, context: ReplacerContext): String? {
-        var currentText = text
-        for (replacer in replacers) {
-            val result = replacer.replace(currentText, context) ?: return null
-            currentText = result
-        }
-        return currentText
-    }
     data class ReplacerContext(
         val player: ServerPlayer,
         val name: String,
         val triggerCount: Int,
         val itemStacks: List<ItemStack>
     )
+
     fun interface CollectionTextReplacer {
         fun replace(text: String, context: ReplacerContext): String?
     }

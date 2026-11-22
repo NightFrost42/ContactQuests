@@ -1,9 +1,9 @@
 package com.creeperyang.contactquests.client.gui
 
 import com.creeperyang.contactquests.client.util.PostcardAutoFiller
+import com.creeperyang.contactquests.data.ChoiceRewardSavedData
 import com.creeperyang.contactquests.quest.task.PostcardTask
 import com.flechazo.contact.client.gui.hud.TexturePos
-import com.flechazo.contact.common.item.PostcardItem
 import com.flechazo.contact.data.PostcardDataManager
 import com.flechazo.contact.data.PostcardStyle
 import com.mojang.blaze3d.systems.RenderSystem
@@ -29,12 +29,7 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
     private val currentStyle: PostcardStyle
 
     init {
-        val styleId = ResourceLocation.tryParse(task.postcardStyle)
-        currentStyle = if (styleId != null) {
-            PostcardDataManager.getPostcards()[styleId] ?: PostcardStyle.DEFAULT
-        } else {
-            PostcardStyle.DEFAULT
-        }
+        currentStyle = normalizeStyleId(task.postcardStyle)?.let { PostcardDataManager.getPostcards()[it] } ?: PostcardStyle.DEFAULT
     }
 
     override fun createMainPanel(): Panel {
@@ -64,15 +59,11 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
                 RenderSystem.setShader(GameRenderer::getPositionTexShader)
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F)
 
-                theme.drawButton(graphics, x, y, w, h, WidgetType.NORMAL)
-                RenderSystem.setShader(GameRenderer::getPositionTexShader)
-                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F)
-
                 val cardX = x + (w - currentStyle.cardWidth()) / 2
                 val cardY = y + (h - currentStyle.cardHeight()) / 2
 
                 ContactGuiHelper.drawLayerBySize(
-                    graphics, currentStyle.cardTexture, cardX, cardY,
+                    graphics, currentStyle.getCardTexture(), cardX, cardY,
                     TexturePos(0, 0, currentStyle.cardWidth(), currentStyle.cardHeight()),
                     currentStyle.cardWidth(), currentStyle.cardHeight()
                 )
@@ -87,19 +78,29 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
                     val player = Minecraft.getInstance().player
                     val teamData = ClientQuestFile.INSTANCE.selfTeamData
                     val textToDraw = task.getResolvedText(teamData, player)
-                    graphics.drawWordWrap(font, Component.literal(textToDraw), textX, textY, textW, textColor)
+                    val textH = currentStyle.textHeight()
+                    graphics.enableScissor(textX, textY, textX + textW, textY + textH)
+                    try {
+                        font.split(Component.literal(textToDraw), textW)
+                            .take(textH / 12).forEachIndexed { index, line ->
+                                graphics.drawString(font, line, textX, textY + index * 12, textColor, false)
+                            }
+                    } finally {
+                        graphics.disableScissor()
+                    }
                 }
             }
         }
     }
 
     override fun findValidSlot(player: Player): Int {
+        val expected = normalizeStyleId(task.postcardStyle)
+        if (task.postcardStyle.isNotEmpty() && expected == null) return -1
         for (i in 0 until player.inventory.items.size) {
             val stack = player.inventory.items[i]
-            if (stack.isEmpty || stack.item !is PostcardItem) continue
-            if (task.postcardStyle.isEmpty()) return i
-            val stackStyleId = getStackStyleId(stack)
-            if (stackStyleId == task.postcardStyle) return i
+            if (!ChoiceRewardSavedData.isEditablePostcard(stack)) continue
+            if (expected == null) return i
+            if (getStackStyleId(stack) == expected) return i
         }
         return -1
     }
@@ -111,34 +112,32 @@ class ValidPostcardItemsScreen(task: PostcardTask) :
     override fun addSubmitTooltip(list: TooltipList, hasValidSlot: Boolean) {
         if (hasValidSlot) {
             list.add(Component.translatable("contactquest.gui.fill_postcard").withStyle(ChatFormatting.GRAY))
+            val mc = Minecraft.getInstance()
+            val text = task.getResolvedText(ClientQuestFile.INSTANCE.selfTeamData, mc.player)
+            if (text.length >= 1024 || mc.font.wordWrapHeight(text, currentStyle.textWidth()) >
+                currentStyle.textHeight() * mc.font.lineHeight / 12) {
+                list.add(Component.translatable("contactquests.postcard.text_too_long").withStyle(ChatFormatting.RED))
+            }
         } else {
             list.add(Component.translatable("contactquest.gui.missing_postcard").withStyle(ChatFormatting.RED))
             if (task.postcardStyle.isNotEmpty()) {
                 val rl = ResourceLocation.tryParse(task.postcardStyle)
                 val styleName = if (rl != null) Component.translatable("tooltip.postcard.${rl.namespace}.${rl.path}")
                 else Component.literal(task.postcardStyle)
-                list.add(Component.literal("Style: ").append(styleName).withStyle(ChatFormatting.DARK_RED))
+                list.add(Component.translatable("contactquest.gui.postcard_style", styleName).withStyle(ChatFormatting.DARK_RED))
             }
         }
     }
 
-    @Suppress("UNCHECKED_CAST")
-    private fun getStackStyleId(stack: ItemStack): String? {
-        if (!stack.hasTag()) return null
+    private fun normalizeStyleId(value: String): ResourceLocation? {
+        val id = value.trim()
+        if (id.isEmpty()) return null
+        return ResourceLocation.tryParse(if (":" in id) id else "contact:$id")
+    }
 
-        val tag = stack.tag!!
-
-        if (tag.contains("CardID")) {
-            return tag.getString("CardID")
-        }
-
-        if (tag.contains("Info")) {
-            val info = tag.getCompound("Info")
-            if (info.contains("ID")) {
-                return "contact:" + info.getString("ID")
-            }
-        }
-
-        return null
+    private fun getStackStyleId(stack: ItemStack): ResourceLocation? {
+        val tag = stack.tag ?: return null
+        val id = tag.getString("CardID").ifEmpty { tag.getCompound("Info").getString("ID") }
+        return normalizeStyleId(id)
     }
 }

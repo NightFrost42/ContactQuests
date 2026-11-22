@@ -1,0 +1,383 @@
+{
+  "id": "client.contact.postcard_autofill",
+  "steps": [
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "open_world",
+      "world": "ContactQuestsTest"
+    },
+    {
+      "action": "wait_for_level"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "assert_choice_templates_layout"
+    },
+    {
+      "action": "install_synthetic_tasks"
+    },
+    {
+      "action": "seed_autofill",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "open_task_display",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "screenshot",
+      "name": "postcard-valid-task-display"
+    },
+    {
+      "action": "click_task_submit",
+      "type": "postcard"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 200
+    },
+    {
+      "action": "assert_screen",
+      "screen": "PostcardEditScreen"
+    },
+    {
+      "action": "assert_postcard_text",
+      "value": "fixed autofill postcard"
+    },
+    {
+      "action": "screenshot",
+      "name": "postcard-autofilled"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 60
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "verify"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "done"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "snapshot_saved"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "verify_saved"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "instant",
+      "phase": "restore"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 20
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "close_early"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 130
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "snapshot_saved"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "verify_timeout"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "reopen"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "verify_idle"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "cancel",
+      "phase": "restore"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 2
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "snapshot_saved"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "verify_rejected"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_instant",
+      "phase": "restore"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 2
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "snapshot_saved"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "verify_rejected"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_animated",
+      "phase": "restore"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "prepare"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 30
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "open"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "submit"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 2
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 40
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "snapshot_saved"
+    },
+    {
+      "action": "wait_ticks",
+      "ticks": 10
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "verify_rejected"
+    },
+    {
+      "action": "autofill_boundary",
+      "type": "postcard",
+      "variant": "overflow_narrow",
+      "phase": "restore"
+    },
+    {
+      "action": "finish"
+    }
+  ]
+}

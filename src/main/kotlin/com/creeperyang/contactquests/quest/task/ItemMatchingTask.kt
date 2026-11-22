@@ -1,5 +1,6 @@
 package com.creeperyang.contactquests.quest.task
 
+import dev.ftb.mods.ftbquests.util.NBTUtils
 import dev.ftb.mods.ftblibrary.config.ConfigGroup
 import dev.ftb.mods.ftblibrary.config.Tristate
 import dev.ftb.mods.ftbquests.api.FTBQuestsTags
@@ -24,11 +25,9 @@ abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest)
 
     override fun writeData(nbt: CompoundTag) {
         super.writeData(nbt)
-        val itemTag = CompoundTag()
         val toSave = itemStack.copy()
         toSave.count = 1
-        toSave.save(itemTag)
-        nbt.put(getItemNbtKey(), itemTag)
+        NBTUtils.write(nbt, getItemNbtKey(), toSave)
 
         matchNBT.write(nbt, "match_nbt")
         if (weakNBTmatch) {
@@ -38,11 +37,7 @@ abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest)
 
     override fun readData(nbt: CompoundTag) {
         super.readData(nbt)
-        itemStack = if (nbt.contains(getItemNbtKey())) {
-            ItemStack.of(nbt.getCompound(getItemNbtKey()))
-        } else {
-            ItemStack.EMPTY
-        }
+        itemStack = NBTUtils.read(nbt, getItemNbtKey())
 
         matchNBT = Tristate.read(nbt, "match_nbt")
         weakNBTmatch = nbt.getBoolean("weak_nbt_match")
@@ -66,7 +61,7 @@ abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest)
     override fun fillConfigGroup(config: ConfigGroup) {
         super.fillConfigGroup(config)
         config.addItemStack(
-            getItemNbtKey(),
+            "item",
             itemStack,
             { v: ItemStack -> itemStack = v },
             ItemStack.EMPTY,
@@ -102,5 +97,5 @@ abstract class ItemMatchingTask(id: Long, quest: Quest) : ContactTask(id, quest)
     }
 
     open fun getItemNbtKey() = "item"
-    open fun getConfigNameKey() = "contactquest.task.ftbquests.parcel.valid_for"
+    open fun getConfigNameKey() = "contactquest.task.parcel.item"
 }

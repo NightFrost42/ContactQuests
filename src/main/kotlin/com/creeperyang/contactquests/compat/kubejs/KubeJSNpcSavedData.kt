@@ -16,9 +16,8 @@ class KubeJSNpcSavedData : SavedData() {
 
         fun get(level: ServerLevel): KubeJSNpcSavedData {
             return level.server.overworld().dataStorage.computeIfAbsent(
-                { tag -> load(tag) },
-                { KubeJSNpcSavedData() },
-                "contactquests_kubejs_npcs"
+                ::load,
+                ::KubeJSNpcSavedData, "contactquests_kubejs_npcs"
             )
         }
 

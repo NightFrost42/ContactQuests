@@ -1,9 +1,10 @@
 package com.creeperyang.contactquests.network
 
 import com.creeperyang.contactquests.ContactQuests
-import com.creeperyang.contactquests.utils.ITeamDataExtension
+import com.creeperyang.contactquests.bridge.ITeamDataExtension
 import dev.ftb.mods.ftbquests.client.ClientQuestFile
 import net.minecraft.network.FriendlyByteBuf
+import net.minecraftforge.fml.loading.FMLEnvironment
 import net.minecraftforge.network.NetworkEvent
 import java.util.*
 import java.util.function.Supplier
@@ -25,11 +26,11 @@ class SyncTeamExtensionMessage {
         redPacketData: Map<Long, String>
     ) {
         this.teamId = teamId
-        this.tags = tags
-        this.forcedQuests = forcedQuests
-        this.blockedQuests = blockedQuests
-        this.postcardData = postcardData
-        this.redPacketData = redPacketData
+        this.tags = Collections.unmodifiableSet(HashSet(tags))
+        this.forcedQuests = Collections.unmodifiableSet(HashSet(forcedQuests))
+        this.blockedQuests = Collections.unmodifiableSet(HashSet(blockedQuests))
+        this.postcardData = Collections.unmodifiableMap(HashMap(postcardData))
+        this.redPacketData = Collections.unmodifiableMap(HashMap(redPacketData))
     }
 
     constructor(buf: FriendlyByteBuf) {
@@ -103,7 +104,13 @@ class SyncTeamExtensionMessage {
     fun handle(contextSupplier: Supplier<NetworkEvent.Context>) {
         val context = contextSupplier.get()
         context.enqueueWork {
-            val file = ClientQuestFile.INSTANCE
+            if (FMLEnvironment.dist.isClient) ClientHandler.apply(this)
+        }
+        context.packetHandled = true
+    }
+    private object ClientHandler {
+        fun apply(message: SyncTeamExtensionMessage) = with(message) {
+            val file = ClientQuestFile.INSTANCE ?: return@with
 
             if (file != null && file.selfTeamData.teamId == teamId) {
                 val teamData = file.selfTeamData
@@ -129,6 +136,6 @@ class SyncTeamExtensionMessage {
                 }
             }
         }
-        context.packetHandled = true
     }
+
 }

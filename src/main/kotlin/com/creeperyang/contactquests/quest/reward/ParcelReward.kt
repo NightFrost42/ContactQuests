@@ -38,11 +38,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     override fun writeData(nbt: CompoundTag) {
         super.writeData(nbt)
-        if (!item.isEmpty) {
-            val itemTag = CompoundTag()
-            item.save(itemTag)
-            nbt.put("item", itemTag)
-        }
+        if (!item.isEmpty) nbt.put("item", item.save(CompoundTag()))
         if (count > 1) nbt.putInt("count", count)
         if (randomBonus > 0) nbt.putInt("random_bonus", randomBonus)
     }
@@ -86,6 +82,7 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltTitle(): MutableComponent {
+        if (isContentsHiddenForViewer()) return Component.translatable("contactquests.reward.sealed")
         return if (randomBonus > 0) {
             Component.literal("$count-${count + randomBonus}x ").append(item.hoverName)
         } else if (count > 1) {
@@ -97,11 +94,13 @@ class ParcelReward(id: Long, quest: Quest) : ParcelRewardBase(id, quest) {
 
     @OnlyIn(Dist.CLIENT)
     override fun getAltIcon(): Icon {
+        if (isContentsHiddenForViewer()) return sealedIcon()
         return if (item.isEmpty) super.getAltIcon() else ItemIcon.getItemIcon(item.copy().also { it.count = 1 })
     }
 
     @OnlyIn(Dist.CLIENT)
     override fun getIngredient(widget: Widget): Optional<PositionedIngredient> {
+        if (isContentsHiddenForViewer()) return Optional.empty()
         return PositionedIngredient.of(item, widget, true)
     }
 }

@@ -10,7 +10,7 @@ import net.minecraft.nbt.Tag
 import net.minecraft.server.level.ServerPlayer
 import net.minecraft.world.item.ItemStack
 
-@Info("Fired when a player tries to send mail (Parcel/Postcard/RedPacket) via a mailbox.")
+@Info("Fired for mail remaining after task quantities have been allocated. Parcel items are remaining contents; postcard/red packet items retain their envelope. intercept() consumes only this remainder.")
 class MailReceivedEventJS(
     val player: ServerPlayer,
     val recipient: String,
@@ -48,31 +48,18 @@ class MailReceivedEventJS(
             for (i in 0 until list.size) {
                 items.add(ItemStack.of(list.getCompound(i)))
             }
-        } else if (tag.contains("Items", Tag.TAG_LIST.toInt())) {
-            val list = tag.getList("Items", Tag.TAG_COMPOUND.toInt())
-            for (i in 0 until list.size) {
-                items.add(ItemStack.of(list.getCompound(i)))
-            }
         }
         return items
     }
 
     @Info("Gets the blessing text from a Red Packet item")
     fun getRedPacketBlessing(stack: ItemStack): String {
-        val tag = stack.tag ?: return ""
-
-        return when {
-            tag.contains("red_packet_blessing") -> tag.getString("red_packet_blessing")
-            tag.contains("blessing") -> tag.getString("blessing")
-            tag.contains("blessings") -> tag.getString("blessings")
-            else -> ""
-        }
+        return stack.tag?.getString("blessing") ?: ""
     }
 
     @Info("Gets the text content of a Postcard item")
     fun getPostcardText(stack: ItemStack): String {
-        val tag = stack.tag ?: return ""
-        return if (tag.contains("Text")) tag.getString("Text") else ""
+        return PostcardItem.getText(stack)
     }
 
     @Info("Gets the style ID of a Postcard item")
@@ -84,7 +71,8 @@ class MailReceivedEventJS(
         } else if (tag.contains("Info")) {
             val infoTag = tag.getCompound("Info")
             if (infoTag.contains("ID")) {
-                return "contact:" + infoTag.getString("ID")
+                val id = infoTag.getString("ID")
+                return if (':' in id) id else "contact:$id"
             }
         }
         return ""
