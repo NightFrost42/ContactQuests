@@ -79,16 +79,22 @@ configurations {
 
 // OELib 0.3.x keeps its classes in nested jars; expose them only to compilers.
 def oelibCompileJarsDirectory = layout.buildDirectory.dir('generated/oelib-compile-jars')
-def extractOelibCompileJars = tasks.register('extractOelibCompileJars', Sync) {
-    from(configurations.oelibJarJar.collect { archive -> zipTree(archive) }) {
-        include 'META-INF/jarjar/*.jar'
-        eachFile { details -> details.path = details.name }
-        includeEmptyDirs = false
+def extractOelibCompileJars = tasks.register('extractOelibCompileJars') {
+    inputs.files(configurations.oelibJarJar)
+    outputs.dir(oelibCompileJarsDirectory)
+    doLast {
+        project.sync {
+            from(configurations.oelibJarJar.collect { archive -> zipTree(archive) }) {
+                include 'META-INF/jarjar/*.jar'
+                eachFile { details -> details.path = details.name }
+                includeEmptyDirs = false
+            }
+            into oelibCompileJarsDirectory
+        }
     }
-    into oelibCompileJarsDirectory
 }
 def oelibCompileJars = files(fileTree(
-        dir: extractOelibCompileJars.map { it.destinationDir }, include: '*.jar'
+        dir: oelibCompileJarsDirectory, include: '*.jar'
 )).builtBy(extractOelibCompileJars)
 
 tasks.matching { it.name in ['compileKotlin', 'compileJava', 'compileTestmodJava', 'compileTestmodKotlin'] }.configureEach {
