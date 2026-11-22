@@ -15,7 +15,6 @@ import dev.ftb.mods.ftbquests.quest.QuestShape;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
 import net.minecraft.client.Screenshot;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.component.DataComponents;
@@ -29,7 +28,6 @@ import net.neoforged.neoforge.common.NeoForge;
 import org.lwjgl.glfw.GLFW;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
@@ -337,19 +335,7 @@ public final class ContactQuestsGraphOptionsClientAssertions {
         require(++s.panKeys <= 80, "Could not bring inherited QuestButton into the viewport with native keys");
     }
     private static void movePointer(double x, double y) throws Exception {
-        var mc = Minecraft.getInstance();
-        var window = mc.getWindow();
-        double rawX = x * window.getScreenWidth() / window.getGuiScaledWidth();
-        double rawY = y * window.getScreenHeight() / window.getGuiScaledHeight();
-        GLFW.glfwSetCursorPos(window.getWindow(), rawX, rawY);
-        if (Math.abs(mc.mouseHandler.xpos() - rawX) > 0.5 || Math.abs(mc.mouseHandler.ypos() - rawY) > 0.5) {
-            Method onMove = MouseHandler.class.getDeclaredMethod("onMove", long.class, double.class, double.class);
-            onMove.setAccessible(true);
-            onMove.invoke(mc.mouseHandler, window.getWindow(), rawX, rawY);
-        }
-        if (mc.screen != null) {
-            mc.screen.mouseMoved(x, y);
-        }
+        ContactQuestsTestVirtualPointer.moveScaled(Minecraft.getInstance(), x, y);
     }
     private static void requireScreen(Session s) {
         require(Minecraft.getInstance().screen == s.screen && ClientQuestFile.INSTANCE == s.file

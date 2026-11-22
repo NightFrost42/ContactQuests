@@ -1,9 +1,8 @@
 package com.creeperyang.contactquests.quest
 
-import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.compat.kubejs.ContactKubeJSPlugin
 import com.creeperyang.contactquests.compat.kubejs.QuestOverrideSavedData
-import net.neoforged.fml.ModList
+import com.creeperyang.contactquests.data.DataManager
 import com.creeperyang.contactquests.mixin.QuestFileAccessor
 import dev.ftb.mods.ftblibrary.util.NetworkHelper
 import dev.ftb.mods.ftbquests.net.SyncQuestsMessage
@@ -14,20 +13,10 @@ import dev.ftb.mods.ftbquests.quest.task.Task
 import dev.ftb.mods.ftbquests.quest.task.TaskType
 import dev.ftb.mods.ftbquests.quest.translation.TranslationKey
 import net.minecraft.nbt.CompoundTag
-import net.minecraft.nbt.ListTag
-import net.minecraft.nbt.StringTag
-import net.minecraft.nbt.Tag
-import net.minecraft.nbt.NumericTag
-import net.minecraft.nbt.FloatTag
-import net.minecraft.nbt.DoubleTag
 import net.minecraft.server.level.ServerLevel
-import com.creeperyang.contactquests.quest.task.ContactTask
-import com.creeperyang.contactquests.quest.task.ItemMatchingTask
-import com.creeperyang.contactquests.quest.reward.ParcelReward
-import com.creeperyang.contactquests.quest.reward.RedPacketReward
+import net.neoforged.fml.ModList
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
-import java.util.Locale
 
 /** 仅允许在服务端主线程调用的任务图谱持久化操作服务，为脚本/AI 工具提供确定且稳定的 64 位对象 ID。 */
 object QuestGraphService {
@@ -72,12 +61,19 @@ object QuestGraphService {
     }
 
     @JvmOverloads
-    fun createChapter(level: ServerLevel, key: String, title: String, options: Map<String, Any?> = emptyMap()): Chapter {
+    fun createChapter(
+        level: ServerLevel,
+        key: String,
+        title: String,
+        options: Map<String, Any?> = emptyMap()
+    ): Chapter {
         val file = file(level)
         val id = stableId("chapter", key)
         val existing = file.getBase(id)
         require(existing == null || existing is Chapter) { "ID belongs to another object type" }
-        val chapter = existing as? Chapter ?: Chapter(id, file, file.defaultChapterGroup, "cq_" + java.lang.Long.toHexString(id))
+        val chapter = existing as? Chapter ?: Chapter(
+            id, file, file.defaultChapterGroup, "cq_" + java.lang.Long.toHexString(id)
+        )
         val prepared = QuestGraphSettings.chapter(level, chapter, mapOf("title" to title) + options, ::resolve, true)
         // 已存在的章节/任务 Key 保持幂等创建语义；仍校验传入参数合法性，但不隐式覆写已有内容。
         if (existing != null) return chapter
@@ -89,12 +85,20 @@ object QuestGraphService {
     }
 
     @JvmOverloads
-    fun createQuest(level: ServerLevel, chapterId: String, key: String, title: String, options: Map<String, Any?> = emptyMap()): Quest {
+    fun createQuest(
+        level: ServerLevel,
+        chapterId: String,
+        key: String,
+        title: String,
+        options: Map<String, Any?> = emptyMap()
+    ): Quest {
         val file = file(level)
         val chapter = file.getChapter(resolve(chapterId)) ?: error("Chapter does not exist")
         val id = stableId("quest", key)
         val existing = file.getBase(id)
-        require(existing == null || existing is Quest && existing.chapter === chapter) { "Quest key belongs to another object/parent" }
+        require(existing == null || existing is Quest && existing.chapter === chapter) {
+            "Quest key belongs to another object/parent"
+        }
         val quest = existing as? Quest ?: Quest(id, chapter)
         val prepared = QuestGraphSettings.quest(level, quest, mapOf("title" to title) + options, ::resolve, true)
         if (existing != null) return quest
@@ -106,24 +110,41 @@ object QuestGraphService {
     }
 
     fun getChapter(level: ServerLevel, id: String): Chapter? = file(level).getChapter(resolve(id))
+
     fun getQuest(level: ServerLevel, id: String): Quest? = file(level).getQuest(resolve(id))
+
     fun getTask(level: ServerLevel, id: String): Task? = file(level).getTask(resolve(id))
+
     fun getReward(level: ServerLevel, id: String): Reward? = file(level).getReward(resolve(id))
+
     fun listChapters(level: ServerLevel): List<Chapter> = file(level).allChapters.toList()
+
     fun listQuests(level: ServerLevel, chapterId: String): List<Quest> =
         getChapter(level, chapterId)?.quests?.toList() ?: emptyList()
-    fun listTasks(level: ServerLevel, questId: String): List<Task> = getQuest(level, questId)?.tasks?.toList() ?: emptyList()
-    fun listRewards(level: ServerLevel, questId: String): List<Reward> = getQuest(level, questId)?.rewards?.toList() ?: emptyList()
+
+    fun listTasks(level: ServerLevel, questId: String): List<Task> =
+        getQuest(level, questId)?.tasks?.toList() ?: emptyList()
+
+    fun listRewards(level: ServerLevel, questId: String): List<Reward> =
+        getQuest(level, questId)?.rewards?.toList() ?: emptyList()
 
     /** 在执行图谱写入、保存与同步前先完整构造校验任务及其全部子任务与奖励。 */
-    fun publishQuest(level: ServerLevel, chapterId: String, key: String, options: Map<String, Any?>,
-                     tasks: List<Map<String, Any?>>, rewards: List<Map<String, Any?>>): Quest {
+    fun publishQuest(
+        level: ServerLevel,
+        chapterId: String,
+        key: String,
+        options: Map<String, Any?>,
+        tasks: List<Map<String, Any?>>,
+        rewards: List<Map<String, Any?>>
+    ): Quest {
         val file = file(level)
         val chapter = file.getChapter(resolve(chapterId)) ?: error("Chapter does not exist")
         require(tasks.size <= 128 && rewards.size <= 128) { "Too many quest children" }
         val id = stableId("quest", key)
         val existing = file.getBase(id)
-        require(existing == null || existing is Quest && existing.chapter === chapter) { "Quest key belongs to another object/parent" }
+        require(existing == null || existing is Quest && existing.chapter === chapter) {
+            "Quest key belongs to another object/parent"
+        }
         val quest = Quest(id, chapter)
         val prepared = QuestGraphSettings.quest(level, quest, options, ::resolve, true)
         val ids = mutableSetOf(id)
@@ -132,12 +153,22 @@ object QuestGraphService {
             val childKey = (fields["key"] as? String)?.takeUnless { it.isBlank() } ?: "$key/task/$index"
             val type = fields["type"] as? String ?: error("Task type is required")
             val childId = stableId("task", childKey)
-            require(ids.add(childId) && (file.getBase(childId) == null || existing is Quest && file.getTask(childId)?.quest === existing)) { "Task key collision" }
+            require(
+                ids.add(childId)
+                    && (file.getBase(childId) == null
+                        || existing is Quest && file.getTask(childId)?.quest === existing)
+            ) {
+                "Task key collision"
+            }
             val task = TaskType.requireCreateTask(childId, quest, type)
-            val input = QuestObjectSettings.prepare(level, task, QuestGraphSettings.creationData(fields["data"]), true)
+            val input = QuestObjectSettings.prepare(
+                level, task, QuestGraphSettings.creationData(fields["data"]), true
+            )
             val merged = QuestObjectSettings.merge(level, task, input)
             NativeObjectSettings.validate(level, task, merged)
-            validateInput(task, merged); task.readData(merged, level.registryAccess()); validate(task)
+            QuestGraphValidation.validateInput(task, merged)
+            task.readData(merged, level.registryAccess())
+            QuestGraphValidation.validate(task)
             task to input
         }
         val rewardData = rewards.mapIndexed { index, fields ->
@@ -145,20 +176,33 @@ object QuestGraphService {
             val childKey = (fields["key"] as? String)?.takeUnless { it.isBlank() } ?: "$key/reward/$index"
             val type = fields["type"] as? String ?: error("Reward type is required")
             val childId = stableId("reward", childKey)
-            require(ids.add(childId) && (file.getBase(childId) == null || existing is Quest && file.getReward(childId)?.quest === existing)) { "Reward key collision" }
+            require(
+                ids.add(childId)
+                    && (file.getBase(childId) == null
+                        || existing is Quest && file.getReward(childId)?.quest === existing)
+            ) {
+                "Reward key collision"
+            }
             val reward = RewardType.createReward(childId, quest, type) ?: error("Unknown reward type")
-            val input = QuestObjectSettings.prepare(level, reward, QuestGraphSettings.creationData(fields["data"]), true)
+            val input = QuestObjectSettings.prepare(
+                level, reward, QuestGraphSettings.creationData(fields["data"]), true
+            )
             val merged = QuestObjectSettings.merge(level, reward, input)
             NativeObjectSettings.validate(level, reward, merged)
-            validateInput(reward, merged); reward.readData(merged, level.registryAccess()); validate(reward)
+            QuestGraphValidation.validateInput(reward, merged)
+            reward.readData(merged, level.registryAccess())
+            QuestGraphValidation.validate(reward)
             reward to input
         }
-        rewardData.forEach { (reward, _) -> InlineQuestSettings.entryIds(reward).forEach { entryId ->
-            require(ids.add(entryId)) { "Inline reward ID collides within the quest bundle" }
-        } }
+        rewardData.forEach { (reward, _) ->
+            InlineQuestSettings.entryIds(reward).forEach { entryId ->
+                require(ids.add(entryId)) { "Inline reward ID collides within the quest bundle" }
+            }
+        }
         if (existing != null) return existing as Quest
         quest.readData(prepared.data, level.registryAccess())
-        taskData.forEach { quest.addTask(it.first) }; rewardData.forEach { quest.addReward(it.first) }
+        taskData.forEach { quest.addTask(it.first) }
+        rewardData.forEach { quest.addReward(it.first) }
         chapter.addQuest(quest)
         QuestGraphSettings.applyText(quest, prepared)
         taskData.forEach { QuestObjectSettings.text(level, it.first, it.second) }
@@ -177,7 +221,11 @@ object QuestGraphService {
         val saved = QuestOverrideSavedData.get(level)
         val ext = (quest as Any) as? com.creeperyang.contactquests.bridge.IQuestExtension
         prepared.text.forEach { (key, _) ->
-            val field = when (key) { TranslationKey.TITLE -> "title"; TranslationKey.QUEST_SUBTITLE -> "subtitle"; else -> "description" }
+            val field = when (key) {
+                TranslationKey.TITLE -> "title"
+                TranslationKey.QUEST_SUBTITLE -> "subtitle"
+                else -> "description"
+            }
             saved.getOverride(quest.id)?.getCompound(field)?.remove(prepared.locale)
             when (key) {
                 TranslationKey.TITLE -> ext?.`contactQuests$setTitleOverride`(prepared.locale, null)
@@ -207,16 +255,19 @@ object QuestGraphService {
         val quest = file.getQuest(resolve(questId)) ?: error("Quest does not exist")
         val id = stableId("task", key)
         val existing = file.getBase(id)
-        require(existing == null || existing is Task && existing.quest === quest && existing.type.typeForNBT.toString() == type) {
+        require(
+            existing == null || existing is Task && existing.quest === quest
+                && existing.type.typeForNBT.toString() == type
+        ) {
             "Stable task key already belongs to another task"
         }
         val candidate = TaskType.requireCreateTask(id, quest, type)
         val input = QuestObjectSettings.prepare(level, candidate, data, true)
         val merged = QuestObjectSettings.merge(level, existing ?: candidate, input)
         NativeObjectSettings.validate(level, candidate, merged)
-        validateInput(candidate, merged)
+        QuestGraphValidation.validateInput(candidate, merged)
         candidate.readData(merged, level.registryAccess())
-        validate(candidate)
+        QuestGraphValidation.validate(candidate)
         val task = existing as? Task ?: candidate.also { quest.addTask(it) }
         task.readData(merged, level.registryAccess())
         clearFieldOverrides(level, task.id, input, true)
@@ -230,16 +281,19 @@ object QuestGraphService {
         val quest = file.getQuest(resolve(questId)) ?: error("Quest does not exist")
         val id = stableId("reward", key)
         val existing = file.getBase(id)
-        require(existing == null || existing is Reward && existing.quest === quest && existing.type.typeForNBT.toString() == type) {
+        require(
+            existing == null || existing is Reward && existing.quest === quest
+                && existing.type.typeForNBT.toString() == type
+        ) {
             "Stable reward key already belongs to another reward"
         }
         val candidate = RewardType.createReward(id, quest, type) ?: error("Unknown reward type: $type")
         val input = QuestObjectSettings.prepare(level, candidate, data, true)
         val merged = QuestObjectSettings.merge(level, existing ?: candidate, input)
         NativeObjectSettings.validate(level, candidate, merged)
-        validateInput(candidate, merged)
+        QuestGraphValidation.validateInput(candidate, merged)
         candidate.readData(merged, level.registryAccess())
-        validate(candidate)
+        QuestGraphValidation.validate(candidate)
         val reward = existing as? Reward ?: candidate.also { quest.addReward(it) }
         reward.readData(merged, level.registryAccess())
         clearFieldOverrides(level, reward.id, input, false)
@@ -255,9 +309,9 @@ object QuestGraphService {
         val merged = QuestObjectSettings.merge(level, task, input)
         val candidate = TaskType.requireCreateTask(task.id, task.quest, task.type.typeForNBT.toString())
         NativeObjectSettings.validate(level, candidate, merged)
-        validateInput(candidate, merged)
+        QuestGraphValidation.validateInput(candidate, merged)
         candidate.readData(merged, level.registryAccess())
-        validate(candidate)
+        QuestGraphValidation.validate(candidate)
         task.readData(merged, level.registryAccess())
         clearFieldOverrides(level, task.id, data, true)
         QuestObjectSettings.text(level, task, input)
@@ -272,9 +326,9 @@ object QuestGraphService {
         val merged = QuestObjectSettings.merge(level, reward, input)
         val candidate = RewardType.createReward(reward.id, reward.quest, reward.type.typeForNBT.toString())!!
         NativeObjectSettings.validate(level, candidate, merged)
-        validateInput(candidate, merged)
+        QuestGraphValidation.validateInput(candidate, merged)
         candidate.readData(merged, level.registryAccess())
-        validate(candidate)
+        QuestGraphValidation.validate(candidate)
         reward.readData(merged, level.registryAccess())
         clearFieldOverrides(level, reward.id, data, false)
         QuestObjectSettings.text(level, reward, input)
@@ -295,8 +349,11 @@ object QuestGraphService {
     }
 
     fun deleteQuest(level: ServerLevel, id: String): Boolean = delete(level, id, QuestObjectType.QUEST)
+
     fun deleteChapter(level: ServerLevel, id: String): Boolean = delete(level, id, QuestObjectType.CHAPTER)
+
     fun deleteTask(level: ServerLevel, id: String): Boolean = delete(level, id, QuestObjectType.TASK)
+
     fun deleteReward(level: ServerLevel, id: String): Boolean = delete(level, id, QuestObjectType.REWARD)
 
     private fun delete(level: ServerLevel, id: String, expected: QuestObjectType): Boolean {
@@ -326,7 +383,7 @@ object QuestGraphService {
             val old = tag.getList("cq_mutex_ids", 8).map { it.asString }
             val retained = old.filter { resolve(it) !in removed }
             if (retained.size != old.size) {
-                tag.put("cq_mutex_ids", nbtList(retained))
+                tag.put("cq_mutex_ids", QuestGraphValidation.nbtList(retained))
                 quest.readData(tag, level.registryAccess())
             }
         }
@@ -334,88 +391,18 @@ object QuestGraphService {
         return true
     }
 
-    private fun dependsOn(obj: QuestObject, target: Quest, visited: MutableSet<Long>): Boolean {
-        if (!visited.add(obj.id)) return false
-        if (obj === target) return true
-        return when (obj) {
-            is Quest -> obj.streamDependencies().anyMatch { dependsOn(it, target, visited) }
-            is Task -> dependsOn(obj.quest, target, visited)
-            is Chapter -> obj.quests.any { dependsOn(it, target, visited) }
-            else -> false
-        }
-    }
-
-    private fun validate(obj: QuestObjectBase) {
-        if (obj is ContactTask) require(obj.count > 0) { "Task count must be positive" }
-        // 原生物品奖励允许创建空物品栈兜底，但包裹奖励必须配置正数量与有效物品才能真实投递。
-        if (obj is ParcelReward) require(obj.count > 0 && !obj.item.isEmpty) { "A parcel reward needs a positive count and item" }
-        if (obj is RedPacketReward) require(obj.count > 0 && !obj.item.isEmpty) { "A red packet reward needs a positive count and item" }
-        if (obj is com.creeperyang.contactquests.quest.reward.ParcelChoiceReward) {
-            require(com.creeperyang.contactquests.config.ChoiceTemplateConfig.hasGroup(obj.templateGroup)) { "Unknown choice template group" }
-            require(obj.table == null || obj.table!!.weightedRewards.size <= 128) { "Choice table exceeds 128 entries" }
-            require(obj.table?.weightedRewards.orEmpty().all { entry -> entry.reward is dev.ftb.mods.ftbquests.quest.reward.ItemReward
-                || entry.reward is ParcelReward || entry.reward is RedPacketReward || entry.reward is com.creeperyang.contactquests.quest.reward.PostcardReward }) {
-                "Choice options must be item or Contact mail rewards"
-            }
-        }
-    }
-
-    private fun validateInput(obj: QuestObjectBase, data: CompoundTag) {
-        // 赶在 FTB 原生 readData 把非法数量默默钳位成 1 之前完成严格校验。
-        fun integer(key: String, minimum: Long, maximum: Long): Long? {
-            val value = data[key] ?: return null
-            require(value is NumericTag) { "$key must be an integer" }
-            // Rhino 会将 JS 数字（哪怕是整数 `count: 4`）统一转换成 DoubleTag；先校验是否可无损表示整数且未溢出，再归一化为整型 NBT。
-            if (value is FloatTag || value is DoubleTag) {
-                val number = data.getDouble(key)
-                require(number.isFinite() && number == kotlin.math.floor(number)
-                        && number.toBigDecimal() >= minimum.toBigDecimal()
-                        && number.toBigDecimal() <= maximum.toBigDecimal()) { "$key must be an integer between $minimum and $maximum" }
-                data.putLong(key, number.toLong())
-            }
-            val number = data.getLong(key)
-            require(number in minimum..maximum) { "$key must be between $minimum and $maximum" }
-            return number
-        }
-        if (obj is ContactTask) integer("count", 1, Long.MAX_VALUE)
-        if (obj is ParcelReward || obj is RedPacketReward) {
-            val count = integer("count", 1, Int.MAX_VALUE.toLong()) ?: 1
-            val bonus = integer("random_bonus", 0, Int.MAX_VALUE.toLong() - 1) ?: 0
-            require(count + bonus <= Int.MAX_VALUE) { "count plus random_bonus overflows the reward quantity" }
-        }
-        if (obj is com.creeperyang.contactquests.quest.reward.ParcelRewardBase && data.contains("team_reward_multiplier")) {
-            require(data.contains("team_reward_multiplier", Tag.TAG_ANY_NUMERIC.toInt())
-                    && data.getFloat("team_reward_multiplier").let { it.isFinite() && it > 0 }) {
-                "team_reward_multiplier must be positive and finite"
-            }
-        }
-    }
-
     private fun clearFieldOverrides(level: ServerLevel, id: Long, changed: CompoundTag, task: Boolean) {
-        val aliases = if (task) mapOf("TargetAddressee" to "target", "postcard_style" to "style", "postcard_text" to "text")
-            else mapOf("target_addressee" to "target", "postcard_style" to "style", "postcard_text" to "text", "random_bonus" to "randomBonus")
+        val aliases = if (task) mapOf(
+            "TargetAddressee" to "target",
+            "postcard_style" to "style",
+            "postcard_text" to "text"
+        ) else mapOf(
+            "target_addressee" to "target",
+            "postcard_style" to "style",
+            "postcard_text" to "text",
+            "random_bonus" to "randomBonus"
+        )
         val saved = QuestOverrideSavedData.get(level)
         changed.allKeys.forEach { saved.clearOverride(id, aliases[it] ?: it) }
-    }
-
-    private fun requireString(key: String, value: Any): String = value as? String ?: error("$key must be a string")
-    private fun requireBoolean(key: String, value: Any): Boolean = value as? Boolean ?: error("$key must be boolean")
-    private fun stringList(key: String, value: Any): List<String> {
-        val list = value as? Collection<*> ?: error("$key must be a list")
-        require(list.all { it is String }) { "$key must contain strings" }
-        return list.map { it as String }
-    }
-    private fun nbtList(values: List<String>): ListTag = ListTag().apply { values.forEach { add(StringTag.valueOf(it)) } }
-    private fun enumValue(key: String, value: Any, allowed: Set<String>): String =
-        requireString(key, value).uppercase(Locale.ROOT).also { require(it in allowed) { "$key must be one of $allowed" } }
-    private fun positiveCount(value: Any): Int {
-        return integerCount("mutexCount", value, 1)
-    }
-    private fun integerCount(key: String, value: Any, minimum: Int): Int {
-        val number = (value as? Number)?.toDouble() ?: error("$key must be an integer")
-        require(number.isFinite() && number >= minimum && number <= Int.MAX_VALUE && number == number.toInt().toDouble()) {
-            "$key must be an integer from $minimum to ${Int.MAX_VALUE}"
-        }
-        return number.toInt()
     }
 }

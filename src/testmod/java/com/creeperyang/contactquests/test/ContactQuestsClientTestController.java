@@ -2182,7 +2182,7 @@ public final class ContactQuestsClientTestController {
             assertCase(id, valid && tasks == 2 && rewards == 1,
                     "Displayed FTB buttons use two consistent Contact postcard task item models and the matching normal/ender reward model;"
                             + " no test-written custom icon; observed=" + observed);
-            org.lwjgl.glfw.GLFW.glfwSetCursorPos(Minecraft.getInstance().getWindow().getWindow(), 20, 20);
+            ContactQuestsTestVirtualPointer.moveRaw(Minecraft.getInstance(), 20, 20);
         } catch (Exception error) {
             assertCase(id, false, error.toString());
         }

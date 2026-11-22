@@ -58,6 +58,33 @@ configurations {
     testmodRuntimeOnly.extendsFrom runtimeOnly
 }
 
+configurations {
+    oelibJarJar {
+        canBeConsumed = false
+        canBeResolved = true
+        transitive = false
+    }
+}
+
+// OELib 0.3.x keeps its classes in nested jars; expose them only to compilers.
+def oelibCompileJarsDirectory = layout.buildDirectory.dir('generated/oelib-compile-jars')
+def extractOelibCompileJars = tasks.register('extractOelibCompileJars', Sync) {
+    // Configure archive trees here so execution does not capture the project or configuration.
+    from(configurations.oelibJarJar.collect { archive -> zipTree(archive) }) {
+        include 'META-INF/jarjar/*.jar'
+        eachFile { details -> details.path = details.name }
+        includeEmptyDirs = false
+    }
+    into oelibCompileJarsDirectory
+}
+def oelibCompileJars = files(fileTree(
+        dir: extractOelibCompileJars.map { it.destinationDir }, include: '*.jar'
+)).builtBy(extractOelibCompileJars)
+
+tasks.matching { it.name in ['compileKotlin', 'compileJava', 'compileTestmodJava'] }.configureEach {
+    dependsOn extractOelibCompileJars
+}
+
 sourceSets.testmod.compileClasspath += sourceSets.main.output + sourceSets.main.compileClasspath
 sourceSets.testmod.runtimeClasspath += sourceSets.main.output + sourceSets.main.runtimeClasspath
 
@@ -168,9 +195,12 @@ dependencies {
     // Optional client recipe bridge; never bundled or required by the production mod.
     compileOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}") { transitive = false }
     runtimeOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}") { transitive = false }
+    runtimeOnly "net.mezzdev.config:mezz_config-${minecraft_version}-neoforge:${mezz_config_version}"
     implementation("dev.architectury:architectury-neoforge:${architectury_version}") { transitive = false }
 //    runtimeOnly "curse.maven:jupiter-1072905:${jupiter_neoforge_21}"
     implementation "curse.maven:oelib-1319210:${oelib_neoforge_21}"
+    add('oelibJarJar', "curse.maven:oelib-1319210:${oelib_neoforge_21}")
+    compileOnly oelibCompileJars
     // Example mod dependency using a mod jar from ./libs with a flat dir repository
     // This maps to ./libs/coolmod-${mc_version}-${coolmod_version}.jar
     // The group id is ignored when searching -- in this case, it is "blank"
@@ -214,6 +244,7 @@ var generateModMetadata = tasks.register("generateModMetadata", ProcessResources
 sourceSets.main.resources.srcDir generateModMetadata
 // To avoid having to run "generateModMetadata" manually, make it run on every project reload
 neoForge.ideSyncTask generateModMetadata
+neoForge.ideSyncTask extractOelibCompileJars
 
 // Example configuration to allow publishing using the maven-publish plugin
 publishing {

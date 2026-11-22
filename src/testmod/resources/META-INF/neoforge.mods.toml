@@ -29,3 +29,6 @@ type="required"
 versionRange="[0,)"
 ordering="AFTER"
 side="BOTH"
+
+[[mixins]]
+config="contactquests_test.mixins.json"

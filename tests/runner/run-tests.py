@@ -281,7 +281,7 @@ def is_optional_script_artifact(path):
 
 
 def is_optional_viewer_artifact(path):
-    return bool(re.search(r"(?:^|[/\\])jei-\d[^/\\]+\.jar$", str(path)))
+    return bool(re.search(r"(?:^|[/\\])(?:jei-\d|mezz_config)[^/\\]*\.jar$", str(path)))
 
 
 def windows_lwjgl_boot_modules(vm, cp, separator):
@@ -313,6 +313,21 @@ def windows_lwjgl_boot_modules(vm, cp, separator):
     if "ALL-MODULE-PATH" not in vm:
         vm += ["--add-modules", "ALL-MODULE-PATH"]
     return vm, cp, module_paths
+
+
+def disable_early_window_control(game_dir):
+    """Let Window.<init> create the GLFW window so test mixins can prevent focus stealing."""
+    fml_config = Path(game_dir) / "config" / "fml.toml"
+    fml_config.parent.mkdir(parents=True, exist_ok=True)
+    if fml_config.is_file():
+        text = fml_config.read_text(encoding="utf-8", errors="replace")
+        updated, count = re.subn(r"(?m)^(\s*earlyWindowControl\s*=\s*)true\b", r"\1false", text)
+        if count == 0 and not re.search(r"(?m)^\s*earlyWindowControl\s*=", text):
+            updated = text + ("" if text.endswith("\n") or not text else "\n") + "earlyWindowControl = false\n"
+        if updated != text:
+            fml_config.write_text(updated, encoding="utf-8")
+    else:
+        fml_config.write_text("earlyWindowControl = false\n", encoding="utf-8")
 
 
 def prepare_launch(record, side, game_dir, result_dir, platform, scenario=None, snapshot=None, rejoin=False,
@@ -401,6 +416,7 @@ def prepare_launch(record, side, game_dir, result_dir, platform, scenario=None, 
                ":com.flechazo.contact.common.tileentity.MailboxBlockEntity*:com.flechazo.contact.common.storage.PlayerMailboxData*,"
                "excludes=com.creeperyang.contactquests.test.*,classdumpdir=" + dump]
     if side == "client":
+        disable_early_window_control(game_dir)
         scenario_path = ROOT / "tests/scenarios/common" / scenario
         if server_address:
             network_scenario, excluded_scenario_steps = derive_network_scenario(read_json(scenario_path))
